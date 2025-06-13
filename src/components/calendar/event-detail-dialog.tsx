@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { CalendarDays, Clock, MapPin, User, Tag, Info, BookOpen, Users } from 'lucide-react'; // Added Users
+import { CalendarDays, Clock, MapPin, User, Info, BookOpen, Users } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface EventDetailDialogProps {
@@ -21,7 +21,6 @@ export default function EventDetailDialog({ event, allSubjects, isOpen, onClose 
   if (!event) return null;
 
   const category = getCategoryByName(event.category);
-  // Use the passed allSubjects list for lookup
   const subject = event.subjectId ? getSubjectById(event.subjectId, allSubjects) : null;
 
   return (
@@ -50,7 +49,7 @@ export default function EventDetailDialog({ event, allSubjects, isOpen, onClose 
                 {subject.semester && <p className="text-xs text-muted-foreground">Semester: {subject.semester}</p>}
                  <div className="mt-1">
                     <Badge variant="outline" style={{ borderColor: subject.color, color: subject.color, backgroundColor: `${subject.color}1A` }}>
-                      {subject.name} ({subject.category})
+                      {subject.name}
                     </Badge>
                   </div>
               </div>

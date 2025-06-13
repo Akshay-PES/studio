@@ -19,8 +19,7 @@ export interface EventCategory {
 
 export interface Subject {
   id: string; // Firestore document ID
-  name: string; 
-  category: EventCategoryName; 
+  name: string;
   color: string; // Hex color code
   // Optional fields remain, can be added to forms later if needed
   faculty?: string;
@@ -60,3 +59,4 @@ export interface CalendarFilters {
 }
 
 export type ColorCodingMode = "category" | "subject";
+

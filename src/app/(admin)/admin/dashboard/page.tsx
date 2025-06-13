@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { collection, getDocs, addDoc, Timestamp, query, orderBy, deleteDoc, doc, updateDoc, DocumentData, QueryDocumentSnapshot, writeBatch } from "firebase/firestore";
+import { collection, getDocs, addDoc, Timestamp, query, orderBy, deleteDoc, doc, updateDoc, DocumentData, QueryDocumentSnapshot, writeBatch, where } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import type { AcademicEvent, EventCategoryName, Subject } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import AddEventDialog from '@/components/calendar/add-event-dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Pencil, Trash2, PlusCircle, BookOpen, Palette, LayersIcon } from 'lucide-react';
+import { Pencil, Trash2, PlusCircle, BookOpen } from 'lucide-react';
 import { format } from 'date-fns';
 import { eventCategories } from '@/data/mock-data';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,12 +27,11 @@ interface EditEventFormData {
   location?: string;
   description?: string;
   subjectId?: string;
-  subType?: string; // Added subType
+  subType?: string;
 }
 
 interface SubjectFormData {
   name: string;
-  category: EventCategoryName;
   color: string; // Hex color string
 }
 
@@ -52,8 +51,8 @@ export default function AdminDashboardPage() {
   const [showAddSubjectDialog, setShowAddSubjectDialog] = useState(false);
   const [showEditSubjectDialog, setShowEditSubjectDialog] = useState(false);
   const [currentSubjectToEdit, setCurrentSubjectToEdit] = useState<Subject | null>(null);
-  const [addSubjectFormData, setAddSubjectFormData] = useState<SubjectFormData>({ name: '', category: 'Academics', color: '#808080' });
-  const [editSubjectFormData, setEditSubjectFormData] = useState<SubjectFormData>({ name: '', category: 'Academics', color: '#808080' });
+  const [addSubjectFormData, setAddSubjectFormData] = useState<SubjectFormData>({ name: '', color: '#808080' });
+  const [editSubjectFormData, setEditSubjectFormData] = useState<SubjectFormData>({ name: '', color: '#808080' });
   
   const { toast } = useToast();
 
@@ -99,9 +98,7 @@ export default function AdminDashboardPage() {
         return {
           id: doc.id,
           name: data.name,
-          category: data.category,
           color: data.color,
-          // Include other fields if they exist in your Firestore documents for subjects
         };
       });
       setSubjectsDB(fetchedSubjects);
@@ -219,13 +216,12 @@ export default function AdminDashboardPage() {
     try {
       await addDoc(collection(db, "subjects"), {
         name: addSubjectFormData.name,
-        category: addSubjectFormData.category,
         color: addSubjectFormData.color,
       });
       toast({ title: "Subject Added Successfully" });
       fetchSubjects();
       setShowAddSubjectDialog(false);
-      setAddSubjectFormData({ name: '', category: 'Academics', color: '#808080' });
+      setAddSubjectFormData({ name: '', color: '#808080' });
     } catch (error) {
       console.error("Error adding subject:", error);
       toast({ variant: "destructive", title: "Error Adding Subject" });
@@ -236,7 +232,6 @@ export default function AdminDashboardPage() {
     setCurrentSubjectToEdit(subject);
     setEditSubjectFormData({
       name: subject.name,
-      category: subject.category,
       color: subject.color,
     });
     setShowEditSubjectDialog(true);
@@ -245,10 +240,6 @@ export default function AdminDashboardPage() {
   const handleEditSubjectFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setEditSubjectFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleEditSubjectCategoryChange = (newCategory: EventCategoryName) => {
-    setEditSubjectFormData(prev => ({ ...prev, category: newCategory }));
   };
 
   const handleUpdateSubjectInDB = async (e: React.FormEvent) => {
@@ -260,7 +251,6 @@ export default function AdminDashboardPage() {
     try {
       await updateDoc(doc(db, "subjects", currentSubjectToEdit.id), {
         name: editSubjectFormData.name,
-        category: editSubjectFormData.category,
         color: editSubjectFormData.color,
       });
       toast({ title: "Subject Updated Successfully" });
@@ -277,11 +267,9 @@ export default function AdminDashboardPage() {
     if (!window.confirm("Are you sure you want to delete this subject? This will also remove its association from any events.")) return;
     try {
       const batch = writeBatch(db);
-      // Delete the subject
       batch.delete(doc(db, "subjects", subjectId));
 
-      // Query for events associated with this subject and update them
-      const eventsQuery = query(collection(db, "events"), where => where("subjectId", "==", subjectId));
+      const eventsQuery = query(collection(db, "events"), where("subjectId", "==", subjectId));
       const eventSnapshots = await getDocs(eventsQuery);
       eventSnapshots.forEach(eventDoc => {
         batch.update(doc(db, "events", eventDoc.id), { subjectId: null });
@@ -291,7 +279,7 @@ export default function AdminDashboardPage() {
 
       toast({ title: "Subject Deleted Successfully" });
       fetchSubjects();
-      fetchEvents(); // Refetch events as their subjectId might have changed
+      fetchEvents(); 
     } catch (error) {
       console.error("Error deleting subject:", error);
       toast({ variant: "destructive", title: "Error Deleting Subject" });
@@ -367,7 +355,7 @@ export default function AdminDashboardPage() {
               <div className="flex justify-between items-center">
                 <CardTitle>Manage Subjects</CardTitle>
                 <Button onClick={() => { 
-                  setAddSubjectFormData({ name: '', category: 'Academics', color: '#808080' });
+                  setAddSubjectFormData({ name: '', color: '#808080' });
                   setShowAddSubjectDialog(true);
                 }}>
                   <BookOpen className="mr-2 h-4 w-4" /> Add New Subject
@@ -386,7 +374,6 @@ export default function AdminDashboardPage() {
                     <li key={subject.id} className="p-4 border rounded-lg shadow-sm flex justify-between items-center hover:bg-muted/50 transition-colors">
                       <div>
                         <h3 className="text-lg font-semibold" style={{color: subject.color}}>{subject.name}</h3>
-                        <p className="text-sm text-muted-foreground">Category: {subject.category}</p>
                         <p className="text-sm text-muted-foreground">Color: {subject.color}</p>
                       </div>
                       <div className="space-x-2">
@@ -410,10 +397,9 @@ export default function AdminDashboardPage() {
         isOpen={showAddEventDialog}
         onClose={() => setShowAddEventDialog(false)}
         onAddEvent={handleAddEvent}
-        subjectsFromDB={subjectsDB} // Pass fetched subjects
+        subjectsFromDB={subjectsDB}
       />
 
-      {/* Edit Event Dialog */}
       {currentEventToEdit && (
          <Dialog open={showEditEventDialog} onOpenChange={(isOpen) => {
             if (!isOpen) setCurrentEventToEdit(null);
@@ -499,7 +485,7 @@ export default function AdminDashboardPage() {
 
       {/* Add Subject Dialog */}
       <Dialog open={showAddSubjectDialog} onOpenChange={(isOpen) => {
-        if (!isOpen) setAddSubjectFormData({ name: '', category: 'Academics', color: '#808080' });
+        if (!isOpen) setAddSubjectFormData({ name: '', color: '#808080' });
         setShowAddSubjectDialog(isOpen);
       }}>
         <DialogContent className="sm:max-w-md">
@@ -517,18 +503,6 @@ export default function AdminDashboardPage() {
                 onChange={(e) => setAddSubjectFormData(prev => ({...prev, name: e.target.value}))} 
                 required 
               />
-            </div>
-            <div>
-              <Label htmlFor="add-subject-category">Category</Label>
-              <Select 
-                value={addSubjectFormData.category} 
-                onValueChange={(val: EventCategoryName) => setAddSubjectFormData(prev => ({...prev, category: val}))}
-              >
-                <SelectTrigger id="add-subject-category"><SelectValue placeholder="Select category" /></SelectTrigger>
-                <SelectContent>
-                  {eventCategories.map(cat => <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
             </div>
             <div>
               <Label htmlFor="add-subject-color">Color (Hex Code)</Label>
@@ -569,18 +543,6 @@ export default function AdminDashboardPage() {
                   onChange={handleEditSubjectFormChange} 
                   required 
                 />
-              </div>
-              <div>
-                <Label htmlFor="edit-subject-category">Category</Label>
-                <Select 
-                  value={editSubjectFormData.category} 
-                  onValueChange={handleEditSubjectCategoryChange}
-                >
-                  <SelectTrigger id="edit-subject-category"><SelectValue placeholder="Select category" /></SelectTrigger>
-                  <SelectContent>
-                    {eventCategories.map(cat => <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
               </div>
               <div>
                 <Label htmlFor="edit-subject-color">Color (Hex Code)</Label>
