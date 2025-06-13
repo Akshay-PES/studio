@@ -69,21 +69,21 @@ export default function SidebarFilters() { // Props removed
   };
 
   return (
-    <div className="p-2 space-y-4 h-full flex flex-col text-sidebar-foreground bg-sidebar"> {/* Adjusted padding and ensure full height */}
+    <div className="p-2 space-y-3 h-full flex flex-col text-sidebar-foreground bg-sidebar"> {/* Reduced space-y slightly */}
       <div className="flex items-center justify-between px-2 pt-2">
-        <h3 className="text-lg font-semibold font-headline flex items-center gap-2"> {/* Reduced size slightly */}
+        <h3 className="text-base font-semibold font-headline flex items-center gap-1.5"> {/* Adjusted size and gap */}
           <Filter className="w-4 h-4" /> Filters
         </h3>
-        <Button variant="ghost" size="sm" onClick={clearFilters} className="text-xs hover:bg-sidebar-accent">Clear All</Button>
+        <Button variant="ghost" size="sm" onClick={clearFilters} className="text-xs hover:bg-sidebar-accent h-7 px-2">Clear All</Button>
       </div>
       
       <ScrollArea className="flex-grow pr-1"> {/* Reduced padding-right */}
         <Accordion type="multiple" defaultValue={['categories', 'subjects', 'date-range', 'display']} className="w-full">
           <AccordionItem value="categories" className="border-b-sidebar-border">
-            <AccordionTrigger className="text-sm font-medium hover:no-underline px-2 py-3"> {/* Reduced size */}
-              <div className="flex items-center gap-2"><Layers className="w-4 h-4" /> Categories</div>
+            <AccordionTrigger className="text-sm font-medium hover:no-underline px-2 py-2.5"> {/* Adjusted padding */}
+              <div className="flex items-center gap-1.5"><Layers className="w-4 h-4" /> Categories</div>
             </AccordionTrigger>
-            <AccordionContent className="pt-1 pb-2 space-y-1.5 px-2"> {/* Reduced padding */}
+            <AccordionContent className="pt-1 pb-1.5 space-y-1 px-2"> {/* Adjusted padding & space */}
               {eventCategories.map(category => (
                 <div key={category.id} className="flex items-center space-x-2 p-1 rounded-md hover:bg-sidebar-accent/70">
                   <Checkbox
@@ -92,7 +92,7 @@ export default function SidebarFilters() { // Props removed
                     onCheckedChange={(checked) => handleCategoryChange(category.name, !!checked)}
                     className="border-sidebar-primary data-[state=checked]:bg-sidebar-primary data-[state=checked]:text-sidebar-primary-foreground"
                   />
-                  <Label htmlFor={`cat-${category.id}`} className="text-xs font-normal cursor-pointer flex-grow"> {/* Reduced size */}
+                  <Label htmlFor={`cat-${category.id}`} className="text-xs font-normal cursor-pointer flex-grow"> {/* Adjusted size */}
                     {category.name}
                   </Label>
                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: category.color }} />
@@ -102,10 +102,10 @@ export default function SidebarFilters() { // Props removed
           </AccordionItem>
 
           <AccordionItem value="subjects" className="border-b-sidebar-border">
-            <AccordionTrigger className="text-sm font-medium hover:no-underline px-2 py-3">
-              <div className="flex items-center gap-2"><Tag className="w-4 h-4" /> Subjects</div>
+            <AccordionTrigger className="text-sm font-medium hover:no-underline px-2 py-2.5">
+              <div className="flex items-center gap-1.5"><Tag className="w-4 h-4" /> Subjects</div>
             </AccordionTrigger>
-            <AccordionContent className="pt-1 pb-2 space-y-1.5 px-2">
+            <AccordionContent className="pt-1 pb-1.5 space-y-1 px-2">
               {subjects.map(subject => (
                 <div key={subject.id} className="flex items-center space-x-2 p-1 rounded-md hover:bg-sidebar-accent/70">
                   <Checkbox
@@ -124,10 +124,10 @@ export default function SidebarFilters() { // Props removed
           </AccordionItem>
           
           <AccordionItem value="date-range" className="border-b-sidebar-border">
-            <AccordionTrigger className="text-sm font-medium hover:no-underline px-2 py-3">
-               <div className="flex items-center gap-2"><CalendarIcon className="w-4 h-4" /> Date Range</div>
+            <AccordionTrigger className="text-sm font-medium hover:no-underline px-2 py-2.5">
+               <div className="flex items-center gap-1.5"><CalendarIcon className="w-4 h-4" /> Date Range</div>
             </AccordionTrigger>
-            <AccordionContent className="pt-1 pb-2 space-y-2.5 px-2">
+            <AccordionContent className="pt-1.5 pb-2 space-y-2 px-2"> {/* Adjusted padding */}
               <div>
                 <Label htmlFor="start-date" className="text-xs">Start Date</Label>
                 <Popover>
@@ -136,7 +136,7 @@ export default function SidebarFilters() { // Props removed
                       id="start-date"
                       variant="outline"
                       className={cn(
-                        "w-full justify-start text-left font-normal mt-1 h-8 text-xs bg-sidebar-accent border-sidebar-border hover:bg-sidebar-accent/70", // Smaller button
+                        "w-full justify-start text-left font-normal mt-1 h-8 text-xs bg-sidebar-accent border-sidebar-border hover:bg-sidebar-accent/70", 
                         !filters.dateRange?.start && "text-muted-foreground"
                       )}
                     >
@@ -162,7 +162,7 @@ export default function SidebarFilters() { // Props removed
                       id="end-date"
                       variant="outline"
                       className={cn(
-                        "w-full justify-start text-left font-normal mt-1 h-8 text-xs bg-sidebar-accent border-sidebar-border hover:bg-sidebar-accent/70", // Smaller button
+                        "w-full justify-start text-left font-normal mt-1 h-8 text-xs bg-sidebar-accent border-sidebar-border hover:bg-sidebar-accent/70", 
                         !filters.dateRange?.end && "text-muted-foreground"
                       )}
                     >
@@ -185,10 +185,10 @@ export default function SidebarFilters() { // Props removed
           </AccordionItem>
 
           <AccordionItem value="display" className="border-b-0">
-            <AccordionTrigger className="text-sm font-medium hover:no-underline px-2 py-3">
-              <div className="flex items-center gap-2"><Palette className="w-4 h-4" /> Display Options</div>
+            <AccordionTrigger className="text-sm font-medium hover:no-underline px-2 py-2.5">
+              <div className="flex items-center gap-1.5"><Palette className="w-4 h-4" /> Display Options</div>
             </AccordionTrigger>
-            <AccordionContent className="pt-2 pb-2 space-y-2.5 px-2">
+            <AccordionContent className="pt-1.5 pb-2 space-y-2 px-2"> {/* Adjusted padding */}
               <div className="flex items-center justify-between p-1 rounded-md">
                 <Label htmlFor="color-mode" className="text-xs">Color Code by Subject</Label>
                 <Switch
@@ -205,7 +205,7 @@ export default function SidebarFilters() { // Props removed
           </AccordionItem>
         </Accordion>
       </ScrollArea>
-      <Separator className="my-2 bg-sidebar-border"/>
+      <Separator className="my-1.5 bg-sidebar-border"/> {/* Reduced margin */}
       <div className="text-xs text-center text-muted-foreground/70 pb-2">
         AcademiaSync v1.0
       </div>

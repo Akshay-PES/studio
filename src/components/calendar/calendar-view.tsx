@@ -93,8 +93,8 @@ export default function CalendarView({
             Today
           </Button>
         </div>
-        <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={goToToday} className="sm:hidden text-sm px-3 py-1.5 h-auto">
+        <div className="flex items-center gap-2 sm:hidden"> {/* Ensure this div is hidden on sm and up */}
+            <Button variant="outline" onClick={goToToday} className="text-xs px-2.5 py-1 h-auto"> {/* Made mobile today button smaller */}
                 Today
             </Button>
         </div>
