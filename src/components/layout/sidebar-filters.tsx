@@ -12,7 +12,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import type { EventCategoryName } from '@/lib/types';
-import { eventCategories, subjects } from '@/data/mock-data';
+import { eventCategories, subjects } from '@/data/mock-data'; // subjects will be an empty array
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import {
@@ -146,20 +146,24 @@ export default function SidebarFilters() {
               <div className="flex items-center gap-1.5"><Tag className="w-4 h-4" /> Subjects</div>
             </AccordionTrigger>
             <AccordionContent className="pt-1 pb-1.5 space-y-1 px-2">
-              {subjects.map(subject => (
-                <div key={subject.id} className="flex items-center space-x-2 p-1 rounded-md hover:bg-sidebar-accent/70">
-                  <Checkbox
-                    id={`sub-${subject.id}`}
-                    checked={filters.subjects.includes(subject.id)}
-                    onCheckedChange={(checked) => handleSubjectChange(subject.id, !!checked)}
-                    className="border-sidebar-primary data-[state=checked]:bg-sidebar-primary data-[state=checked]:text-sidebar-primary-foreground"
-                  />
-                  <Label htmlFor={`sub-${subject.id}`} className="text-xs font-normal cursor-pointer flex-grow">
-                    {subject.name}
-                  </Label>
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: subject.color }} />
-                </div>
-              ))}
+              {subjects.length === 0 ? (
+                <p className="text-xs text-muted-foreground/80 px-1 py-2">No subjects available for filtering. Subjects are managed via the database.</p>
+              ) : (
+                subjects.map(subject => (
+                  <div key={subject.id} className="flex items-center space-x-2 p-1 rounded-md hover:bg-sidebar-accent/70">
+                    <Checkbox
+                      id={`sub-${subject.id}`}
+                      checked={filters.subjects.includes(subject.id)}
+                      onCheckedChange={(checked) => handleSubjectChange(subject.id, !!checked)}
+                      className="border-sidebar-primary data-[state=checked]:bg-sidebar-primary data-[state=checked]:text-sidebar-primary-foreground"
+                    />
+                    <Label htmlFor={`sub-${subject.id}`} className="text-xs font-normal cursor-pointer flex-grow">
+                      {subject.name}
+                    </Label>
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: subject.color }} />
+                  </div>
+                ))
+              )}
             </AccordionContent>
           </AccordionItem>
           
@@ -239,7 +243,7 @@ export default function SidebarFilters() {
                 />
               </div>
                <p className="text-xs text-muted-foreground/80 px-1">
-                Toggle to color events by subject. Default is by category.
+                Toggle to color events by subject. Default is by category. This may not have an effect if no subjects are defined in the database.
               </p>
             </AccordionContent>
           </AccordionItem>
@@ -252,4 +256,3 @@ export default function SidebarFilters() {
     </div>
   );
 }
-

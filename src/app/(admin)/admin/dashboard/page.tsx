@@ -18,7 +18,7 @@ import AddEventDialog from '@/components/calendar/add-event-dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Pencil, Trash2, PlusCircle } from 'lucide-react';
 import { format } from 'date-fns';
-import { eventCategories } from '@/data/mock-data'; // Import eventCategories
+import { eventCategories, subjects } from '@/data/mock-data'; // Import eventCategories, subjects will be an empty array
 
 
 // Simplified form state for editing
@@ -29,7 +29,10 @@ interface EditEventFormData {
   end: string;
   location?: string;
   description?: string;
+  subjectId?: string; // Added subjectId
 }
+
+const NO_SUBJECT_VALUE = "__NONE_SUBJECT__";
 
 
 export default function AdminDashboardPage() {
@@ -75,7 +78,7 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     fetchEvents();
-  }, [toast]);
+  }, [toast]); // Removed fetchEvents from dependencies to avoid re-fetch loop if toast causes re-render
 
 
   const handleAddEvent = async (newEventData: Omit<AcademicEvent, 'id'>) => {
@@ -84,6 +87,7 @@ export default function AdminDashboardPage() {
         ...newEventData,
         start: Timestamp.fromDate(newEventData.start),
         end: Timestamp.fromDate(newEventData.end),
+        subjectId: newEventData.subjectId || null, // Ensure it's null if undefined
       };
       await addDoc(collection(db, "events"), eventDataForFirestore);
       toast({ title: "Event Added Successfully" });
@@ -112,11 +116,11 @@ export default function AdminDashboardPage() {
     setEditFormData({
         title: event.title,
         category: event.category,
-        // Format date for datetime-local input: YYYY-MM-DDTHH:mm
         start: format(event.start, "yyyy-MM-dd'T'HH:mm"),
         end: format(event.end, "yyyy-MM-dd'T'HH:mm"),
         location: event.location || '',
         description: event.description || '',
+        subjectId: event.subjectId || '',
     });
     setShowEditEventDialog(true);
   };
@@ -129,6 +133,10 @@ export default function AdminDashboardPage() {
   const handleEditCategoryChange = (newCategory: EventCategoryName) => {
     setEditFormData(prev => ({ ...prev, category: newCategory }));
   };
+  
+  const handleEditSubjectChange = (newSubjectId: string) => {
+    setEditFormData(prev => ({ ...prev, subjectId: newSubjectId === NO_SUBJECT_VALUE ? '' : newSubjectId }));
+  };
 
   const handleUpdateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -136,18 +144,19 @@ export default function AdminDashboardPage() {
 
     try {
         const updatedEventData = {
-            ...currentEventToEdit, // Keep existing fields like subType, subjectId etc.
+            ...currentEventToEdit, // Keep existing fields like subType, faculty etc.
             title: editFormData.title,
             category: editFormData.category,
             start: Timestamp.fromDate(new Date(editFormData.start)),
             end: Timestamp.fromDate(new Date(editFormData.end)),
             location: editFormData.location,
             description: editFormData.description,
+            subjectId: editFormData.subjectId || null, // Ensure it's null if empty string
         };
         // Remove id from the object to be updated in Firestore
         const { id, ...dataToUpdate } = updatedEventData;
 
-        await updateDoc(doc(db, "events", currentEventToEdit.id), dataToUpdate);
+        await updateDoc(doc(db, "events", currentEventToEdit.id), dataToUpdate as { [x: string]: any });
         toast({ title: "Event Updated Successfully" });
         fetchEvents(); // Refresh list
         setShowEditEventDialog(false);
@@ -169,21 +178,9 @@ export default function AdminDashboardPage() {
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle>Manage Academic Events</CardTitle>
-            {/* ShadCN Button replaced with basic HTML button for testing */}
-            <button
-              onClick={() => setShowAddEventDialog(true)}
-              style={{
-                backgroundColor: 'green',
-                color: 'white',
-                padding: '10px 20px',
-                border: '2px solid darkgreen',
-                borderRadius: '5px',
-                fontSize: '16px',
-                cursor: 'pointer'
-              }}
-            >
-              Add New Event (Raw HTML)
-            </button>
+            <Button onClick={() => setShowAddEventDialog(true)}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Add New Event
+            </Button>
           </div>
           <CardDescription>
             Here you can add, edit, or delete academic events.
@@ -203,6 +200,8 @@ export default function AdminDashboardPage() {
                     </p>
                     <p className="text-sm text-muted-foreground">Category: {event.category} {event.subType && `(${event.subType})`}</p>
                     {event.location && <p className="text-sm text-muted-foreground">Location: {event.location}</p>}
+                    {/* Display subject name if available - this will likely not work without fetching subject details by ID from DB */}
+                    {/* {event.subjectId && <p className="text-sm text-muted-foreground">Subject: {subjects.find(s => s.id === event.subjectId)?.name || event.subjectId}</p>} */}
                   </div>
                   <div className="space-x-2">
                     <Button variant="outline" size="sm" onClick={() => openEditDialog(event)}>
@@ -239,11 +238,11 @@ export default function AdminDashboardPage() {
             </DialogHeader>
             <form onSubmit={handleUpdateEvent} className="space-y-4 py-4">
               <div>
-                <label htmlFor="title" className="block text-sm font-medium">Title</label>
+                <Label htmlFor="title" className="block text-sm font-medium">Title</Label>
                 <Input id="title" name="title" value={editFormData.title} onChange={handleEditFormChange} required />
               </div>
               <div>
-                <label htmlFor="category" className="block text-sm font-medium">Category</label>
+                <Label htmlFor="category" className="block text-sm font-medium">Category</Label>
                 <Select
                     value={editFormData.category}
                     onValueChange={(value: EventCategoryName) => handleEditCategoryChange(value)}
@@ -263,20 +262,44 @@ export default function AdminDashboardPage() {
                     </SelectContent>
                 </Select>
               </div>
+              <div>
+                  <Label htmlFor="subjectId" className="block text-sm font-medium">Subject (Optional)</Label>
+                  <Select
+                      value={editFormData.subjectId || ""}
+                      onValueChange={(value: string) => handleEditSubjectChange(value)}
+                  >
+                      <SelectTrigger id="subjectId" className="mt-1">
+                          <SelectValue placeholder="Select a subject (currently unavailable)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                          {subjects.length === 0 && <SelectItem value={NO_SUBJECT_VALUE} disabled>No subjects available</SelectItem>}
+                          {subjects.length > 0 && <SelectItem value={NO_SUBJECT_VALUE}>None</SelectItem>}
+                          {subjects.map(subject => (
+                              <SelectItem key={subject.id} value={subject.id}>
+                                  <span className="flex items-center">
+                                      <span className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: subject.color }} />
+                                      {subject.name}
+                                  </span>
+                              </SelectItem>
+                          ))}
+                      </SelectContent>
+                  </Select>
+                  {subjects.length === 0 && <p className="text-xs text-muted-foreground mt-1">Subjects are managed via database and currently none are available for selection.</p>}
+              </div>
                <div>
-                <label htmlFor="start" className="block text-sm font-medium">Start Date & Time</label>
+                <Label htmlFor="start" className="block text-sm font-medium">Start Date & Time</Label>
                 <Input id="start" name="start" type="datetime-local" value={editFormData.start} onChange={handleEditFormChange} required />
               </div>
               <div>
-                <label htmlFor="end" className="block text-sm font-medium">End Date & Time</label>
+                <Label htmlFor="end" className="block text-sm font-medium">End Date & Time</Label>
                 <Input id="end" name="end" type="datetime-local" value={editFormData.end} onChange={handleEditFormChange} required />
               </div>
               <div>
-                <label htmlFor="location" className="block text-sm font-medium">Location (Optional)</label>
+                <Label htmlFor="location" className="block text-sm font-medium">Location (Optional)</Label>
                 <Input id="location" name="location" value={editFormData.location || ''} onChange={handleEditFormChange} />
               </div>
               <div>
-                <label htmlFor="description" className="block text-sm font-medium">Description (Optional)</label>
+                <Label htmlFor="description" className="block text-sm font-medium">Description (Optional)</Label>
                 <Textarea id="description" name="description" value={editFormData.description || ''} onChange={handleEditFormChange} />
               </div>
               <DialogFooter>

@@ -43,7 +43,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import type { AcademicEvent, EventCategoryName } from '@/lib/types';
 import { validCategoryNames } from '@/lib/types';
-import { eventCategories, subjects } from '@/data/mock-data';
+import { eventCategories, subjects } from '@/data/mock-data'; // subjects will be an empty array
 import { cn } from '@/lib/utils';
 
 const NO_SUBJECT_VALUE = "__NONE_SUBJECT__"; // Unique value for "None" option
@@ -125,7 +125,7 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent }: AddEvent
       title: data.title,
       category: data.category,
       subType: data.subType || undefined, // Treat empty string as undefined if preferred
-      subjectId: data.subjectId === NO_SUBJECT_VALUE ? undefined : data.subjectId,
+      subjectId: data.subjectId === NO_SUBJECT_VALUE || !data.subjectId ? undefined : data.subjectId,
       start: startDateTime,
       end: endDateTime,
       location: data.location,
@@ -237,11 +237,12 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent }: AddEvent
                       <Select onValueChange={field.onChange} value={field.value || ""} defaultValue={field.value || ""}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select a subject" />
+                            <SelectValue placeholder="Select a subject (currently unavailable)" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value={NO_SUBJECT_VALUE}>None</SelectItem>
+                          {subjects.length === 0 && <SelectItem value={NO_SUBJECT_VALUE} disabled>No subjects available</SelectItem>}
+                          {subjects.length > 0 && <SelectItem value={NO_SUBJECT_VALUE}>None</SelectItem>}
                           {subjects.map(subject => (
                             <SelectItem key={subject.id} value={subject.id}>
                                <span className="flex items-center">
@@ -253,6 +254,7 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent }: AddEvent
                         </SelectContent>
                       </Select>
                       <FormMessage />
+                       {subjects.length === 0 && <FormDescription className="text-xs">Subjects are managed via database and currently none are available for selection.</FormDescription>}
                     </FormItem>
                   )}
                 />
@@ -415,4 +417,3 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent }: AddEvent
     </Dialog>
   );
 }
-
