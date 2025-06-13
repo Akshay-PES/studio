@@ -263,29 +263,55 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleDeleteSubjectFromDB = async (subjectId: string) => {
-    if (!window.confirm("Are you sure you want to delete this subject? This will also remove its association from any events.")) return;
+const handleDeleteSubjectFromDB = async (subjectId: string) => {
+    if (!window.confirm("Are you sure you want to delete this subject? This will also remove its association from any events.")) {
+      console.log("Subject deletion cancelled by user.");
+      return;
+    }
+    
+    console.log(`Attempting to delete subject: ${subjectId}`);
     try {
       const batch = writeBatch(db);
-      batch.delete(doc(db, "subjects", subjectId));
+      
+      const subjectDocRef = doc(db, "subjects", subjectId);
+      batch.delete(subjectDocRef);
+      console.log(`Subject ${subjectId} added to delete batch.`);
 
       const eventsQuery = query(collection(db, "events"), where("subjectId", "==", subjectId));
       const eventSnapshots = await getDocs(eventsQuery);
+      
+      console.log(`Found ${eventSnapshots.docs.length} events associated with subject ${subjectId}.`);
       eventSnapshots.forEach(eventDoc => {
-        batch.update(doc(db, "events", eventDoc.id), { subjectId: null });
+        const eventDocRef = doc(db, "events", eventDoc.id);
+        batch.update(eventDocRef, { subjectId: null });
+        console.log(`Event ${eventDoc.id} added to batch for subjectId update to null.`);
       });
       
+      console.log("Committing batch delete for subject and update for associated events...");
       await batch.commit();
+      console.log("Batch commit successful.");
 
       toast({ title: "Subject Deleted Successfully" });
-      fetchSubjects();
-      fetchEvents(); 
+      
+      console.log("Re-fetching subjects and events post-deletion...");
+      fetchSubjects(); 
+      fetchEvents();   
     } catch (error) {
-      console.error("Error deleting subject:", error);
+      console.error("Error deleting subject (raw error object):", error);
+      let errorMessage = "An unknown error occurred. Check console for details.";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      if (typeof error === 'object' && error !== null && 'code' in error && 'message' in error) {
+        const firebaseError = error as { code: string; message: string };
+        errorMessage = `Firebase Error (${firebaseError.code}): ${firebaseError.message}`;
+        console.error(`Detailed Firebase Error: Code - ${firebaseError.code}, Message - ${firebaseError.message}`);
+      }
+      
       toast({ 
         variant: "destructive", 
         title: "Error Deleting Subject", 
-        description: (error as Error)?.message || "An unknown error occurred. Check console for details." 
+        description: errorMessage
       });
     }
   };
@@ -309,9 +335,9 @@ export default function AdminDashboardPage() {
             <CardHeader>
               <div className="flex justify-between items-center">
                 <CardTitle>Manage Academic Events</CardTitle>
-                <Button onClick={() => setShowAddEventDialog(true)}>
+                 <Button onClick={() => setShowAddEventDialog(true)}>
                    <PlusCircle className="mr-2 h-4 w-4" /> Add New Event
-                </Button>
+                 </Button>
               </div>
               <CardDescription>
                 Add, edit, or delete academic events.
@@ -572,5 +598,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-
-    
