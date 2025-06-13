@@ -30,12 +30,28 @@ interface EditEventFormData {
   subType?: string;
 }
 
-interface SubjectFormData {
+// Used for adding a subject, color is auto-assigned
+interface AddSubjectFormData {
   name: string;
-  color: string; // Hex color string
+}
+
+// Used for editing a subject, color is editable
+interface EditSubjectFormData {
+  name: string;
+  color: string; 
 }
 
 const NO_SUBJECT_VALUE = "__NONE_SUBJECT__";
+
+// Predefined list of colors for automatic assignment
+const PREDEFINED_SUBJECT_COLORS = [
+  '#FF5733', '#33FF57', '#3357FF', '#FF33A1', '#A133FF', 
+  '#33FFA1', '#FF8C00', '#00CED1', '#FFD700', '#ADFF2F', 
+  '#BA55D3', '#20B2AA', '#FF69B4', '#7B68EE', '#66CDAA',
+  '#E57373', '#81C784', '#64B5F6', '#F06292', '#CE93D8',
+  '#4DB6AC', '#FFB74D', '#7986CB', '#AED581', '#F48FB1'
+];
+const FALLBACK_SUBJECT_COLOR = '#A0A0A0'; // Default if all predefined are used
 
 export default function AdminDashboardPage() {
   const [events, setEvents] = useState<AcademicEvent[]>([]);
@@ -51,8 +67,8 @@ export default function AdminDashboardPage() {
   const [showAddSubjectDialog, setShowAddSubjectDialog] = useState(false);
   const [showEditSubjectDialog, setShowEditSubjectDialog] = useState(false);
   const [currentSubjectToEdit, setCurrentSubjectToEdit] = useState<Subject | null>(null);
-  const [addSubjectFormData, setAddSubjectFormData] = useState<SubjectFormData>({ name: '', color: '#808080' });
-  const [editSubjectFormData, setEditSubjectFormData] = useState<SubjectFormData>({ name: '', color: '#808080' });
+  const [addSubjectFormData, setAddSubjectFormData] = useState<AddSubjectFormData>({ name: '' });
+  const [editSubjectFormData, setEditSubjectFormData] = useState<EditSubjectFormData>({ name: '', color: '#808080' });
   
   const { toast } = useToast();
 
@@ -186,7 +202,7 @@ export default function AdminDashboardPage() {
   };
 
   const handleEditEventCategoryChange = (newCategory: EventCategoryName) => {
-    setEditFormData(prev => ({ ...prev, category: newCategory, subType: '' })); // Reset subType when category changes
+    setEditFormData(prev => ({ ...prev, category: newCategory, subType: '' })); 
   };
   
   const handleEditEventSubjectChange = (newSubjectId: string) => {
@@ -227,19 +243,33 @@ export default function AdminDashboardPage() {
   // Subject Management Functions
   const handleAddSubjectToDB = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!addSubjectFormData.name.trim() || !addSubjectFormData.color.trim()) {
-      toast({ variant: "destructive", title: "Validation Error", description: "Subject name and color are required." });
+    if (!addSubjectFormData.name.trim()) {
+      toast({ variant: "destructive", title: "Validation Error", description: "Subject name is required." });
       return;
     }
+
+    const usedColors = new Set(subjectsDB.map(s => s.color));
+    let assignedColor = FALLBACK_SUBJECT_COLOR;
+    for (const color of PREDEFINED_SUBJECT_COLORS) {
+      if (!usedColors.has(color)) {
+        assignedColor = color;
+        break;
+      }
+    }
+    if (assignedColor === FALLBACK_SUBJECT_COLOR && PREDEFINED_SUBJECT_COLORS.length > 0 && usedColors.size >= PREDEFINED_SUBJECT_COLORS.length) {
+        console.warn("All predefined subject colors are in use. Assigning fallback color. Consider expanding the color palette.");
+    }
+
+
     try {
       await addDoc(collection(db, "subjects"), {
         name: addSubjectFormData.name,
-        color: addSubjectFormData.color,
+        color: assignedColor,
       });
-      toast({ title: "Subject Added Successfully" });
+      toast({ title: "Subject Added Successfully", description: `Assigned color: ${assignedColor}` });
       fetchSubjects();
       setShowAddSubjectDialog(false);
-      setAddSubjectFormData({ name: '', color: '#808080' });
+      setAddSubjectFormData({ name: '' }); // Reset form
     } catch (error) {
       console.error("Error adding subject:", error);
       toast({ variant: "destructive", title: "Error Adding Subject", description: `Details: ${(error as Error)?.message}` });
@@ -281,7 +311,7 @@ export default function AdminDashboardPage() {
     }
   };
 
-const handleDeleteSubjectFromDB = async (subjectId: string) => {
+  const handleDeleteSubjectFromDB = async (subjectId: string) => {
     console.log(`Attempting to delete subject: ${subjectId}`);
     if (!window.confirm("Are you sure you want to delete this subject? This will also remove its association from any events.")) {
       console.log("Subject deletion cancelled by user.");
@@ -404,7 +434,7 @@ const handleDeleteSubjectFromDB = async (subjectId: string) => {
               <div className="flex justify-between items-center">
                 <CardTitle>Manage Subjects</CardTitle>
                 <Button onClick={() => { 
-                  setAddSubjectFormData({ name: '', color: '#808080' });
+                  setAddSubjectFormData({ name: '' }); // Reset form data for adding
                   setShowAddSubjectDialog(true);
                 }}>
                   <BookOpen className="mr-2 h-4 w-4" /> Add New Subject
@@ -536,13 +566,13 @@ const handleDeleteSubjectFromDB = async (subjectId: string) => {
 
       {/* Add Subject Dialog */}
       <Dialog open={showAddSubjectDialog} onOpenChange={(isOpen) => {
-        if (!isOpen) setAddSubjectFormData({ name: '', color: '#808080' });
+        if (!isOpen) setAddSubjectFormData({ name: '' });
         setShowAddSubjectDialog(isOpen);
       }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Add New Subject</DialogTitle>
-            <DialogDescription>Define a new subject for event association.</DialogDescription>
+            <DialogDescription>Define a new subject. A unique color will be automatically assigned.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleAddSubjectToDB} className="space-y-4 py-4">
             <div>
@@ -555,17 +585,7 @@ const handleDeleteSubjectFromDB = async (subjectId: string) => {
                 required 
               />
             </div>
-            <div>
-              <Label htmlFor="add-subject-color">Color (Hex Code)</Label>
-              <Input 
-                id="add-subject-color" 
-                name="color" 
-                value={addSubjectFormData.color} 
-                onChange={(e) => setAddSubjectFormData(prev => ({...prev, color: e.target.value}))} 
-                placeholder="e.g., #FF5733"
-                required 
-              />
-            </div>
+            {/* Color input removed - will be auto-assigned */}
             <DialogFooter>
               <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
               <Button type="submit">Add Subject</Button>
@@ -617,6 +637,5 @@ const handleDeleteSubjectFromDB = async (subjectId: string) => {
     </div>
   );
 }
-
 
     
