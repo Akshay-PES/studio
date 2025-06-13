@@ -3,10 +3,11 @@
 
 import React, { useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck } from 'lucide-react';
+// import { ShieldCheck } from 'lucide-react'; // ShieldCheck no longer used
 
 export default function AdminLayout({
   children,
@@ -67,7 +68,7 @@ export default function AdminLayout({
     <div className="flex flex-col min-h-screen">
       <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 border-b bg-card shadow-sm sm:px-6">
         <Link href="/admin/dashboard" className="flex items-center gap-2 text-lg font-semibold text-primary">
-          <ShieldCheck className="w-6 h-6"/>
+          <Image src="/pes-logo.png" alt="PES University Logo" width={67} height={24} />
           AcademiaSync - Admin Panel
         </Link>
         <div className="flex items-center gap-3">

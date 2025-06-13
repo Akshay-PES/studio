@@ -3,15 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import Image from 'next/image';
 
 export default function HomePage() {
   return (
     <main className="flex flex-col items-center justify-center min-h-screen p-8 bg-gradient-to-br from-background to-blue-100">
       <Card className="w-full max-w-md shadow-2xl">
         <CardHeader className="text-center">
-          <div className="inline-block p-3 mb-4 rounded-full bg-primary/10">
-            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="hsl(var(--primary))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-calendar-check"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="m9 16 2 2 4-4"/></svg>
-          </div>
+          <Image src="/pes-logo.png" alt="PES University Logo" width={133} height={48} className="mx-auto mb-4" />
           <CardTitle className="text-4xl font-headline text-primary">AcademiaSync</CardTitle>
           <CardDescription className="text-lg text-muted-foreground">
             Your Unified Academic Planner
