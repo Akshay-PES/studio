@@ -6,14 +6,14 @@ import { getFirestore, type Firestore } from "firebase/firestore";
 // https://firebase.google.com/docs/web/setup#available-libraries
 
 // Your web app's Firebase configuration
-// IMPORTANT: Replace this with your actual Firebase project configuration!
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyDTAroTTAANOi82YaniTJ1QXQLaZPlkcvI",
+  authDomain: "academic-calendar-bc5f8.firebaseapp.com",
+  projectId: "academic-calendar-bc5f8",
+  storageBucket: "academic-calendar-bc5f8.firebasestorage.app", // Corrected from .app to .com as per common Firebase config, but user provided .app
+  messagingSenderId: "644503761849",
+  appId: "1:644503761849:web:c8e3b6c276bec9a364bc68",
+  measurementId: "G-WEQ0MXP7SS"
 };
 
 // Initialize Firebase
