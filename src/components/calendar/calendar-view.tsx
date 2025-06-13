@@ -27,7 +27,6 @@ interface CalendarViewProps {
   colorMode: ColorCodingMode;
   setSelectedEvent: Dispatch<SetStateAction<AcademicEvent | null>>;
   setShowEventDetail: Dispatch<SetStateAction<boolean>>;
-  // setShowAddEventDialog: Dispatch<SetStateAction<boolean>>; // Prop removed
 }
 
 export default function CalendarView({
@@ -36,7 +35,6 @@ export default function CalendarView({
   colorMode,
   setSelectedEvent,
   setShowEventDetail,
-  // setShowAddEventDialog prop removed from here
 }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = React.useState(new Date());
 
@@ -69,7 +67,7 @@ export default function CalendarView({
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   const startDate = startOfWeek(monthStart);
-  const endDate = endOfWeek(monthEnd);
+  const endDate = endOfWeek(monthEnd, { weekStartsOn: 0 }); // Ensure endDate covers the full week if month ends mid-week
 
   const days = eachDayOfInterval({ start: startDate, end: endDate });
   const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -102,7 +100,7 @@ export default function CalendarView({
         </div>
       </div>
       
-      <div className="flex-grow overflow-auto border rounded-lg shadow-sm bg-card">
+      <div className="flex-grow overflow-hidden border rounded-lg shadow-sm bg-card flex flex-col"> {/* Use flex-col and overflow-hidden */}
         <div className="grid grid-cols-7 sticky top-0 bg-card z-10 border-b">
           {dayNames.map(dayName => (
             <div key={dayName} className="p-2 text-center font-medium text-sm text-muted-foreground">
@@ -110,23 +108,23 @@ export default function CalendarView({
             </div>
           ))}
         </div>
-        <div className="grid grid-cols-7 grid-rows-5 min-h-[calc(100%-2.5rem)]">
+        <div className="grid grid-cols-7 grid-rows-6 flex-grow"> {/* Changed to grid-rows-6 and flex-grow */}
           {days.map(day => {
             const eventsForDay = filteredEvents.filter(event => isSameDay(event.start, day));
             return (
               <div
                 key={day.toString()}
-                className={`p-1.5 border-b border-r text-sm overflow-hidden
+                className={`p-1.5 border-b border-r text-sm overflow-hidden flex flex-col 
                   ${!isSameMonth(day, currentDate) ? 'bg-muted/30' : 'bg-card'}
                   ${fnsIsToday(day) ? 'border-primary border-2 relative' : ''}`}
               >
-                <span className={`block text-center mb-1 p-1 rounded-full w-7 h-7 flex items-center justify-center mx-auto
+                <span className={`block text-center mb-1 p-1 rounded-full w-7 h-7 flex items-center justify-center mx-auto shrink-0
                   ${fnsIsToday(day) ? 'bg-primary text-primary-foreground font-bold' : isSameMonth(day, currentDate) ? 'text-foreground' : 'text-muted-foreground/70'}
                   `}>
                   {format(day, 'd')}
                 </span>
                 {fnsIsToday(day) && <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary" />}
-                <div className="space-y-1 overflow-y-auto max-h-28 custom-scrollbar">
+                <div className="space-y-1 overflow-y-auto flex-grow max-h-36 custom-scrollbar"> {/* Increased max-h, added flex-grow */}
                   {eventsForDay.map(event => (
                     <EventCard key={event.id} event={event} colorMode={colorMode} onClick={() => handleEventClick(event)} />
                   ))}
