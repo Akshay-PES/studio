@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight } from "lucide-react";
@@ -20,7 +21,7 @@ export default function HomePage() {
           <p className="text-center text-foreground">
             Streamline your academic schedule, manage events, and stay organized with AcademiaSync.
           </p>
-          <Link href="/dashboard" legacyBehavior>
+          <Link href="/dashboard">
             <Button size="lg" className="w-full font-semibold group">
               Go to Dashboard
               <ArrowRight className="w-5 h-5 ml-2 transition-transform duration-200 group-hover:translate-x-1" />
