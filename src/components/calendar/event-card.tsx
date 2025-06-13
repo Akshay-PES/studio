@@ -29,7 +29,7 @@ export default function EventCard({ event, allSubjects, colorMode, onClick }: Ev
     <Tooltip>
       <TooltipTrigger asChild>
         <Card
-          className="mb-2 cursor-pointer hover:shadow-md transition-shadow duration-200 border-l-4"
+          className="mb-2 cursor-pointer hover:shadow-md transition-shadow duration-200 border-l-[5px]"
           style={{ borderLeftColor: displayColor }}
           onClick={onClick}
           role="button"
