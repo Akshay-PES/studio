@@ -81,7 +81,7 @@ export default function AdminDashboardPage() {
       setEvents(fetchedEvents);
     } catch (error) {
       console.error("Error fetching events:", error);
-      toast({ variant: "destructive", title: "Error Fetching Events", description: (error as Error)?.message || "Could not load events." });
+      toast({ variant: "destructive", title: "Error Fetching Events", description: "Could not load events." });
     } finally {
       setIsLoadingEvents(false);
     }
@@ -104,7 +104,7 @@ export default function AdminDashboardPage() {
       setSubjectsDB(fetchedSubjects);
     } catch (error) {
       console.error("Error fetching subjects:", error);
-      toast({ variant: "destructive", title: "Error Fetching Subjects", description: (error as Error)?.message || "Could not load subjects." });
+      toast({ variant: "destructive", title: "Error Fetching Subjects", description: "Could not load subjects." });
     } finally {
       setIsLoadingSubjects(false);
     }
@@ -131,19 +131,37 @@ export default function AdminDashboardPage() {
       setShowAddEventDialog(false);
     } catch (error) {
       console.error("Error adding event:", error);
-      toast({ variant: "destructive", title: "Error Adding Event", description: (error as Error)?.message || "Could not add event." });
+      toast({ variant: "destructive", title: "Error Adding Event", description: `Details: ${(error as Error)?.message}` });
     }
   };
 
   const handleDeleteEvent = async (eventId: string) => {
-    if (!window.confirm("Are you sure you want to delete this event? This will also remove its association from any subjects.")) return;
+    console.log(`Attempting to delete event: ${eventId}`);
+    if (!window.confirm("Are you sure you want to delete this event?")) {
+        console.log("Event deletion cancelled by user.");
+        return;
+    }
     try {
+      console.log(`Proceeding with delete operation for event: ${eventId}`);
       await deleteDoc(doc(db, "events", eventId));
+      console.log(`Event ${eventId} successfully deleted from Firestore (according to client).`);
       toast({ title: "Event Deleted Successfully" });
       fetchEvents();
     } catch (error) {
-      console.error("Error deleting event:", error);
-      toast({ variant: "destructive", title: "Error Deleting Event", description: (error as Error)?.message || "Could not delete event." });
+      console.error(`Error deleting event ${eventId} (raw error object):`, error);
+      let errorMessage = "An unknown error occurred. Check console for details.";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      if (typeof error === 'object' && error !== null && 'code' in error && 'message' in error) {
+        const firebaseError = error as { code: string; message: string };
+        errorMessage = `Firebase Error (${firebaseError.code}): ${firebaseError.message}`;
+      }
+      toast({ 
+          variant: "destructive", 
+          title: "Error Deleting Event", 
+          description: errorMessage 
+      });
     }
   };
   
@@ -202,7 +220,7 @@ export default function AdminDashboardPage() {
         setCurrentEventToEdit(null);
     } catch (error) {
         console.error("Error updating event:", error);
-        toast({ variant: "destructive", title: "Error Updating Event", description: (error as Error)?.message || "Could not update event." });
+        toast({ variant: "destructive", title: "Error Updating Event", description: `Details: ${(error as Error)?.message}` });
     }
   };
 
@@ -224,7 +242,7 @@ export default function AdminDashboardPage() {
       setAddSubjectFormData({ name: '', color: '#808080' });
     } catch (error) {
       console.error("Error adding subject:", error);
-      toast({ variant: "destructive", title: "Error Adding Subject", description: (error as Error)?.message || "Could not add subject. Check permissions." });
+      toast({ variant: "destructive", title: "Error Adding Subject", description: `Details: ${(error as Error)?.message}` });
     }
   };
 
@@ -259,17 +277,18 @@ export default function AdminDashboardPage() {
       setCurrentSubjectToEdit(null);
     } catch (error) {
       console.error("Error updating subject:", error);
-      toast({ variant: "destructive", title: "Error Updating Subject", description: (error as Error)?.message || "Could not update subject." });
+      toast({ variant: "destructive", title: "Error Updating Subject", description: `Details: ${(error as Error)?.message}` });
     }
   };
 
 const handleDeleteSubjectFromDB = async (subjectId: string) => {
+    console.log(`Attempting to delete subject: ${subjectId}`);
     if (!window.confirm("Are you sure you want to delete this subject? This will also remove its association from any events.")) {
       console.log("Subject deletion cancelled by user.");
       return;
     }
     
-    console.log(`Attempting to delete subject: ${subjectId}`);
+    console.log(`Proceeding with delete operation for subject: ${subjectId}`);
     try {
       const batch = writeBatch(db);
       
@@ -289,7 +308,7 @@ const handleDeleteSubjectFromDB = async (subjectId: string) => {
       
       console.log("Committing batch delete for subject and update for associated events...");
       await batch.commit();
-      console.log("Batch commit successful.");
+      console.log("Batch commit successful (according to client).");
 
       toast({ title: "Subject Deleted Successfully" });
       
@@ -297,7 +316,7 @@ const handleDeleteSubjectFromDB = async (subjectId: string) => {
       fetchSubjects(); 
       fetchEvents();   
     } catch (error) {
-      console.error("Error deleting subject (raw error object):", error);
+      console.error(`Error deleting subject ${subjectId} (raw error object):`, error);
       let errorMessage = "An unknown error occurred. Check console for details.";
       if (error instanceof Error) {
         errorMessage = error.message;
@@ -598,3 +617,6 @@ const handleDeleteSubjectFromDB = async (subjectId: string) => {
     </div>
   );
 }
+
+
+    
