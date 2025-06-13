@@ -46,6 +46,8 @@ import { validCategoryNames } from '@/lib/types';
 import { eventCategories, subjects } from '@/data/mock-data';
 import { cn } from '@/lib/utils';
 
+const NO_SUBJECT_VALUE = "__NONE_SUBJECT__"; // Unique value for "None" option
+
 const eventFormSchema = z.object({
   title: z.string().min(3, { message: "Title must be at least 3 characters." }),
   category: z.enum(validCategoryNames, { required_error: "Category is required." }),
@@ -93,7 +95,7 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent }: AddEvent
       faculty: "",
       description: "",
       subType: "",
-      subjectId: "",
+      subjectId: "", // Remains empty string for placeholder to show initially
     },
   });
 
@@ -122,8 +124,8 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent }: AddEvent
     const newEvent: Omit<AcademicEvent, 'id'> = {
       title: data.title,
       category: data.category,
-      subType: data.subType,
-      subjectId: data.subjectId,
+      subType: data.subType || undefined, // Treat empty string as undefined if preferred
+      subjectId: data.subjectId === NO_SUBJECT_VALUE ? undefined : data.subjectId,
       start: startDateTime,
       end: endDateTime,
       location: data.location,
@@ -205,7 +207,7 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent }: AddEvent
                         render={({ field }) => (
                         <FormItem>
                             <FormLabel><Layers className="inline w-4 h-4 mr-1 opacity-70" />Sub-Type</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                            <Select onValueChange={field.onChange} value={field.value || ""} defaultValue={field.value || ""}>
                             <FormControl>
                                 <SelectTrigger>
                                 <SelectValue placeholder="Select a sub-type" />
@@ -232,14 +234,14 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent }: AddEvent
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel><BookOpen className="inline w-4 h-4 mr-1" />Subject (Optional)</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value || ""} defaultValue={field.value || ""}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select a subject" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">None</SelectItem>
+                          <SelectItem value={NO_SUBJECT_VALUE}>None</SelectItem>
                           {subjects.map(subject => (
                             <SelectItem key={subject.id} value={subject.id}>
                                <span className="flex items-center">
@@ -413,3 +415,4 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent }: AddEvent
     </Dialog>
   );
 }
+
