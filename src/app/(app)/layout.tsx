@@ -33,7 +33,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <SidebarFilters />
               </Sidebar>
               <SidebarRail />
-              <main className="flex-1 overflow-y-auto bg-background">
+              <main className="flex flex-col flex-1 overflow-y-auto bg-background"> {/* Ensure main is a flex column */}
                 {children}
               </main>
             </div>
@@ -43,3 +43,4 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </TooltipProvider>
   );
 }
+

@@ -78,10 +78,10 @@ export default function DashboardPage() {
   return (
     // The parent div now directly contains the CalendarView and EventDetailDialog
     // Sidebar is handled by AppLayout
-    <div className="flex flex-1 h-full"> {/* Use h-full to fill space given by AppLayout's main tag */}
+    <div className="flex flex-col flex-1 h-full"> {/* Ensure this is a flex column */}
       {/* SidebarContent and SidebarFilters are removed from here */}
       
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto min-h-0"> {/* Added min-h-0 to prevent overflow issues in flex children */}
       {isLoading && isMobile && ( 
           <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-50">
             <p className="text-muted-foreground">Loading...</p>
@@ -109,3 +109,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
