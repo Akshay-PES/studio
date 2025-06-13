@@ -12,12 +12,15 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { AuthError } from 'firebase/auth';
 
+// The designated admin email for this login page
+const ADMIN_LOGIN_EMAIL = "mbaoffice.rr@pes.edu";
+
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const { signIn, isAdmin } = useAuth();
+  const { signIn } = useAuth(); // Removed isAdmin as it's not reliably updated for immediate check here
   const router = useRouter();
   const { toast } = useToast();
 
@@ -30,26 +33,28 @@ export default function LoginPage() {
 
     if (result && 'code' in result && (result as AuthError).code) {
       const authError = result as AuthError;
+      let userFriendlyError = "Failed to log in. Please try again.";
       if (authError.code === 'auth/invalid-credential' || authError.code === 'auth/user-not-found' || authError.code === 'auth/wrong-password') {
-        setError("Invalid email or password. Please try again.");
+        userFriendlyError = "Invalid email or password. Please try again.";
       } else if (authError.code === 'auth/too-many-requests') {
-        setError("Too many failed login attempts. Please try again later.");
+        userFriendlyError = "Too many failed login attempts. Please try again later.";
+      } else if (authError.message) {
+        userFriendlyError = authError.message;
       }
-      else {
-        setError(authError.message || "Failed to log in. Please try again.");
-      }
-      toast({ variant: "destructive", title: "Login Failed", description: error || "Please check your credentials." });
+      setError(userFriendlyError);
+      toast({ variant: "destructive", title: "Login Failed", description: userFriendlyError });
     } else if (result && 'uid' in result) { // Successfully signed in
-        // Check if the signed-in user is an admin (AuthContext's isAdmin will update)
-        // We need to rely on the AuthContext's isAdmin state which updates onAuthStateChanged
-        // For immediate check after sign-in:
-        if (result.email === "admin@example.com") { // Direct check
+        // The signIn function in AuthContext already sets the isAdmin state.
+        // Here, we do an immediate check for this specific admin login page.
+        if (result.email === ADMIN_LOGIN_EMAIL) {
             toast({ title: "Login Successful", description: "Redirecting to admin dashboard..." });
             router.push('/admin/dashboard');
         } else {
+            // User authenticated successfully, but is not the admin this page expects.
             toast({ variant: "destructive", title: "Access Denied", description: "You are not authorized to access the admin panel." });
-            // Optionally sign them out if they are not admin
-            // await signOut(); 
+            // Consider signing out the user as this page is for admins only,
+            // or redirecting them to the public dashboard.
+            // For now, they remain logged in but won't be able to access /admin/dashboard due to AdminLayout protection.
         }
     }
     setIsLoggingIn(false);
@@ -93,7 +98,7 @@ export default function LoginPage() {
       </CardContent>
        <CardFooter className="flex flex-col items-center text-sm">
          <p className="text-muted-foreground">
-            Remember: Use 'admin@example.com' for demo admin access.
+            Use '{ADMIN_LOGIN_EMAIL}' for admin access.
           </p>
         <Link href="/dashboard" className="mt-2 text-primary hover:underline">
           Back to Public Calendar
