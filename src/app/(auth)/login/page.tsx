@@ -3,7 +3,8 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useRouter } //Omitted from agent history
+from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,7 +21,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const { signIn } = useAuth(); // Removed isAdmin as it's not reliably updated for immediate check here
+  const { signIn } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -28,8 +29,10 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     setIsLoggingIn(true);
+    console.log("LoginPage: handleSubmit initiated for", email);
 
     const result = await signIn(email, password);
+    console.log("LoginPage: signIn result received in LoginPage:", result);
 
     if (result && 'code' in result && (result as AuthError).code) {
       const authError = result as AuthError;
@@ -43,19 +46,17 @@ export default function LoginPage() {
       }
       setError(userFriendlyError);
       toast({ variant: "destructive", title: "Login Failed", description: userFriendlyError });
-    } else if (result && 'uid' in result) { // Successfully signed in
-        // The signIn function in AuthContext already sets the isAdmin state.
-        // Here, we do an immediate check for this specific admin login page.
-        if (result.email === ADMIN_LOGIN_EMAIL) {
-            toast({ title: "Login Successful", description: "Redirecting to admin dashboard..." });
-            router.push('/admin/dashboard');
-        } else {
-            // User authenticated successfully, but is not the admin this page expects.
-            toast({ variant: "destructive", title: "Access Denied", description: "You are not authorized to access the admin panel." });
-            // Consider signing out the user as this page is for admins only,
-            // or redirecting them to the public dashboard.
-            // For now, they remain logged in but won't be able to access /admin/dashboard due to AdminLayout protection.
-        }
+      console.error("LoginPage: Login failed with AuthError:", authError);
+    } else if (result && 'uid' in result) { // Firebase User object
+        console.log("LoginPage: Firebase login successful for", result.email, ". Redirecting to /admin/dashboard.");
+        toast({ title: "Login Successful", description: "Redirecting..." });
+        // Always redirect to /admin/dashboard. AdminLayout will handle authorization.
+        router.push('/admin/dashboard');
+    } else {
+      // Fallback for unexpected result, though signIn should return FirebaseUser or AuthError
+      setError("An unexpected error occurred during login.");
+      toast({ variant: "destructive", title: "Login Error", description: "An unexpected error occurred."});
+      console.error("LoginPage: Unexpected login result:", result);
     }
     setIsLoggingIn(false);
   };
