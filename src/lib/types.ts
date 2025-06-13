@@ -1,3 +1,4 @@
+
 export type EventCategoryName = "Experiential Learning" | "Quality Control" | "Placement" | "Academics" | "Others";
 
 // Explicit array for Zod enum validation
@@ -53,7 +54,9 @@ export type UserRole = "student" | "faculty" | "admin" | "placement_coordinator"
 export interface CalendarFilters {
   categories: EventCategoryName[];
   subjects: string[]; // Array of Subject IDs
+  subTypes: string[]; // Array of selected sub-types
   dateRange?: { start?: Date; end?: Date };
 }
 
 export type ColorCodingMode = "category" | "subject";
+

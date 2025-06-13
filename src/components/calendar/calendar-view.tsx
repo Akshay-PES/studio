@@ -51,6 +51,12 @@ export default function CalendarView({
       if (filters.categories.length > 0 && !filters.categories.includes(event.category)) {
         return false;
       }
+      // Filter by sub-types
+      if (filters.subTypes.length > 0) {
+        if (!event.subType || !filters.subTypes.includes(event.subType)) {
+          return false;
+        }
+      }
       if (filters.subjects.length > 0 && (!event.subjectId || !filters.subjects.includes(event.subjectId))) {
         return false;
       }
@@ -67,7 +73,7 @@ export default function CalendarView({
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   const startDate = startOfWeek(monthStart);
-  const endDate = endOfWeek(monthEnd, { weekStartsOn: 0 }); // Ensure endDate covers the full week if month ends mid-week
+  const endDate = endOfWeek(monthEnd, { weekStartsOn: 0 });
 
   const days = eachDayOfInterval({ start: startDate, end: endDate });
   const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -93,14 +99,14 @@ export default function CalendarView({
             Today
           </Button>
         </div>
-        <div className="flex items-center gap-2 sm:hidden"> {/* Ensure this div is hidden on sm and up */}
-            <Button variant="outline" onClick={goToToday} className="text-xs px-2.5 py-1 h-auto"> {/* Made mobile today button smaller */}
+        <div className="flex items-center gap-2 sm:hidden">
+            <Button variant="outline" onClick={goToToday} className="text-xs px-2.5 py-1 h-auto">
                 Today
             </Button>
         </div>
       </div>
       
-      <div className="flex-grow overflow-hidden border rounded-lg shadow-sm bg-card flex flex-col"> {/* Use flex-col and overflow-hidden */}
+      <div className="flex-grow overflow-hidden border rounded-lg shadow-sm bg-card flex flex-col">
         <div className="grid grid-cols-7 sticky top-0 bg-card z-10 border-b">
           {dayNames.map(dayName => (
             <div key={dayName} className="p-2 text-center font-medium text-sm text-muted-foreground">
@@ -108,7 +114,7 @@ export default function CalendarView({
             </div>
           ))}
         </div>
-        <div className="grid grid-cols-7 grid-rows-6 flex-grow"> {/* Changed to grid-rows-6 and flex-grow */}
+        <div className="grid grid-cols-7 grid-rows-6 flex-grow">
           {days.map(day => {
             const eventsForDay = filteredEvents.filter(event => isSameDay(event.start, day));
             return (
@@ -124,7 +130,7 @@ export default function CalendarView({
                   {format(day, 'd')}
                 </span>
                 {fnsIsToday(day) && <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary" />}
-                <div className="space-y-1 overflow-y-auto flex-grow max-h-36 custom-scrollbar"> {/* Increased max-h, added flex-grow */}
+                <div className="space-y-1 overflow-y-auto flex-grow max-h-36 custom-scrollbar">
                   {eventsForDay.map(event => (
                     <EventCard key={event.id} event={event} colorMode={colorMode} onClick={() => handleEventClick(event)} />
                   ))}
@@ -149,3 +155,4 @@ export default function CalendarView({
     </div>
   );
 }
+

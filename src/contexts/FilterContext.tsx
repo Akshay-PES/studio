@@ -24,6 +24,7 @@ export const FilterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [filters, setFilters] = useState<CalendarFilters>({
     categories: [],
     subjects: [],
+    subTypes: [], // Initialize subTypes filter
     dateRange: {},
   });
   const [colorMode, setColorMode] = useState<ColorCodingMode>('category');
@@ -34,3 +35,4 @@ export const FilterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     </FilterContext.Provider>
   );
 };
+
