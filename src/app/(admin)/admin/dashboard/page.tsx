@@ -81,7 +81,7 @@ export default function AdminDashboardPage() {
       setEvents(fetchedEvents);
     } catch (error) {
       console.error("Error fetching events:", error);
-      toast({ variant: "destructive", title: "Error Fetching Events" });
+      toast({ variant: "destructive", title: "Error Fetching Events", description: (error as Error)?.message || "Could not load events." });
     } finally {
       setIsLoadingEvents(false);
     }
@@ -104,7 +104,7 @@ export default function AdminDashboardPage() {
       setSubjectsDB(fetchedSubjects);
     } catch (error) {
       console.error("Error fetching subjects:", error);
-      toast({ variant: "destructive", title: "Error Fetching Subjects" });
+      toast({ variant: "destructive", title: "Error Fetching Subjects", description: (error as Error)?.message || "Could not load subjects." });
     } finally {
       setIsLoadingSubjects(false);
     }
@@ -131,7 +131,7 @@ export default function AdminDashboardPage() {
       setShowAddEventDialog(false);
     } catch (error) {
       console.error("Error adding event:", error);
-      toast({ variant: "destructive", title: "Error Adding Event" });
+      toast({ variant: "destructive", title: "Error Adding Event", description: (error as Error)?.message || "Could not add event." });
     }
   };
 
@@ -143,7 +143,7 @@ export default function AdminDashboardPage() {
       fetchEvents();
     } catch (error) {
       console.error("Error deleting event:", error);
-      toast({ variant: "destructive", title: "Error Deleting Event" });
+      toast({ variant: "destructive", title: "Error Deleting Event", description: (error as Error)?.message || "Could not delete event." });
     }
   };
   
@@ -202,7 +202,7 @@ export default function AdminDashboardPage() {
         setCurrentEventToEdit(null);
     } catch (error) {
         console.error("Error updating event:", error);
-        toast({ variant: "destructive", title: "Error Updating Event" });
+        toast({ variant: "destructive", title: "Error Updating Event", description: (error as Error)?.message || "Could not update event." });
     }
   };
 
@@ -224,7 +224,7 @@ export default function AdminDashboardPage() {
       setAddSubjectFormData({ name: '', color: '#808080' });
     } catch (error) {
       console.error("Error adding subject:", error);
-      toast({ variant: "destructive", title: "Error Adding Subject" });
+      toast({ variant: "destructive", title: "Error Adding Subject", description: (error as Error)?.message || "Could not add subject. Check permissions." });
     }
   };
 
@@ -259,7 +259,7 @@ export default function AdminDashboardPage() {
       setCurrentSubjectToEdit(null);
     } catch (error) {
       console.error("Error updating subject:", error);
-      toast({ variant: "destructive", title: "Error Updating Subject" });
+      toast({ variant: "destructive", title: "Error Updating Subject", description: (error as Error)?.message || "Could not update subject." });
     }
   };
 
@@ -282,7 +282,11 @@ export default function AdminDashboardPage() {
       fetchEvents(); 
     } catch (error) {
       console.error("Error deleting subject:", error);
-      toast({ variant: "destructive", title: "Error Deleting Subject" });
+      toast({ 
+        variant: "destructive", 
+        title: "Error Deleting Subject", 
+        description: (error as Error)?.message || "An unknown error occurred. Check console for details." 
+      });
     }
   };
   
@@ -306,7 +310,7 @@ export default function AdminDashboardPage() {
               <div className="flex justify-between items-center">
                 <CardTitle>Manage Academic Events</CardTitle>
                 <Button onClick={() => setShowAddEventDialog(true)}>
-                    <PlusCircle className="mr-2 h-4 w-4" /> Add New Event
+                   <PlusCircle className="mr-2 h-4 w-4" /> Add New Event
                 </Button>
               </div>
               <CardDescription>
@@ -366,7 +370,9 @@ export default function AdminDashboardPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {subjectsDB.length === 0 ? (
+              {isLoadingSubjects ? (
+                 <p className="text-center text-muted-foreground">Loading subjects...</p>
+              ) : subjectsDB.length === 0 ? (
                 <p className="text-center text-muted-foreground">No subjects found. Add some!</p>
               ) : (
                 <ul className="space-y-4">
@@ -566,3 +572,5 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
+    
