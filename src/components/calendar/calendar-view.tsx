@@ -4,12 +4,8 @@
 import type { Dispatch, SetStateAction } from 'react';
 import type { AcademicEvent, CalendarFilters, ColorCodingMode } from '@/lib/types';
 import EventCard from './event-card';
-// EventDetailDialog is now managed by DashboardPage
-// import { getCategoryByName, getSubjectById } from '@/data/mock-data'; // No longer needed here for events
 import { Button } from '@/components/ui/button';
-// Select components might not be needed if view mode selector is removed or simplified
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronLeft, ChevronRight, PlusCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react'; // Removed PlusCircle
 import {
   format,
   addMonths,
@@ -26,24 +22,23 @@ import {
 import React from 'react';
 
 interface CalendarViewProps {
-  allEvents: AcademicEvent[]; // Changed from importing to receiving as prop
+  allEvents: AcademicEvent[];
   filters: CalendarFilters;
   colorMode: ColorCodingMode;
   setSelectedEvent: Dispatch<SetStateAction<AcademicEvent | null>>;
   setShowEventDetail: Dispatch<SetStateAction<boolean>>;
-  setShowAddEventDialog: Dispatch<SetStateAction<boolean>>; // New prop to open AddEventDialog
+  setShowAddEventDialog: Dispatch<SetStateAction<boolean>>;
 }
 
 export default function CalendarView({
-  allEvents, // Use this prop
+  allEvents,
   filters,
   colorMode,
   setSelectedEvent,
   setShowEventDetail,
-  setShowAddEventDialog, // Use this prop
+  // setShowAddEventDialog is still a prop but we won't call it from here
 }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = React.useState(new Date());
-  // const [viewMode, setViewMode] = React.useState<'month' | 'week' | 'day'>('month');
 
   const handleEventClick = (event: AcademicEvent) => {
     setSelectedEvent(event);
@@ -51,7 +46,7 @@ export default function CalendarView({
   };
 
   const filteredEvents = React.useMemo(() => {
-    return allEvents.filter(event => { // Use allEvents from props
+    return allEvents.filter(event => {
       const eventStart = event.start;
       const eventEnd = event.end;
 
@@ -69,7 +64,7 @@ export default function CalendarView({
       }
       return true;
     });
-  }, [allEvents, filters]); // Add allEvents to dependency array
+  }, [allEvents, filters]);
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
@@ -104,16 +99,20 @@ export default function CalendarView({
             <Button variant="outline" onClick={goToToday} className="sm:hidden text-sm px-3 py-1.5 h-auto">
                 Today
             </Button>
+            {/* "Add Event" button removed for read-only view 
             <Button onClick={() => setShowAddEventDialog(true)} className="hidden sm:inline-flex">
               <PlusCircle className="w-4 h-4 mr-2" />
               Add Event
             </Button>
+            */}
         </div>
       </div>
+      {/* Mobile "Add Event" button removed for read-only view
        <Button onClick={() => setShowAddEventDialog(true)} className="sm:hidden mb-4 w-full">
           <PlusCircle className="w-4 h-4 mr-2" />
           Add Event
       </Button>
+      */}
 
       <div className="flex-grow overflow-auto border rounded-lg shadow-sm bg-card">
         <div className="grid grid-cols-7 sticky top-0 bg-card z-10 border-b">
