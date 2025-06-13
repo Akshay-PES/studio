@@ -75,7 +75,7 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     fetchEvents();
-  }, [toast]); // Removed fetchEvents from dependency array as it causes infinite loop if not memoized
+  }, [toast]);
 
 
   const handleAddEvent = async (newEventData: Omit<AcademicEvent, 'id'>) => {
@@ -169,9 +169,21 @@ export default function AdminDashboardPage() {
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle>Manage Academic Events</CardTitle>
-            <Button onClick={() => setShowAddEventDialog(true)}>
-              <PlusCircle className="mr-2 h-4 w-4" /> Add New Event
-            </Button>
+            {/* ShadCN Button replaced with basic HTML button for testing */}
+            <button
+              onClick={() => setShowAddEventDialog(true)}
+              style={{
+                backgroundColor: 'green',
+                color: 'white',
+                padding: '10px 20px',
+                border: '2px solid darkgreen',
+                borderRadius: '5px',
+                fontSize: '16px',
+                cursor: 'pointer'
+              }}
+            >
+              Add New Event (Raw HTML)
+            </button>
           </div>
           <CardDescription>
             Here you can add, edit, or delete academic events.
@@ -280,4 +292,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-
