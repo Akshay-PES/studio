@@ -15,7 +15,28 @@ export const subjects: Subject[] = [
   { id: 'digital_marketing_e1', name: 'Digital Marketing E1', category: 'Academics', color: '#32CD32', faculty: 'Prof. Web', semester: 'Spring 2025', courseCode: 'DM101' },
   { id: 'us_taxation_e1', name: 'US Taxation E1', category: 'Academics', color: '#8A2BE2', faculty: 'Mr. Taxman', semester: 'Fall 2024', courseCode: 'TAX101' },
   { id: 'disruptive_technologies', name: 'Disruptive Technologies', category: 'Experiential Learning', color: '#FFC0CB', faculty: 'Ms. Innovate', semester: 'Spring 2025', courseCode: 'DT101'},
-  { id: 'investment_management_e1', name: 'Investment Management E1', category: 'Placement', color: '#00CED1', faculty: 'Mr. Invest', semester: 'Fall 2024', courseCode: 'IM101'}
+  { id: 'investment_management_e1', name: 'Investment Management E1', category: 'Placement', color: '#00CED1', faculty: 'Mr. Invest', semester: 'Fall 2024', courseCode: 'IM101'},
+  // New subjects added below
+  { id: 'marketing_analytics_e2', name: 'Marketing Analytics E2', category: 'Academics', color: '#FF4500' },
+  { id: 'ads_sales_e1', name: 'Ads & Sales E1', category: 'Academics', color: '#FF8C00' },
+  { id: 'digital_marketing_e2', name: 'Digital marketing E2', category: 'Academics', color: '#ADFF2F' },
+  { id: 'machine_learning_e2', name: 'Machine Learning E2', category: 'Academics', color: '#20B2AA' },
+  { id: 'data_visualisation_e2', name: 'Data Visualisation E2', category: 'Academics', color: '#5F9EA0' },
+  { id: 'optimization_technique', name: 'Optimization technique', category: 'Academics', color: '#BA55D3' },
+  { id: 'disruptive_tech_talent_acquisition', name: 'Disruptive Technologies and Talent Acquisition', category: 'Experiential Learning', color: '#DB7093' },
+  { id: 'compensation_reward_management', name: 'Compensation and Reward management', category: 'Academics', color: '#F08080' },
+  { id: 'us_taxation_e2', name: 'US Taxation E2', category: 'Academics', color: '#E9967A' },
+  { id: 'consumer_behaviour', name: 'Consumer Behaviour', category: 'Academics', color: '#CD5C5C' },
+  { id: 'corporate_taxation_e3', name: 'Corporate Taxation E3', category: 'Academics', color: '#BC8F8F' },
+  { id: 'corporate_taxation_e1', name: 'Corporate Taxation E1', category: 'Academics', color: '#D2B48C' },
+  { id: 'ads_sales_e2', name: 'Ads & Sales E2', category: 'Academics', color: '#DAA520' },
+  { id: 'international_financial_management_e2', name: 'International Financial Management E2', category: 'Academics', color: '#BDB76B' },
+  { id: 'international_financial_management_e1', name: 'International Financial Management E1', category: 'Academics', color: '#9ACD32' },
+  { id: 'investment_management_e2', name: 'Investment Management E2', category: 'Placement', color: '#66CDAA' },
+  { id: 'risk_management_operations', name: 'Risk Management in operations', category: 'Academics', color: '#48D1CC' },
+  { id: 'corporate_taxation_e2', name: 'Corporate Taxation E2', category: 'Academics', color: '#AFEEEE' },
+  { id: 'project_management_e2', name: 'Project Management E2', category: 'Academics', color: '#B0E0E6' },
+  { id: 'service_operations', name: 'Service Operations', category: 'Academics', color: '#C71585' }
 ];
 
 const getDayWithOffset = (day: number, hour: number, monthOffset: number = 0): Date => {
