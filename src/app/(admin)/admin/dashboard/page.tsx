@@ -170,7 +170,7 @@ export default function AdminDashboardPage() {
           <div className="flex justify-between items-center">
             <CardTitle>Manage Academic Events</CardTitle>
             <Button onClick={() => setShowAddEventDialog(true)}>
-              {/* <PlusCircle className="mr-2 h-4 w-4" /> */} Add New Event
+              <PlusCircle className="mr-2 h-4 w-4" /> Add New Event
             </Button>
           </div>
           <CardDescription>
@@ -280,3 +280,4 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
