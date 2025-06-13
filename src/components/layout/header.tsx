@@ -1,16 +1,33 @@
+
+"use client"; // Add "use client" for hooks
+
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Briefcase, Settings, LogOut, UserCircle } from 'lucide-react';
+import { Menu, Briefcase, Settings, LogOut, UserCircle, LogIn } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext'; // Import useAuth
+import { useRouter } from 'next/navigation';
 
 interface HeaderProps {
-  sidebarTrigger?: React.ReactNode; // To allow passing SidebarTrigger from shadcn/ui/sidebar
+  sidebarTrigger?: React.ReactNode;
 }
 
 export default function Header({ sidebarTrigger }: HeaderProps) {
+  const { currentUser, signOut, isAdmin } = useAuth(); // Get auth state
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await signOut();
+    // router.push('/login'); // AuthContext signOut already handles this
+  };
+
+  const handleLogin = () => {
+    router.push('/login');
+  };
+
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 border-b bg-card shadow-sm sm:px-6">
       <div className="flex items-center gap-2">
@@ -32,10 +49,16 @@ export default function Header({ sidebarTrigger }: HeaderProps) {
                   <Briefcase className="w-5 h-5" />
                   Dashboard
                 </Link>
-                <Link href="#" className="flex items-center gap-4 px-2.5 text-sidebar-foreground/70 hover:text-sidebar-accent-foreground">
+                {isAdmin && (
+                   <Link href="/admin/dashboard" className="flex items-center gap-4 px-2.5 text-sidebar-foreground hover:text-sidebar-accent-foreground">
+                      <Settings className="w-5 h-5" />
+                      Admin Panel
+                    </Link>
+                )}
+                {/* <Link href="#" className="flex items-center gap-4 px-2.5 text-sidebar-foreground/70 hover:text-sidebar-accent-foreground">
                   <Settings className="w-5 h-5" />
                   Settings
-                </Link>
+                </Link> */}
               </nav>
             </SheetContent>
           </Sheet>
@@ -47,30 +70,42 @@ export default function Header({ sidebarTrigger }: HeaderProps) {
       </div>
       
       <div className="flex items-center gap-4">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <Avatar className="w-8 h-8">
-                <AvatarImage src="https://placehold.co/40x40.png" alt="User Avatar" data-ai-hint="user avatar" />
-                <AvatarFallback>
-                  <UserCircle className="w-6 h-6 text-muted-foreground" />
-                </AvatarFallback>
-              </Avatar>
-              <span className="sr-only">Toggle user menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>Profile</DropdownMenuItem>
-            <DropdownMenuItem>Settings</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {currentUser ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-8 w-auto rounded-full px-2">
+                <Avatar className="w-7 h-7 mr-2">
+                  <AvatarImage src="https://placehold.co/40x40.png" alt="User Avatar" data-ai-hint="user avatar" />
+                  <AvatarFallback>
+                    {currentUser.email ? currentUser.email.charAt(0).toUpperCase() : <UserCircle className="w-5 h-5"/>}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-sm hidden sm:inline">{currentUser.email}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>My Account {isAdmin && <span className="text-xs text-primary">(Admin)</span>}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {/* <DropdownMenuItem>Profile</DropdownMenuItem>
+              <DropdownMenuItem>Settings</DropdownMenuItem> */}
+              {isAdmin && (
+                <Link href="/admin/dashboard">
+                  <DropdownMenuItem>Admin Dashboard</DropdownMenuItem>
+                </Link>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="w-4 h-4 mr-2" />
+                Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Button variant="outline" onClick={handleLogin}>
+            <LogIn className="w-4 h-4 mr-2" />
+            Login
+          </Button>
+        )}
       </div>
     </header>
   );
