@@ -5,7 +5,7 @@ import type { Dispatch, SetStateAction } from 'react';
 import type { AcademicEvent, CalendarFilters, ColorCodingMode } from '@/lib/types';
 import EventCard from './event-card';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react'; // Removed PlusCircle
+import { ChevronLeft, ChevronRight } from 'lucide-react'; 
 import {
   format,
   addMonths,
@@ -27,7 +27,7 @@ interface CalendarViewProps {
   colorMode: ColorCodingMode;
   setSelectedEvent: Dispatch<SetStateAction<AcademicEvent | null>>;
   setShowEventDetail: Dispatch<SetStateAction<boolean>>;
-  setShowAddEventDialog: Dispatch<SetStateAction<boolean>>;
+  // setShowAddEventDialog: Dispatch<SetStateAction<boolean>>; // Prop removed
 }
 
 export default function CalendarView({
@@ -36,7 +36,7 @@ export default function CalendarView({
   colorMode,
   setSelectedEvent,
   setShowEventDetail,
-  // setShowAddEventDialog is still a prop but we won't call it from here
+  // setShowAddEventDialog prop removed from here
 }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = React.useState(new Date());
 
@@ -99,21 +99,9 @@ export default function CalendarView({
             <Button variant="outline" onClick={goToToday} className="sm:hidden text-sm px-3 py-1.5 h-auto">
                 Today
             </Button>
-            {/* "Add Event" button removed for read-only view 
-            <Button onClick={() => setShowAddEventDialog(true)} className="hidden sm:inline-flex">
-              <PlusCircle className="w-4 h-4 mr-2" />
-              Add Event
-            </Button>
-            */}
         </div>
       </div>
-      {/* Mobile "Add Event" button removed for read-only view
-       <Button onClick={() => setShowAddEventDialog(true)} className="sm:hidden mb-4 w-full">
-          <PlusCircle className="w-4 h-4 mr-2" />
-          Add Event
-      </Button>
-      */}
-
+      
       <div className="flex-grow overflow-auto border rounded-lg shadow-sm bg-card">
         <div className="grid grid-cols-7 sticky top-0 bg-card z-10 border-b">
           {dayNames.map(dayName => (
