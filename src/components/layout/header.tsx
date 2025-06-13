@@ -2,7 +2,7 @@
 "use client"; // Add "use client" for hooks
 
 import Link from 'next/link';
-import Image from 'next/image';
+// import Image from 'next/image'; // Logo removed
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -43,7 +43,7 @@ export default function Header({ sidebarTrigger }: HeaderProps) {
             <SheetContent side="left" className="sm:max-w-xs bg-sidebar text-sidebar-foreground">
               <nav className="grid gap-6 text-lg font-medium">
                 <Link href="/dashboard" className="flex items-center gap-2 text-lg font-semibold text-primary">
-                  <Image src="/pes-logo.png" alt="PES University Logo" width={67} height={24} />
+                  {/* <Image src="/pes-logo.png" alt="PES University Logo" width={67} height={24} /> */}
                   <span className="font-headline">AcademiaSync</span>
                 </Link>
                 <Link href="/dashboard" className="flex items-center gap-4 px-2.5 text-sidebar-foreground hover:text-sidebar-accent-foreground">
@@ -65,7 +65,7 @@ export default function Header({ sidebarTrigger }: HeaderProps) {
           </Sheet>
         )}
         <Link href="/dashboard" className="hidden md:flex items-center gap-2 text-lg font-semibold text-primary">
-           <Image src="/pes-logo.png" alt="PES University Logo" width={78} height={28} />
+           {/* <Image src="/pes-logo.png" alt="PES University Logo" width={78} height={28} /> */}
           <span className="font-headline text-xl">AcademiaSync</span>
         </Link>
       </div>
