@@ -1,10 +1,19 @@
 export type EventCategoryName = "Experiential Learning" | "Quality Control" | "Placement" | "Academics" | "Others";
 
+// Explicit array for Zod enum validation
+export const validCategoryNames: [EventCategoryName, ...EventCategoryName[]] = [
+  "Academics",
+  "Experiential Learning",
+  "Placement",
+  "Quality Control",
+  "Others",
+];
+
 export interface EventCategory {
   id: string;
   name: EventCategoryName;
   color: string; // Hex color code
-  subTypes?: string[]; // Original sub-types
+  subTypes?: string[];
 }
 
 export interface Subject {
@@ -21,7 +30,7 @@ export interface AcademicEvent {
   id: string;
   title: string;
   category: EventCategoryName;
-  subType?: string; // Original sub-type
+  subType?: string;
   subjectId?: string; // Reference to Subject id
   start: Date;
   end: Date;
@@ -45,8 +54,6 @@ export interface CalendarFilters {
   categories: EventCategoryName[];
   subjects: string[]; // Array of Subject IDs
   dateRange?: { start?: Date; end?: Date };
-  // userRole?: UserRole; // Simplified for now
-  // faculty?: string; // Simplified for now
 }
 
 export type ColorCodingMode = "category" | "subject";

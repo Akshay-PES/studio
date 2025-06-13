@@ -1,13 +1,15 @@
+
 "use client";
 
-import type { useState, Dispatch, SetStateAction } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import type { AcademicEvent, CalendarFilters, ColorCodingMode } from '@/lib/types';
-import { getCategoryByName, getSubjectById, academicEvents as allEvents } from '@/data/mock-data';
 import EventCard from './event-card';
-import EventDetailDialog from './event-detail-dialog';
+// EventDetailDialog is now managed by DashboardPage
+// import { getCategoryByName, getSubjectById } from '@/data/mock-data'; // No longer needed here for events
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
+// Select components might not be needed if view mode selector is removed or simplified
+// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ChevronLeft, ChevronRight, PlusCircle } from 'lucide-react';
 import {
   format,
   addMonths,
@@ -20,20 +22,28 @@ import {
   isSameMonth,
   isSameDay,
   isToday as fnsIsToday,
-  parseISO,
 } from 'date-fns';
-import React from 'react'; // Explicitly import React for useState
+import React from 'react';
 
 interface CalendarViewProps {
+  allEvents: AcademicEvent[]; // Changed from importing to receiving as prop
   filters: CalendarFilters;
   colorMode: ColorCodingMode;
   setSelectedEvent: Dispatch<SetStateAction<AcademicEvent | null>>;
   setShowEventDetail: Dispatch<SetStateAction<boolean>>;
+  setShowAddEventDialog: Dispatch<SetStateAction<boolean>>; // New prop to open AddEventDialog
 }
 
-export default function CalendarView({ filters, colorMode, setSelectedEvent, setShowEventDetail }: CalendarViewProps) {
+export default function CalendarView({
+  allEvents, // Use this prop
+  filters,
+  colorMode,
+  setSelectedEvent,
+  setShowEventDetail,
+  setShowAddEventDialog, // Use this prop
+}: CalendarViewProps) {
   const [currentDate, setCurrentDate] = React.useState(new Date());
-  const [viewMode, setViewMode] = React.useState<'month' | 'week' | 'day'>('month'); // Simplified to month for now
+  // const [viewMode, setViewMode] = React.useState<'month' | 'week' | 'day'>('month');
 
   const handleEventClick = (event: AcademicEvent) => {
     setSelectedEvent(event);
@@ -41,9 +51,9 @@ export default function CalendarView({ filters, colorMode, setSelectedEvent, set
   };
 
   const filteredEvents = React.useMemo(() => {
-    return allEvents.filter(event => {
-      const eventStart = event.start; // Already a Date object
-      const eventEnd = event.end; // Already a Date object
+    return allEvents.filter(event => { // Use allEvents from props
+      const eventStart = event.start;
+      const eventEnd = event.end;
 
       if (filters.categories.length > 0 && !filters.categories.includes(event.category)) {
         return false;
@@ -59,7 +69,7 @@ export default function CalendarView({ filters, colorMode, setSelectedEvent, set
       }
       return true;
     });
-  }, [filters]);
+  }, [allEvents, filters]); // Add allEvents to dependency array
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
@@ -73,7 +83,6 @@ export default function CalendarView({ filters, colorMode, setSelectedEvent, set
   const prevMonth = () => setCurrentDate(subMonths(currentDate, 1));
   const goToToday = () => setCurrentDate(new Date());
 
-
   return (
     <div className="p-4 md:p-6 h-full flex flex-col">
       <div className="flex flex-col sm:flex-row items-center justify-between mb-4 gap-2">
@@ -81,7 +90,7 @@ export default function CalendarView({ filters, colorMode, setSelectedEvent, set
           <Button variant="outline" size="icon" onClick={prevMonth} aria-label="Previous month">
             <ChevronLeft className="w-5 h-5" />
           </Button>
-          <h2 className="text-xl md:text-2xl font-headline text-primary text-center w-48">
+          <h2 className="text-xl md:text-2xl font-headline text-primary text-center w-40 sm:w-48">
             {format(currentDate, 'MMMM yyyy')}
           </h2>
           <Button variant="outline" size="icon" onClick={nextMonth} aria-label="Next month">
@@ -95,21 +104,17 @@ export default function CalendarView({ filters, colorMode, setSelectedEvent, set
             <Button variant="outline" onClick={goToToday} className="sm:hidden text-sm px-3 py-1.5 h-auto">
                 Today
             </Button>
-          {/* View mode selector can be added here if more views are implemented */}
-          {/* <Select value={viewMode} onValueChange={(value) => setViewMode(value as any)}>
-            <SelectTrigger className="w-[120px]">
-              <SelectValue placeholder="View" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="month">Month</SelectItem>
-              <SelectItem value="week" disabled>Week</SelectItem>
-              <SelectItem value="day" disabled>Day</SelectItem>
-            </SelectContent>
-          </Select> */}
+            <Button onClick={() => setShowAddEventDialog(true)} className="hidden sm:inline-flex">
+              <PlusCircle className="w-4 h-4 mr-2" />
+              Add Event
+            </Button>
         </div>
       </div>
+       <Button onClick={() => setShowAddEventDialog(true)} className="sm:hidden mb-4 w-full">
+          <PlusCircle className="w-4 h-4 mr-2" />
+          Add Event
+      </Button>
 
-      {/* Calendar Grid - Month View */}
       <div className="flex-grow overflow-auto border rounded-lg shadow-sm bg-card">
         <div className="grid grid-cols-7 sticky top-0 bg-card z-10 border-b">
           {dayNames.map(dayName => (
