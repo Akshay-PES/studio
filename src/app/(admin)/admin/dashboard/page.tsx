@@ -1,52 +1,64 @@
 
 "use client";
 
-// Placeholder for Admin Dashboard
-// This page will eventually contain UI for managing events (CRUD operations)
-
-import React, { useState, useEffect } from 'react';
-import { collection, getDocs, addDoc, Timestamp, query, orderBy, deleteDoc, doc, updateDoc, DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
+import React, { useState, useEffect, useCallback } from 'react';
+import { collection, getDocs, addDoc, Timestamp, query, orderBy, deleteDoc, doc, updateDoc, DocumentData, QueryDocumentSnapshot, writeBatch } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import type { AcademicEvent, EventCategoryName } from '@/lib/types';
+import type { AcademicEvent, EventCategoryName, Subject } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import AddEventDialog from '@/components/calendar/add-event-dialog'; 
+import AddEventDialog from '@/components/calendar/add-event-dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Pencil, Trash2, PlusCircle } from 'lucide-react';
+import { Pencil, Trash2, PlusCircle, BookOpen, Palette, LayersIcon } from 'lucide-react';
 import { format } from 'date-fns';
-import { eventCategories, subjects } from '@/data/mock-data'; // Import eventCategories, subjects will be an empty array
+import { eventCategories } from '@/data/mock-data';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from '@/components/ui/label';
 
-
-// Simplified form state for editing
 interface EditEventFormData {
   title: string;
-  category: EventCategoryName; // Use EventCategoryName type
-  start: string; // Store as ISO string or similar for input[type=datetime-local]
+  category: EventCategoryName;
+  start: string;
   end: string;
   location?: string;
   description?: string;
-  subjectId?: string; // Added subjectId
+  subjectId?: string;
+  subType?: string; // Added subType
+}
+
+interface SubjectFormData {
+  name: string;
+  category: EventCategoryName;
+  color: string; // Hex color string
 }
 
 const NO_SUBJECT_VALUE = "__NONE_SUBJECT__";
 
-
 export default function AdminDashboardPage() {
   const [events, setEvents] = useState<AcademicEvent[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [subjectsDB, setSubjectsDB] = useState<Subject[]>([]);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(true);
+  const [isLoadingSubjects, setIsLoadingSubjects] = useState(true);
+
   const [showAddEventDialog, setShowAddEventDialog] = useState(false);
   const [showEditEventDialog, setShowEditEventDialog] = useState(false);
   const [currentEventToEdit, setCurrentEventToEdit] = useState<AcademicEvent | null>(null);
   const [editFormData, setEditFormData] = useState<EditEventFormData>({ title: '', category: 'Academics', start: '', end: '' });
 
+  const [showAddSubjectDialog, setShowAddSubjectDialog] = useState(false);
+  const [showEditSubjectDialog, setShowEditSubjectDialog] = useState(false);
+  const [currentSubjectToEdit, setCurrentSubjectToEdit] = useState<Subject | null>(null);
+  const [addSubjectFormData, setAddSubjectFormData] = useState<SubjectFormData>({ name: '', category: 'Academics', color: '#808080' });
+  const [editSubjectFormData, setEditSubjectFormData] = useState<SubjectFormData>({ name: '', category: 'Academics', color: '#808080' });
+  
   const { toast } = useToast();
 
-  const fetchEvents = async () => {
-    setIsLoading(true);
+  const fetchEvents = useCallback(async () => {
+    setIsLoadingEvents(true);
     try {
       const eventsCollection = collection(db, "events");
       const q = query(eventsCollection, orderBy("start", "asc"));
@@ -72,26 +84,53 @@ export default function AdminDashboardPage() {
       console.error("Error fetching events:", error);
       toast({ variant: "destructive", title: "Error Fetching Events" });
     } finally {
-      setIsLoading(false);
+      setIsLoadingEvents(false);
     }
-  };
+  }, [toast]);
+
+  const fetchSubjects = useCallback(async () => {
+    setIsLoadingSubjects(true);
+    try {
+      const subjectsCollection = collection(db, "subjects");
+      const q = query(subjectsCollection, orderBy("name", "asc"));
+      const querySnapshot = await getDocs(q);
+      const fetchedSubjects: Subject[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          name: data.name,
+          category: data.category,
+          color: data.color,
+          // Include other fields if they exist in your Firestore documents for subjects
+        };
+      });
+      setSubjectsDB(fetchedSubjects);
+    } catch (error) {
+      console.error("Error fetching subjects:", error);
+      toast({ variant: "destructive", title: "Error Fetching Subjects" });
+    } finally {
+      setIsLoadingSubjects(false);
+    }
+  }, [toast]);
 
   useEffect(() => {
     fetchEvents();
-  }, [toast]); // Removed fetchEvents from dependencies to avoid re-fetch loop if toast causes re-render
+    fetchSubjects();
+  }, [fetchEvents, fetchSubjects]);
 
-
+  // Event Management Functions
   const handleAddEvent = async (newEventData: Omit<AcademicEvent, 'id'>) => {
     try {
       const eventDataForFirestore = {
         ...newEventData,
         start: Timestamp.fromDate(newEventData.start),
         end: Timestamp.fromDate(newEventData.end),
-        subjectId: newEventData.subjectId || null, // Ensure it's null if undefined
+        subjectId: newEventData.subjectId || null,
+        subType: newEventData.subType || null,
       };
       await addDoc(collection(db, "events"), eventDataForFirestore);
       toast({ title: "Event Added Successfully" });
-      fetchEvents(); // Refresh list
+      fetchEvents();
       setShowAddEventDialog(false);
     } catch (error) {
       console.error("Error adding event:", error);
@@ -100,18 +139,18 @@ export default function AdminDashboardPage() {
   };
 
   const handleDeleteEvent = async (eventId: string) => {
-    if (!window.confirm("Are you sure you want to delete this event?")) return;
+    if (!window.confirm("Are you sure you want to delete this event? This will also remove its association from any subjects.")) return;
     try {
       await deleteDoc(doc(db, "events", eventId));
       toast({ title: "Event Deleted Successfully" });
-      fetchEvents(); // Refresh list
+      fetchEvents();
     } catch (error) {
       console.error("Error deleting event:", error);
       toast({ variant: "destructive", title: "Error Deleting Event" });
     }
   };
   
-  const openEditDialog = (event: AcademicEvent) => {
+  const openEditEventDialog = (event: AcademicEvent) => {
     setCurrentEventToEdit(event);
     setEditFormData({
         title: event.title,
@@ -121,44 +160,47 @@ export default function AdminDashboardPage() {
         location: event.location || '',
         description: event.description || '',
         subjectId: event.subjectId || '',
+        subType: event.subType || '',
     });
     setShowEditEventDialog(true);
   };
 
-  const handleEditFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleEditEventFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setEditFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleEditCategoryChange = (newCategory: EventCategoryName) => {
-    setEditFormData(prev => ({ ...prev, category: newCategory }));
+  const handleEditEventCategoryChange = (newCategory: EventCategoryName) => {
+    setEditFormData(prev => ({ ...prev, category: newCategory, subType: '' })); // Reset subType when category changes
   };
   
-  const handleEditSubjectChange = (newSubjectId: string) => {
+  const handleEditEventSubjectChange = (newSubjectId: string) => {
     setEditFormData(prev => ({ ...prev, subjectId: newSubjectId === NO_SUBJECT_VALUE ? '' : newSubjectId }));
+  };
+  
+  const handleEditEventSubTypeChange = (newSubType: string) => {
+    setEditFormData(prev => ({ ...prev, subType: newSubType }));
   };
 
   const handleUpdateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentEventToEdit) return;
-
     try {
         const updatedEventData = {
-            ...currentEventToEdit, // Keep existing fields like subType, faculty etc.
+            ...currentEventToEdit,
             title: editFormData.title,
             category: editFormData.category,
+            subType: editFormData.subType || null,
             start: Timestamp.fromDate(new Date(editFormData.start)),
             end: Timestamp.fromDate(new Date(editFormData.end)),
             location: editFormData.location,
             description: editFormData.description,
-            subjectId: editFormData.subjectId || null, // Ensure it's null if empty string
+            subjectId: editFormData.subjectId || null,
         };
-        // Remove id from the object to be updated in Firestore
         const { id, ...dataToUpdate } = updatedEventData;
-
         await updateDoc(doc(db, "events", currentEventToEdit.id), dataToUpdate as { [x: string]: any });
         toast({ title: "Event Updated Successfully" });
-        fetchEvents(); // Refresh list
+        fetchEvents();
         setShowEditEventDialog(false);
         setCurrentEventToEdit(null);
     } catch (error) {
@@ -167,68 +209,214 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // Subject Management Functions
+  const handleAddSubjectToDB = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!addSubjectFormData.name.trim() || !addSubjectFormData.color.trim()) {
+      toast({ variant: "destructive", title: "Validation Error", description: "Subject name and color are required." });
+      return;
+    }
+    try {
+      await addDoc(collection(db, "subjects"), {
+        name: addSubjectFormData.name,
+        category: addSubjectFormData.category,
+        color: addSubjectFormData.color,
+      });
+      toast({ title: "Subject Added Successfully" });
+      fetchSubjects();
+      setShowAddSubjectDialog(false);
+      setAddSubjectFormData({ name: '', category: 'Academics', color: '#808080' });
+    } catch (error) {
+      console.error("Error adding subject:", error);
+      toast({ variant: "destructive", title: "Error Adding Subject" });
+    }
+  };
 
-  if (isLoading) {
-    return <div className="flex justify-center items-center h-full"><p>Loading events...</p></div>;
+  const openEditSubjectDialog = (subject: Subject) => {
+    setCurrentSubjectToEdit(subject);
+    setEditSubjectFormData({
+      name: subject.name,
+      category: subject.category,
+      color: subject.color,
+    });
+    setShowEditSubjectDialog(true);
+  };
+
+  const handleEditSubjectFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setEditSubjectFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleEditSubjectCategoryChange = (newCategory: EventCategoryName) => {
+    setEditSubjectFormData(prev => ({ ...prev, category: newCategory }));
+  };
+
+  const handleUpdateSubjectInDB = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentSubjectToEdit || !editSubjectFormData.name.trim() || !editSubjectFormData.color.trim()) {
+      toast({ variant: "destructive", title: "Validation Error", description: "Subject name and color are required." });
+      return;
+    }
+    try {
+      await updateDoc(doc(db, "subjects", currentSubjectToEdit.id), {
+        name: editSubjectFormData.name,
+        category: editSubjectFormData.category,
+        color: editSubjectFormData.color,
+      });
+      toast({ title: "Subject Updated Successfully" });
+      fetchSubjects();
+      setShowEditSubjectDialog(false);
+      setCurrentSubjectToEdit(null);
+    } catch (error) {
+      console.error("Error updating subject:", error);
+      toast({ variant: "destructive", title: "Error Updating Subject" });
+    }
+  };
+
+  const handleDeleteSubjectFromDB = async (subjectId: string) => {
+    if (!window.confirm("Are you sure you want to delete this subject? This will also remove its association from any events.")) return;
+    try {
+      const batch = writeBatch(db);
+      // Delete the subject
+      batch.delete(doc(db, "subjects", subjectId));
+
+      // Query for events associated with this subject and update them
+      const eventsQuery = query(collection(db, "events"), where => where("subjectId", "==", subjectId));
+      const eventSnapshots = await getDocs(eventsQuery);
+      eventSnapshots.forEach(eventDoc => {
+        batch.update(doc(db, "events", eventDoc.id), { subjectId: null });
+      });
+      
+      await batch.commit();
+
+      toast({ title: "Subject Deleted Successfully" });
+      fetchSubjects();
+      fetchEvents(); // Refetch events as their subjectId might have changed
+    } catch (error) {
+      console.error("Error deleting subject:", error);
+      toast({ variant: "destructive", title: "Error Deleting Subject" });
+    }
+  };
+  
+  const selectedEditEventCategoryDetails = eventCategories.find(c => c.name === editFormData.category);
+
+  if (isLoadingEvents || isLoadingSubjects) {
+    return <div className="flex justify-center items-center h-full"><p>Loading admin data...</p></div>;
   }
 
   return (
     <div className="container mx-auto py-8">
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle>Manage Academic Events</CardTitle>
-            <Button onClick={() => setShowAddEventDialog(true)}>
-                <PlusCircle className="mr-2 h-4 w-4" /> Add New Event
-            </Button>
-          </div>
-          <CardDescription>
-            Here you can add, edit, or delete academic events.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {events.length === 0 ? (
-            <p className="text-center text-muted-foreground">No events found. Add some!</p>
-          ) : (
-            <ul className="space-y-4">
-              {events.map((event) => (
-                <li key={event.id} className="p-4 border rounded-lg shadow-sm flex justify-between items-center hover:bg-muted/50 transition-colors">
-                  <div>
-                    <h3 className="text-lg font-semibold text-primary">{event.title}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {format(event.start, "PPP p")} - {format(event.end, "PPP p")}
-                    </p>
-                    <p className="text-sm text-muted-foreground">Category: {event.category} {event.subType && `(${event.subType})`}</p>
-                    {event.location && <p className="text-sm text-muted-foreground">Location: {event.location}</p>}
-                    {/* Display subject name if available - this will likely not work without fetching subject details by ID from DB */}
-                    {/* {event.subjectId && <p className="text-sm text-muted-foreground">Subject: {subjects.find(s => s.id === event.subjectId)?.name || event.subjectId}</p>} */}
-                  </div>
-                  <div className="space-x-2">
-                    <Button variant="outline" size="sm" onClick={() => openEditDialog(event)}>
-                      <Pencil className="mr-1 h-4 w-4" /> Edit
-                    </Button>
-                    <Button variant="destructive" size="sm" onClick={() => handleDeleteEvent(event.id)}>
-                      <Trash2 className="mr-1 h-4 w-4" /> Delete
-                    </Button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="events" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="events">Manage Events</TabsTrigger>
+          <TabsTrigger value="subjects">Manage Subjects</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="events">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle>Manage Academic Events</CardTitle>
+                <Button onClick={() => setShowAddEventDialog(true)}>
+                    <PlusCircle className="mr-2 h-4 w-4" /> Add New Event
+                </Button>
+              </div>
+              <CardDescription>
+                Add, edit, or delete academic events.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {events.length === 0 ? (
+                <p className="text-center text-muted-foreground">No events found. Add some!</p>
+              ) : (
+                <ul className="space-y-4">
+                  {events.map((event) => (
+                    <li key={event.id} className="p-4 border rounded-lg shadow-sm flex justify-between items-center hover:bg-muted/50 transition-colors">
+                      <div>
+                        <h3 className="text-lg font-semibold text-primary">{event.title}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {format(event.start, "PPP p")} - {format(event.end, "PPP p")}
+                        </p>
+                        <p className="text-sm text-muted-foreground">Category: {event.category} {event.subType && `(${event.subType})`}</p>
+                        {event.location && <p className="text-sm text-muted-foreground">Location: {event.location}</p>}
+                        {event.subjectId && subjectsDB.find(s => s.id === event.subjectId) &&
+                          <p className="text-sm" style={{color: subjectsDB.find(s => s.id === event.subjectId)?.color || 'inherit'}}>
+                            Subject: {subjectsDB.find(s => s.id === event.subjectId)?.name}
+                          </p>
+                        }
+                      </div>
+                      <div className="space-x-2">
+                        <Button variant="outline" size="sm" onClick={() => openEditEventDialog(event)}>
+                          <Pencil className="mr-1 h-4 w-4" /> Edit
+                        </Button>
+                        <Button variant="destructive" size="sm" onClick={() => handleDeleteEvent(event.id)}>
+                          <Trash2 className="mr-1 h-4 w-4" /> Delete
+                        </Button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="subjects">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle>Manage Subjects</CardTitle>
+                <Button onClick={() => { 
+                  setAddSubjectFormData({ name: '', category: 'Academics', color: '#808080' });
+                  setShowAddSubjectDialog(true);
+                }}>
+                  <BookOpen className="mr-2 h-4 w-4" /> Add New Subject
+                </Button>
+              </div>
+              <CardDescription>
+                Add, edit, or delete subjects. These will be available for selection when creating events.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {subjectsDB.length === 0 ? (
+                <p className="text-center text-muted-foreground">No subjects found. Add some!</p>
+              ) : (
+                <ul className="space-y-4">
+                  {subjectsDB.map((subject) => (
+                    <li key={subject.id} className="p-4 border rounded-lg shadow-sm flex justify-between items-center hover:bg-muted/50 transition-colors">
+                      <div>
+                        <h3 className="text-lg font-semibold" style={{color: subject.color}}>{subject.name}</h3>
+                        <p className="text-sm text-muted-foreground">Category: {subject.category}</p>
+                        <p className="text-sm text-muted-foreground">Color: {subject.color}</p>
+                      </div>
+                      <div className="space-x-2">
+                        <Button variant="outline" size="sm" onClick={() => openEditSubjectDialog(subject)}>
+                          <Pencil className="mr-1 h-4 w-4" /> Edit
+                        </Button>
+                        <Button variant="destructive" size="sm" onClick={() => handleDeleteSubjectFromDB(subject.id)}>
+                          <Trash2 className="mr-1 h-4 w-4" /> Delete
+                        </Button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       <AddEventDialog
         isOpen={showAddEventDialog}
         onClose={() => setShowAddEventDialog(false)}
         onAddEvent={handleAddEvent}
+        subjectsFromDB={subjectsDB} // Pass fetched subjects
       />
 
+      {/* Edit Event Dialog */}
       {currentEventToEdit && (
          <Dialog open={showEditEventDialog} onOpenChange={(isOpen) => {
-            if (!isOpen) {
-                setCurrentEventToEdit(null);
-            }
+            if (!isOpen) setCurrentEventToEdit(null);
             setShowEditEventDialog(isOpen);
          }}>
           <DialogContent className="sm:max-w-lg">
@@ -238,43 +426,41 @@ export default function AdminDashboardPage() {
             </DialogHeader>
             <form onSubmit={handleUpdateEvent} className="space-y-4 py-4">
               <div>
-                <Label htmlFor="title" className="block text-sm font-medium">Title</Label>
-                <Input id="title" name="title" value={editFormData.title} onChange={handleEditFormChange} required />
+                <Label htmlFor="title">Title</Label>
+                <Input id="title" name="title" value={editFormData.title} onChange={handleEditEventFormChange} required />
               </div>
-              <div>
-                <Label htmlFor="category" className="block text-sm font-medium">Category</Label>
-                <Select
-                    value={editFormData.category}
-                    onValueChange={(value: EventCategoryName) => handleEditCategoryChange(value)}
-                >
-                    <SelectTrigger id="category" className="mt-1">
-                        <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {eventCategories.map(category => (
-                            <SelectItem key={category.id} value={category.name}>
-                                <span className="flex items-center">
-                                  <span className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: category.color }} />
-                                  {category.name}
-                                </span>
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-              </div>
-              <div>
-                  <Label htmlFor="subjectId" className="block text-sm font-medium">Subject (Optional)</Label>
-                  <Select
-                      value={editFormData.subjectId || ""}
-                      onValueChange={(value: string) => handleEditSubjectChange(value)}
-                  >
-                      <SelectTrigger id="subjectId" className="mt-1">
-                          <SelectValue placeholder="Select a subject (currently unavailable)" />
-                      </SelectTrigger>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="category">Category</Label>
+                  <Select value={editFormData.category} onValueChange={handleEditEventCategoryChange}>
+                      <SelectTrigger id="category"><SelectValue placeholder="Select category" /></SelectTrigger>
                       <SelectContent>
-                          {subjects.length === 0 && <SelectItem value={NO_SUBJECT_VALUE} disabled>No subjects available</SelectItem>}
-                          {subjects.length > 0 && <SelectItem value={NO_SUBJECT_VALUE}>None</SelectItem>}
-                          {subjects.map(subject => (
+                          {eventCategories.map(cat => <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>)}
+                      </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                    <Label htmlFor="subType">Sub-Type</Label>
+                    <Select 
+                        value={editFormData.subType || ""} 
+                        onValueChange={handleEditEventSubTypeChange}
+                        disabled={!selectedEditEventCategoryDetails || !selectedEditEventCategoryDetails.subTypes || selectedEditEventCategoryDetails.subTypes.length === 0}
+                    >
+                        <SelectTrigger id="subType"><SelectValue placeholder="Select sub-type (if any)" /></SelectTrigger>
+                        <SelectContent>
+                            {selectedEditEventCategoryDetails?.subTypes?.map(st => <SelectItem key={st} value={st}>{st}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                    {(!selectedEditEventCategoryDetails || !selectedEditEventCategoryDetails.subTypes || selectedEditEventCategoryDetails.subTypes.length === 0) && <p className="text-xs text-muted-foreground mt-1">No sub-types for this category.</p>}
+                </div>
+              </div>
+              <div>
+                  <Label htmlFor="subjectId">Subject (Optional)</Label>
+                  <Select value={editFormData.subjectId || NO_SUBJECT_VALUE} onValueChange={handleEditEventSubjectChange}>
+                      <SelectTrigger id="subjectId"><SelectValue placeholder="Select a subject" /></SelectTrigger>
+                      <SelectContent>
+                          <SelectItem value={NO_SUBJECT_VALUE}>None</SelectItem>
+                          {subjectsDB.map(subject => (
                               <SelectItem key={subject.id} value={subject.id}>
                                   <span className="flex items-center">
                                       <span className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: subject.color }} />
@@ -282,30 +468,133 @@ export default function AdminDashboardPage() {
                                   </span>
                               </SelectItem>
                           ))}
+                          {subjectsDB.length === 0 && <SelectItem value="no-subjects" disabled>No subjects configured</SelectItem>}
                       </SelectContent>
                   </Select>
-                  {subjects.length === 0 && <p className="text-xs text-muted-foreground mt-1">Subjects are managed via database and currently none are available for selection.</p>}
               </div>
                <div>
-                <Label htmlFor="start" className="block text-sm font-medium">Start Date & Time</Label>
-                <Input id="start" name="start" type="datetime-local" value={editFormData.start} onChange={handleEditFormChange} required />
+                <Label htmlFor="start">Start Date & Time</Label>
+                <Input id="start" name="start" type="datetime-local" value={editFormData.start} onChange={handleEditEventFormChange} required />
               </div>
               <div>
-                <Label htmlFor="end" className="block text-sm font-medium">End Date & Time</Label>
-                <Input id="end" name="end" type="datetime-local" value={editFormData.end} onChange={handleEditFormChange} required />
+                <Label htmlFor="end">End Date & Time</Label>
+                <Input id="end" name="end" type="datetime-local" value={editFormData.end} onChange={handleEditEventFormChange} required />
               </div>
               <div>
-                <Label htmlFor="location" className="block text-sm font-medium">Location (Optional)</Label>
-                <Input id="location" name="location" value={editFormData.location || ''} onChange={handleEditFormChange} />
+                <Label htmlFor="location">Location (Optional)</Label>
+                <Input id="location" name="location" value={editFormData.location || ''} onChange={handleEditEventFormChange} />
               </div>
               <div>
-                <Label htmlFor="description" className="block text-sm font-medium">Description (Optional)</Label>
-                <Textarea id="description" name="description" value={editFormData.description || ''} onChange={handleEditFormChange} />
+                <Label htmlFor="description">Description (Optional)</Label>
+                <Textarea id="description" name="description" value={editFormData.description || ''} onChange={handleEditEventFormChange} />
               </div>
               <DialogFooter>
-                <DialogClose asChild>
-                    <Button type="button" variant="outline">Cancel</Button>
-                </DialogClose>
+                <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
+                <Button type="submit">Save Changes</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Add Subject Dialog */}
+      <Dialog open={showAddSubjectDialog} onOpenChange={(isOpen) => {
+        if (!isOpen) setAddSubjectFormData({ name: '', category: 'Academics', color: '#808080' });
+        setShowAddSubjectDialog(isOpen);
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add New Subject</DialogTitle>
+            <DialogDescription>Define a new subject for event association.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleAddSubjectToDB} className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="add-subject-name">Subject Name</Label>
+              <Input 
+                id="add-subject-name" 
+                name="name" 
+                value={addSubjectFormData.name} 
+                onChange={(e) => setAddSubjectFormData(prev => ({...prev, name: e.target.value}))} 
+                required 
+              />
+            </div>
+            <div>
+              <Label htmlFor="add-subject-category">Category</Label>
+              <Select 
+                value={addSubjectFormData.category} 
+                onValueChange={(val: EventCategoryName) => setAddSubjectFormData(prev => ({...prev, category: val}))}
+              >
+                <SelectTrigger id="add-subject-category"><SelectValue placeholder="Select category" /></SelectTrigger>
+                <SelectContent>
+                  {eventCategories.map(cat => <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="add-subject-color">Color (Hex Code)</Label>
+              <Input 
+                id="add-subject-color" 
+                name="color" 
+                value={addSubjectFormData.color} 
+                onChange={(e) => setAddSubjectFormData(prev => ({...prev, color: e.target.value}))} 
+                placeholder="e.g., #FF5733"
+                required 
+              />
+            </div>
+            <DialogFooter>
+              <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
+              <Button type="submit">Add Subject</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Subject Dialog */}
+      {currentSubjectToEdit && (
+        <Dialog open={showEditSubjectDialog} onOpenChange={(isOpen) => {
+          if (!isOpen) setCurrentSubjectToEdit(null);
+          setShowEditSubjectDialog(isOpen);
+        }}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit Subject: {currentSubjectToEdit.name}</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleUpdateSubjectInDB} className="space-y-4 py-4">
+              <div>
+                <Label htmlFor="edit-subject-name">Subject Name</Label>
+                <Input 
+                  id="edit-subject-name" 
+                  name="name" 
+                  value={editSubjectFormData.name} 
+                  onChange={handleEditSubjectFormChange} 
+                  required 
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-subject-category">Category</Label>
+                <Select 
+                  value={editSubjectFormData.category} 
+                  onValueChange={handleEditSubjectCategoryChange}
+                >
+                  <SelectTrigger id="edit-subject-category"><SelectValue placeholder="Select category" /></SelectTrigger>
+                  <SelectContent>
+                    {eventCategories.map(cat => <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="edit-subject-color">Color (Hex Code)</Label>
+                <Input 
+                  id="edit-subject-color" 
+                  name="color" 
+                  value={editSubjectFormData.color} 
+                  onChange={handleEditSubjectFormChange}
+                  placeholder="e.g., #FF5733" 
+                  required 
+                />
+              </div>
+              <DialogFooter>
+                <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
                 <Button type="submit">Save Changes</Button>
               </DialogFooter>
             </form>

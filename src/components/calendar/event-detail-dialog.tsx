@@ -1,25 +1,28 @@
+
 "use client";
 
-import type { AcademicEvent } from '@/lib/types';
+import type { AcademicEvent, Subject } from '@/lib/types';
 import { getCategoryByName, getSubjectById } from '@/data/mock-data';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { CalendarDays, Clock, MapPin, User, Tag, Info, BookOpen } from 'lucide-react';
+import { CalendarDays, Clock, MapPin, User, Tag, Info, BookOpen, Users } from 'lucide-react'; // Added Users
 import { format } from 'date-fns';
 
 interface EventDetailDialogProps {
   event: AcademicEvent | null;
+  allSubjects: Subject[]; // Receive all subjects
   isOpen: boolean;
   onClose: () => void;
 }
 
-export default function EventDetailDialog({ event, isOpen, onClose }: EventDetailDialogProps) {
+export default function EventDetailDialog({ event, allSubjects, isOpen, onClose }: EventDetailDialogProps) {
   if (!event) return null;
 
   const category = getCategoryByName(event.category);
-  const subject = event.subjectId ? getSubjectById(event.subjectId) : null;
+  // Use the passed allSubjects list for lookup
+  const subject = event.subjectId ? getSubjectById(event.subjectId, allSubjects) : null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -40,14 +43,14 @@ export default function EventDetailDialog({ event, isOpen, onClose }: EventDetai
             {subject && (
               <div className="p-3 rounded-md bg-accent/50 border border-accent">
                 <h4 className="font-semibold flex items-center gap-2 mb-1">
-                  <Tag className="w-4 h-4 text-accent-foreground" /> Subject Details
+                  <BookOpen className="w-4 h-4 text-accent-foreground" /> Subject Details
                 </h4>
                 <p className="text-sm"><strong className="text-accent-foreground">{subject.name}</strong></p>
                 {subject.courseCode && <p className="text-xs text-muted-foreground">Code: {subject.courseCode}</p>}
                 {subject.semester && <p className="text-xs text-muted-foreground">Semester: {subject.semester}</p>}
                  <div className="mt-1">
                     <Badge variant="outline" style={{ borderColor: subject.color, color: subject.color, backgroundColor: `${subject.color}1A` }}>
-                      {subject.name}
+                      {subject.name} ({subject.category})
                     </Badge>
                   </div>
               </div>

@@ -1,65 +1,96 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { collection, getDocs, Timestamp, query, orderBy } from "firebase/firestore";
+import React, { useState, useEffect, useCallback } from 'react';
+import { collection, getDocs, Timestamp, query, orderBy, DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
 import { db } from '@/lib/firebase'; 
 
 import CalendarView from '@/components/calendar/calendar-view';
 import EventDetailDialog from '@/components/calendar/event-detail-dialog';
-import type { AcademicEvent } from '@/lib/types';
-// SidebarFilters is now in AppLayout
-// import { SidebarContent } from '@/components/ui/sidebar'; // No longer needed here
+import type { AcademicEvent, Subject } from '@/lib/types';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
-import { useFilters } from '@/contexts/FilterContext'; // Import useFilters
+import { useFilters } from '@/contexts/FilterContext';
 
 export default function DashboardPage() {
   const [events, setEvents] = useState<AcademicEvent[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { filters, colorMode } = useFilters(); // Get filters and colorMode from context
+  const [subjects, setSubjects] = useState<Subject[]>([]); // State for subjects
+  const [isLoadingEvents, setIsLoadingEvents] = useState(true);
+  const [isLoadingSubjects, setIsLoadingSubjects] = useState(true);
+  const { filters, colorMode } = useFilters();
   const [selectedEvent, setSelectedEvent] = useState<AcademicEvent | null>(null);
   const [showEventDetail, setShowEventDetail] = useState(false);
   const isMobile = useIsMobile();
   const { toast } = useToast();
 
-  useEffect(() => {
-    async function fetchEvents() {
-      setIsLoading(true);
-      try {
-        const eventsCollection = collection(db, "events");
-        const q = query(eventsCollection, orderBy("start", "asc")); 
-        const querySnapshot = await getDocs(q);
-        const fetchedEvents: AcademicEvent[] = querySnapshot.docs.map(doc => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            title: data.title,
-            category: data.category,
-            subType: data.subType,
-            subjectId: data.subjectId,
-            start: (data.start as Timestamp).toDate(), 
-            end: (data.end as Timestamp).toDate(),     
-            location: data.location,
-            faculty: data.faculty,
-            description: data.description,
-            attendees: data.attendees,
-          };
-        });
-        setEvents(fetchedEvents);
-      } catch (error) {
-        console.error("Error fetching events from Firestore:", error);
-        toast({
-          variant: "destructive",
-          title: "Error Fetching Events",
-          description: "Could not load events from the database. Please try again later.",
-        });
-      } finally {
-        setIsLoading(false);
-      }
+  const fetchEvents = useCallback(async () => {
+    setIsLoadingEvents(true);
+    try {
+      const eventsCollection = collection(db, "events");
+      const q = query(eventsCollection, orderBy("start", "asc")); 
+      const querySnapshot = await getDocs(q);
+      const fetchedEvents: AcademicEvent[] = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          title: data.title,
+          category: data.category,
+          subType: data.subType,
+          subjectId: data.subjectId,
+          start: (data.start as Timestamp).toDate(), 
+          end: (data.end as Timestamp).toDate(),     
+          location: data.location,
+          faculty: data.faculty,
+          description: data.description,
+          attendees: data.attendees,
+        };
+      });
+      setEvents(fetchedEvents);
+    } catch (error) {
+      console.error("Error fetching events from Firestore:", error);
+      toast({
+        variant: "destructive",
+        title: "Error Fetching Events",
+        description: "Could not load events. Please try again later.",
+      });
+    } finally {
+      setIsLoadingEvents(false);
     }
-    fetchEvents();
   }, [toast]);
+
+  const fetchSubjects = useCallback(async () => {
+    setIsLoadingSubjects(true);
+    try {
+      const subjectsCollection = collection(db, "subjects");
+      const q = query(subjectsCollection, orderBy("name", "asc"));
+      const querySnapshot = await getDocs(q);
+      const fetchedSubjects: Subject[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          name: data.name,
+          category: data.category,
+          color: data.color,
+        };
+      });
+      setSubjects(fetchedSubjects);
+    } catch (error) {
+      console.error("Error fetching subjects from Firestore:", error);
+      toast({
+        variant: "destructive",
+        title: "Error Fetching Subjects",
+        description: "Could not load subjects. Please try again later.",
+      });
+    } finally {
+      setIsLoadingSubjects(false);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    fetchEvents();
+    fetchSubjects();
+  }, [fetchEvents, fetchSubjects]);
+
 
   useEffect(() => {
     if (!selectedEvent) {
@@ -67,21 +98,19 @@ export default function DashboardPage() {
     }
   }, [selectedEvent]);
   
+  const isLoading = isLoadingEvents || isLoadingSubjects;
+
   if (isLoading && !isMobile) { 
     return (
-      <div className="flex flex-1 h-full items-center justify-center"> {/* Use h-full */}
+      <div className="flex flex-1 h-full items-center justify-center">
         <p className="text-lg text-muted-foreground">Loading calendar data...</p>
       </div>
     );
   }
 
   return (
-    // The parent div now directly contains the CalendarView and EventDetailDialog
-    // Sidebar is handled by AppLayout
-    <div className="flex flex-col flex-1 h-full"> {/* Ensure this is a flex column */}
-      {/* SidebarContent and SidebarFilters are removed from here */}
-      
-      <div className="flex-1 overflow-auto min-h-0"> {/* Added min-h-0 to prevent overflow issues in flex children */}
+    <div className="flex flex-col flex-1 h-full">
+      <div className="flex-1 overflow-auto min-h-0">
       {isLoading && isMobile && ( 
           <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-50">
             <p className="text-muted-foreground">Loading...</p>
@@ -89,8 +118,9 @@ export default function DashboardPage() {
         )}
         <CalendarView
           allEvents={events}
-          filters={filters} // from context
-          colorMode={colorMode} // from context
+          allSubjects={subjects} // Pass fetched subjects
+          filters={filters}
+          colorMode={colorMode}
           setSelectedEvent={setSelectedEvent}
           setShowEventDetail={setShowEventDetail}
         />
@@ -99,6 +129,7 @@ export default function DashboardPage() {
       {selectedEvent && (
         <EventDetailDialog
           event={selectedEvent}
+          allSubjects={subjects} // Pass fetched subjects
           isOpen={showEventDetail}
           onClose={() => {
             setShowEventDetail(false);
@@ -109,4 +140,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

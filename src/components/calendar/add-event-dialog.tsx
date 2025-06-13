@@ -5,8 +5,8 @@ import * as React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { format, parse } from 'date-fns';
-import { CalendarIcon, Tag, Layers, Clock, MapPin, User as UserIcon, Info, BookOpen } from 'lucide-react'; // Renamed User to UserIcon to avoid conflict
+import { format } from 'date-fns';
+import { CalendarIcon, Tag, Layers, Clock, MapPin, User as UserIcon, Info, BookOpen, ChevronsUpDown } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -29,7 +29,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Select,
@@ -41,12 +40,12 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import type { AcademicEvent, EventCategoryName } from '@/lib/types';
+import type { AcademicEvent, EventCategoryName, Subject } from '@/lib/types';
 import { validCategoryNames } from '@/lib/types';
-import { eventCategories, subjects } from '@/data/mock-data'; // subjects will be an empty array
+import { eventCategories } from '@/data/mock-data';
 import { cn } from '@/lib/utils';
 
-const NO_SUBJECT_VALUE = "__NONE_SUBJECT__"; // Unique value for "None" option
+const NO_SUBJECT_VALUE = "__NONE_SUBJECT__";
 
 const eventFormSchema = z.object({
   title: z.string().min(3, { message: "Title must be at least 3 characters." }),
@@ -72,7 +71,7 @@ const eventFormSchema = z.object({
   return endDateTime >= startDateTime;
 }, {
   message: "End date/time must be after start date/time.",
-  path: ["endDate"], // You can also use "endTime" or a more general path if needed
+  path: ["endDate"],
 });
 
 type EventFormData = z.infer<typeof eventFormSchema>;
@@ -81,9 +80,10 @@ interface AddEventDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onAddEvent: (event: Omit<AcademicEvent, 'id'>) => void;
+  subjectsFromDB: Subject[]; // Pass subjects from Firestore
 }
 
-export default function AddEventDialog({ isOpen, onClose, onAddEvent }: AddEventDialogProps) {
+export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFromDB }: AddEventDialogProps) {
   const { toast } = useToast();
   const form = useForm<EventFormData>({
     resolver: zodResolver(eventFormSchema),
@@ -95,7 +95,7 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent }: AddEvent
       faculty: "",
       description: "",
       subType: "",
-      subjectId: "", // Remains empty string for placeholder to show initially
+      subjectId: NO_SUBJECT_VALUE,
     },
   });
 
@@ -104,8 +104,8 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent }: AddEvent
 
   React.useEffect(() => {
     if (selectedCategoryName) {
-      const category = eventCategories.find(c => c.name === selectedCategoryName);
-      setAvailableSubTypes(category?.subTypes || []);
+      const categoryDetails = eventCategories.find(c => c.name === selectedCategoryName);
+      setAvailableSubTypes(categoryDetails?.subTypes || []);
       form.setValue("subType", ""); // Reset subType when category changes
     } else {
       setAvailableSubTypes([]);
@@ -124,7 +124,7 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent }: AddEvent
     const newEvent: Omit<AcademicEvent, 'id'> = {
       title: data.title,
       category: data.category,
-      subType: data.subType || undefined, // Treat empty string as undefined if preferred
+      subType: data.subType || undefined,
       subjectId: data.subjectId === NO_SUBJECT_VALUE || !data.subjectId ? undefined : data.subjectId,
       start: startDateTime,
       end: endDateTime,
@@ -137,14 +137,30 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent }: AddEvent
       title: "Event Added",
       description: `${data.title} has been successfully added to the calendar.`,
     });
-    form.reset();
+    form.reset({ // Reset with default values explicitly
+        title: "",
+        category: undefined, // Or your default category
+        subType: "",
+        subjectId: NO_SUBJECT_VALUE,
+        startDate: undefined,
+        startTime: "09:00",
+        endDate: undefined,
+        endTime: "10:00",
+        location: "",
+        faculty: "",
+        description: ""
+    });
     onClose();
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
       if (!open) {
-        form.reset(); // Reset form when dialog is closed
+        form.reset({
+            title: "", category: undefined, subType: "", subjectId: NO_SUBJECT_VALUE,
+            startDate: undefined, startTime: "09:00", endDate: undefined, endTime: "10:00",
+            location: "", faculty: "", description: ""
+        });
       }
       onClose();
     }}>
@@ -199,33 +215,38 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent }: AddEvent
                       </FormItem>
                     )}
                   />
-
-                  {availableSubTypes.length > 0 && (
-                     <FormField
-                        control={form.control}
-                        name="subType"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel><Layers className="inline w-4 h-4 mr-1 opacity-70" />Sub-Type</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value || ""} defaultValue={field.value || ""}>
-                            <FormControl>
-                                <SelectTrigger>
-                                <SelectValue placeholder="Select a sub-type" />
-                                </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                                {availableSubTypes.map(subType => (
-                                <SelectItem key={subType} value={subType}>
-                                    {subType}
-                                </SelectItem>
-                                ))}
-                            </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                  )}
+                  
+                  <FormField
+                    control={form.control}
+                    name="subType"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel><ChevronsUpDown className="inline w-4 h-4 mr-1 opacity-70" />Sub-Type</FormLabel>
+                        <Select 
+                            onValueChange={field.onChange} 
+                            value={field.value || ""} 
+                            defaultValue={field.value || ""}
+                            disabled={availableSubTypes.length === 0}
+                        >
+                        <FormControl>
+                            <SelectTrigger>
+                            <SelectValue placeholder="Select a sub-type" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            {availableSubTypes.map(subType => (
+                            <SelectItem key={subType} value={subType}>
+                                {subType}
+                            </SelectItem>
+                            ))}
+                        </SelectContent>
+                        </Select>
+                        {availableSubTypes.length === 0 && selectedCategoryName && <FormDescription className="text-xs">No sub-types for selected category.</FormDescription>}
+                        {!selectedCategoryName && <FormDescription className="text-xs">Select a category first.</FormDescription>}
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
                 </div>
                 
                 <FormField
@@ -234,16 +255,15 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent }: AddEvent
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel><BookOpen className="inline w-4 h-4 mr-1" />Subject (Optional)</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ""} defaultValue={field.value || ""}>
+                      <Select onValueChange={field.onChange} value={field.value || NO_SUBJECT_VALUE} defaultValue={field.value || NO_SUBJECT_VALUE}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select a subject (currently unavailable)" />
+                            <SelectValue placeholder="Select a subject" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {subjects.length === 0 && <SelectItem value={NO_SUBJECT_VALUE} disabled>No subjects available</SelectItem>}
-                          {subjects.length > 0 && <SelectItem value={NO_SUBJECT_VALUE}>None</SelectItem>}
-                          {subjects.map(subject => (
+                          <SelectItem value={NO_SUBJECT_VALUE}>None</SelectItem>
+                          {subjectsFromDB.map(subject => (
                             <SelectItem key={subject.id} value={subject.id}>
                                <span className="flex items-center">
                                 <span className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: subject.color }} />
@@ -251,10 +271,11 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent }: AddEvent
                                </span>
                             </SelectItem>
                           ))}
+                          {subjectsFromDB.length === 0 && <SelectItem value="no-subjects" disabled>No subjects configured in database</SelectItem>}
                         </SelectContent>
                       </Select>
                       <FormMessage />
-                       {subjects.length === 0 && <FormDescription className="text-xs">Subjects are managed via database and currently none are available for selection.</FormDescription>}
+                      {subjectsFromDB.length === 0 && <FormDescription className="text-xs">No subjects found in the database. Add them via the admin panel.</FormDescription>}
                     </FormItem>
                   )}
                 />

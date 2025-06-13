@@ -1,6 +1,7 @@
+
 "use client";
 
-import type { AcademicEvent, ColorCodingMode } from '@/lib/types';
+import type { AcademicEvent, ColorCodingMode, Subject } from '@/lib/types';
 import { getCategoryByName, getSubjectById } from '@/data/mock-data';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -10,13 +11,15 @@ import { format } from 'date-fns';
 
 interface EventCardProps {
   event: AcademicEvent;
+  allSubjects: Subject[]; // Receive all subjects
   colorMode: ColorCodingMode;
   onClick: () => void;
 }
 
-export default function EventCard({ event, colorMode, onClick }: EventCardProps) {
+export default function EventCard({ event, allSubjects, colorMode, onClick }: EventCardProps) {
   const category = getCategoryByName(event.category);
-  const subject = event.subjectId ? getSubjectById(event.subjectId) : null;
+  // Use the passed allSubjects list for lookup
+  const subject = event.subjectId ? getSubjectById(event.subjectId, allSubjects) : null;
 
   const displayColor = colorMode === 'subject' && subject ? subject.color : category?.color || '#808080';
 
@@ -55,7 +58,7 @@ export default function EventCard({ event, colorMode, onClick }: EventCardProps)
       <TooltipContent side="top" align="start" className="bg-popover text-popover-foreground shadow-lg rounded-md p-3">
         <p className="font-semibold">{event.title}</p>
         <p className="text-sm text-muted-foreground">{eventTime}</p>
-        {category && <p className="text-xs">Category: {category.name}</p>}
+        {category && <p className="text-xs">Category: {category.name}{event.subType ? ` (${event.subType})` : ''}</p>}
         {subject && <p className="text-xs">Subject: {subject.name}</p>}
         {event.location && <p className="text-xs flex items-center"><MapPin className="w-3 h-3 mr-1" /> {event.location}</p>}
         {event.faculty && <p className="text-xs flex items-center"><User className="w-3 h-3 mr-1" /> {event.faculty}</p>}

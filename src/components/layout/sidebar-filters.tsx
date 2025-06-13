@@ -2,7 +2,9 @@
 "use client";
 
 import * as React from 'react';
-import { CalendarIcon, Palette, Tag, Layers, Filter, ListFilter } from 'lucide-react';
+import { collection, getDocs, query, orderBy, DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
+import { db } from '@/lib/firebase';
+import { CalendarIcon, Palette, Tag, Layers, Filter, ListFilter, ChevronsUpDown } from 'lucide-react'; // Added ChevronsUpDown
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -11,8 +13,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import type { EventCategoryName } from '@/lib/types';
-import { eventCategories, subjects } from '@/data/mock-data'; // subjects will be an empty array
+import type { EventCategoryName, Subject } from '@/lib/types';
+import { eventCategories } from '@/data/mock-data';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import {
@@ -22,9 +24,40 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { useFilters } from '@/contexts/FilterContext';
+import { useToast } from '@/hooks/use-toast';
 
 export default function SidebarFilters() {
   const { filters, setFilters, colorMode, setColorMode } = useFilters();
+  const [subjectsDB, setSubjectsDB] = React.useState<Subject[]>([]);
+  const [isLoadingSubjects, setIsLoadingSubjects] = React.useState(true);
+  const { toast } = useToast();
+
+  React.useEffect(() => {
+    const fetchSubjects = async () => {
+      setIsLoadingSubjects(true);
+      try {
+        const subjectsCollection = collection(db, "subjects");
+        const q = query(subjectsCollection, orderBy("name", "asc"));
+        const querySnapshot = await getDocs(q);
+        const fetchedSubjects: Subject[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            name: data.name,
+            category: data.category,
+            color: data.color,
+          };
+        });
+        setSubjectsDB(fetchedSubjects);
+      } catch (error) {
+        console.error("Error fetching subjects for filters:", error);
+        toast({ variant: "destructive", title: "Error Fetching Subjects for Filters" });
+      } finally {
+        setIsLoadingSubjects(false);
+      }
+    };
+    fetchSubjects();
+  }, [toast]);
 
   const handleCategoryChange = (categoryName: EventCategoryName, checked: boolean) => {
     setFilters(prev => ({
@@ -32,8 +65,7 @@ export default function SidebarFilters() {
       categories: checked
         ? [...prev.categories, categoryName]
         : prev.categories.filter(c => c !== categoryName),
-      // Reset subTypes when categories change, as available subtypes depend on selected categories
-      subTypes: [],
+      subTypes: [], // Reset subTypes when categories change
     }));
   };
 
@@ -71,13 +103,11 @@ export default function SidebarFilters() {
   };
 
   const availableSubTypes = React.useMemo(() => {
-    if (filters.categories.length === 0) {
-      return [];
-    }
+    if (filters.categories.length === 0) return [];
     const allSelectedSubTypes = eventCategories
       .filter(category => filters.categories.includes(category.name))
       .flatMap(category => category.subTypes || [])
-      .filter(subType => subType); // Ensure not undefined or empty string if that's possible
+      .filter(subType => subType);
     return [...new Set(allSelectedSubTypes)].sort();
   }, [filters.categories]);
 
@@ -116,18 +146,18 @@ export default function SidebarFilters() {
 
           <AccordionItem value="sub-types" className="border-b-sidebar-border">
             <AccordionTrigger className="text-sm font-medium hover:no-underline px-2 py-2.5">
-              <div className="flex items-center gap-1.5"><ListFilter className="w-4 h-4" /> Sub-Types</div>
+              <div className="flex items-center gap-1.5"><ChevronsUpDown className="w-4 h-4" /> Sub-Types</div>
             </AccordionTrigger>
             <AccordionContent className="pt-1 pb-1.5 space-y-1 px-2">
               {filters.categories.length === 0 ? (
-                <p className="text-xs text-muted-foreground/80 px-1 py-2">Select a category to see available sub-types.</p>
+                <p className="text-xs text-muted-foreground/80 px-1 py-2">Select a category to see sub-types.</p>
               ) : availableSubTypes.length === 0 ? (
-                <p className="text-xs text-muted-foreground/80 px-1 py-2">No sub-types available for selected category/categories.</p>
+                <p className="text-xs text-muted-foreground/80 px-1 py-2">No sub-types for selected category/categories.</p>
               ) : (
                 availableSubTypes.map(subType => (
                   <div key={subType} className="flex items-center space-x-2 p-1 rounded-md hover:bg-sidebar-accent/70">
                     <Checkbox
-                      id={`subtype-${subType.replace(/\s+/g, '-')}`} // Create a safe ID
+                      id={`subtype-${subType.replace(/\s+/g, '-')}`}
                       checked={filters.subTypes.includes(subType)}
                       onCheckedChange={(checked) => handleSubTypeChange(subType, !!checked)}
                       className="border-sidebar-primary data-[state=checked]:bg-sidebar-primary data-[state=checked]:text-sidebar-primary-foreground"
@@ -146,10 +176,11 @@ export default function SidebarFilters() {
               <div className="flex items-center gap-1.5"><Tag className="w-4 h-4" /> Subjects</div>
             </AccordionTrigger>
             <AccordionContent className="pt-1 pb-1.5 space-y-1 px-2">
-              {subjects.length === 0 ? (
-                <p className="text-xs text-muted-foreground/80 px-1 py-2">No subjects available for filtering. Subjects are managed via the database.</p>
+              {isLoadingSubjects ? (<p className="text-xs text-muted-foreground/80 px-1 py-2">Loading subjects...</p>) 
+              : subjectsDB.length === 0 ? (
+                <p className="text-xs text-muted-foreground/80 px-1 py-2">No subjects found in database. Add them via Admin Panel.</p>
               ) : (
-                subjects.map(subject => (
+                subjectsDB.map(subject => (
                   <div key={subject.id} className="flex items-center space-x-2 p-1 rounded-md hover:bg-sidebar-accent/70">
                     <Checkbox
                       id={`sub-${subject.id}`}
@@ -240,10 +271,11 @@ export default function SidebarFilters() {
                   checked={colorMode === 'subject'}
                   onCheckedChange={(checked) => setColorMode(checked ? 'subject' : 'category')}
                   className="data-[state=checked]:bg-sidebar-primary data-[state=unchecked]:bg-sidebar-accent"
+                  disabled={subjectsDB.length === 0}
                 />
               </div>
                <p className="text-xs text-muted-foreground/80 px-1">
-                Toggle to color events by subject. Default is by category. This may not have an effect if no subjects are defined in the database.
+                Toggle to color events by subject. Default is by category. {subjectsDB.length === 0 && " (Disabled as no subjects are configured.)"}
               </p>
             </AccordionContent>
           </AccordionItem>
