@@ -18,6 +18,7 @@ import {
   isSameMonth,
   isSameDay,
   isToday as fnsIsToday,
+  startOfDay, // Added import
 } from 'date-fns';
 import React from 'react';
 
@@ -120,7 +121,12 @@ export default function CalendarView({
         </div>
         <div className="grid grid-cols-7 grid-rows-6 flex-grow">
           {days.map(day => {
-            const eventsForDay = filteredEvents.filter(event => isSameDay(event.start, day));
+            const eventsForDay = filteredEvents.filter(event => {
+              const eventStartDateOnly = startOfDay(event.start);
+              const eventEndDateOnly = startOfDay(event.end);
+              const currentDayOnly = startOfDay(day);
+              return currentDayOnly >= eventStartDateOnly && currentDayOnly <= eventEndDateOnly;
+            });
             return (
               <div
                 key={day.toString()}
@@ -166,3 +172,4 @@ export default function CalendarView({
     </div>
   );
 }
+
