@@ -15,7 +15,6 @@ import AddEventDialog from '@/components/calendar/add-event-dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Pencil, Trash2, PlusCircle, BookOpen, Layers } from 'lucide-react';
 import { format } from 'date-fns';
-// import { eventCategories as staticEventCategories } from '@/data/mock-data'; // Replaced by dynamic categories
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from '@/components/ui/label';
 
@@ -41,7 +40,7 @@ interface EditSubjectFormData {
 
 interface AddCategoryFormData {
   name: string;
-  color: string;
+  // color: string; // Color is now auto-assigned
   subTypesString: string; // Comma-separated
 }
 
@@ -67,6 +66,14 @@ const PREDEFINED_SUBJECT_COLORS = [
 ];
 const FALLBACK_SUBJECT_COLOR = '#A0A0A0'; 
 
+const PREDEFINED_CATEGORY_COLORS = [
+  '#EF9A9A', '#F48FB1', '#CE93D8', '#B39DDB', '#9FA8DA', '#90CAF9',
+  '#81D4FA', '#80DEEA', '#80CBC4', '#A5D6A7', '#C5E1A5', '#E6EE9C',
+  '#FFF59D', '#FFE082', '#FFCC80', '#FFAB91', '#BCAAA4', '#EEEEEE',
+  '#B0BEC5', '#F06292', '#BA68C8', '#9575CD', '#7986CB', '#64B5F6'
+];
+const FALLBACK_CATEGORY_COLOR = '#BDBDBD';
+
 export default function AdminDashboardPage() {
   const [events, setEvents] = useState<AcademicEvent[]>([]);
   const [subjectsDB, setSubjectsDB] = useState<Subject[]>([]);
@@ -89,7 +96,7 @@ export default function AdminDashboardPage() {
   const [showAddCategoryDialog, setShowAddCategoryDialog] = useState(false);
   const [showEditCategoryDialog, setShowEditCategoryDialog] = useState(false);
   const [currentCategoryToEdit, setCurrentCategoryToEdit] = useState<EventCategory | null>(null);
-  const [addCategoryFormData, setAddCategoryFormData] = useState<AddCategoryFormData>({ name: '', color: '#808080', subTypesString: '' });
+  const [addCategoryFormData, setAddCategoryFormData] = useState<AddCategoryFormData>({ name: '', subTypesString: '' });
   const [editCategoryFormData, setEditCategoryFormData] = useState<EditCategoryFormData>({ id: '', name: '', color: '#808080', subTypesString: '' });
   
   const { toast } = useToast();
@@ -105,7 +112,7 @@ export default function AdminDashboardPage() {
         return {
           id: doc.id,
           title: data.title,
-          category: data.category, // Storing category name
+          category: data.category,
           subType: data.subType,
           subjectId: data.subjectId,
           start: (data.start as Timestamp).toDate(),
@@ -175,7 +182,6 @@ export default function AdminDashboardPage() {
     fetchEventCategories();
   }, [fetchEvents, fetchSubjects, fetchEventCategories]);
 
-  // Event Management Functions
   const handleAddEvent = async (newEventData: Omit<AcademicEvent, 'id'>) => {
     try {
       const eventDataForFirestore = {
@@ -183,7 +189,7 @@ export default function AdminDashboardPage() {
         start: Timestamp.fromDate(newEventData.start),
         end: Timestamp.fromDate(newEventData.end),
         subjectId: newEventData.subjectId || null,
-        category: newEventData.category || DEFAULT_EVENT_CATEGORY_ON_DELETE, // Ensure category name is stored
+        category: newEventData.category || DEFAULT_EVENT_CATEGORY_ON_DELETE,
         subType: newEventData.subType || null,
       };
       await addDoc(collection(db, "events"), eventDataForFirestore);
@@ -214,7 +220,7 @@ export default function AdminDashboardPage() {
       toast({ 
           variant: "destructive", 
           title: "Error Deleting Event", 
-          description: firebaseError.code ? `Firebase Error (${firebaseError.code}): ${firebaseError.message}` : firebaseError.message 
+          description: `Firebase Error (${firebaseError.code || 'UNKNOWN'}): ${firebaseError.message}`
       });
     }
   };
@@ -223,7 +229,7 @@ export default function AdminDashboardPage() {
     setCurrentEventToEdit(event);
     setEditEventFormData({
         title: event.title,
-        category: event.category, // This is category name
+        category: event.category,
         start: format(event.start, "yyyy-MM-dd'T'HH:mm"),
         end: format(event.end, "yyyy-MM-dd'T'HH:mm"),
         location: event.location || '',
@@ -239,7 +245,6 @@ export default function AdminDashboardPage() {
     setEditEventFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Category for event is stored as name.
   const handleEditEventCategoryChange = (newCategoryName: string) => {
     setEditEventFormData(prev => ({ ...prev, category: newCategoryName, subType: '' })); 
   };
@@ -258,7 +263,7 @@ export default function AdminDashboardPage() {
     try {
         const updatedEventData = {
             title: editEventFormData.title,
-            category: editEventFormData.category, // Category name
+            category: editEventFormData.category,
             subType: editEventFormData.subType || null,
             start: Timestamp.fromDate(new Date(editEventFormData.start)),
             end: Timestamp.fromDate(new Date(editEventFormData.end)),
@@ -277,7 +282,6 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Subject Management Functions
   const handleAddSubjectToDB = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!addSubjectFormData.name.trim()) {
@@ -369,35 +373,45 @@ export default function AdminDashboardPage() {
       toast({ 
         variant: "destructive", 
         title: "Error Deleting Subject", 
-        description: firebaseError.code ? `Firebase Error (${firebaseError.code}): ${firebaseError.message}` : firebaseError.message
+        description: `Firebase Error (${firebaseError.code || 'UNKNOWN'}): ${firebaseError.message}`
       });
     }
   };
 
-  // Category Management Functions
   const handleAddEventCategoryToDB = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!addCategoryFormData.name.trim() || !addCategoryFormData.color.trim()) {
-      toast({ variant: "destructive", title: "Validation Error", description: "Category name and color are required." });
+    if (!addCategoryFormData.name.trim()) {
+      toast({ variant: "destructive", title: "Validation Error", description: "Category name is required." });
       return;
     }
-    // Check for duplicate category name
     if (eventCategoriesDB.some(cat => cat.name.toLowerCase() === addCategoryFormData.name.trim().toLowerCase())) {
         toast({ variant: "destructive", title: "Validation Error", description: "A category with this name already exists." });
         return;
+    }
+
+    const usedColors = new Set(eventCategoriesDB.map(c => c.color));
+    let assignedColor = FALLBACK_CATEGORY_COLOR;
+    for (const color of PREDEFINED_CATEGORY_COLORS) {
+        if (!usedColors.has(color)) {
+            assignedColor = color;
+            break;
+        }
+    }
+    if (assignedColor === FALLBACK_CATEGORY_COLOR && PREDEFINED_CATEGORY_COLORS.length > 0 && usedColors.size >= PREDEFINED_CATEGORY_COLORS.length) {
+        console.warn("All predefined category colors are in use. Assigning fallback color.");
     }
 
     const subTypesArray = addCategoryFormData.subTypesString.split(',').map(st => st.trim()).filter(st => st);
     try {
       await addDoc(collection(db, "eventCategories"), {
         name: addCategoryFormData.name.trim(),
-        color: addCategoryFormData.color.trim(),
+        color: assignedColor,
         subTypes: subTypesArray,
       });
-      toast({ title: "Category Added Successfully" });
+      toast({ title: "Category Added Successfully", description: `Assigned color: ${assignedColor}` });
       fetchEventCategories();
       setShowAddCategoryDialog(false);
-      setAddCategoryFormData({ name: '', color: '#808080', subTypesString: '' });
+      setAddCategoryFormData({ name: '', subTypesString: '' });
     } catch (error) {
       console.error("Error adding category:", error);
       toast({ variant: "destructive", title: "Error Adding Category", description: `Details: ${(error as Error)?.message}` });
@@ -409,7 +423,7 @@ export default function AdminDashboardPage() {
     setEditCategoryFormData({
       id: category.id,
       name: category.name,
-      originalName: category.name, // Store original name
+      originalName: category.name,
       color: category.color,
       subTypesString: (category.subTypes || []).join(', '),
     });
@@ -427,7 +441,6 @@ export default function AdminDashboardPage() {
       toast({ variant: "destructive", title: "Validation Error", description: "Category name and color are required." });
       return;
     }
-    // Check for duplicate category name (if name changed)
     if (editCategoryFormData.name.trim().toLowerCase() !== currentCategoryToEdit.name.toLowerCase() &&
         eventCategoriesDB.some(cat => cat.id !== currentCategoryToEdit.id && cat.name.toLowerCase() === editCategoryFormData.name.trim().toLowerCase())) {
         toast({ variant: "destructive", title: "Validation Error", description: "Another category with this name already exists." });
@@ -443,18 +456,12 @@ export default function AdminDashboardPage() {
       subTypes: subTypesArray,
     });
 
-    // If category name changed, update associated events
-    // This is a simplification: events will retain old category name if not updated here.
-    // For robust solution, query and update events if name changes.
-    // For now, we are NOT propagating name changes to events automatically to keep it simpler.
-    // Events will just store the string name. If name changes, they link to an "old" name.
-
     try {
       await batch.commit();
       toast({ title: "Category Updated Successfully" });
-      fetchEventCategories(); // Re-fetch categories
+      fetchEventCategories(); 
       if (editCategoryFormData.name !== editCategoryFormData.originalName) {
-         fetchEvents(); // Re-fetch events if category name might have affected them (if propagation was added)
+         fetchEvents(); 
       }
       setShowEditCategoryDialog(false);
       setCurrentCategoryToEdit(null);
@@ -473,7 +480,6 @@ export default function AdminDashboardPage() {
       const categoryDocRef = doc(db, "eventCategories", category.id);
       batch.delete(categoryDocRef);
 
-      // Find events using this category and update them
       const eventsQuery = query(collection(db, "events"), where("category", "==", category.name));
       const eventSnapshots = await getDocs(eventsQuery);
       eventSnapshots.forEach(eventDoc => {
@@ -484,7 +490,7 @@ export default function AdminDashboardPage() {
       await batch.commit();
       toast({ title: "Category Deleted Successfully" });
       fetchEventCategories();
-      fetchEvents(); // Re-fetch events as some might have changed category
+      fetchEvents(); 
     } catch (error) {
       console.error("Error deleting category:", error);
       toast({ variant: "destructive", title: "Error Deleting Category", description: `Details: ${(error as Error)?.message}` });
@@ -500,7 +506,7 @@ export default function AdminDashboardPage() {
   return (
     <div className="container mx-auto py-8">
       <Tabs defaultValue="events" className="w-full">
-        <TabsList className="grid w-full grid-cols-3"> {/* Adjusted for 3 tabs */}
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="events">Manage Events</TabsTrigger>
           <TabsTrigger value="subjects">Manage Subjects</TabsTrigger>
           <TabsTrigger value="categories">Manage Categories</TabsTrigger>
@@ -575,7 +581,7 @@ export default function AdminDashboardPage() {
                 </Button>
               </div>
               <CardDescription>
-                Add, edit, or delete subjects. These will be available for selection when creating events.
+                Add, edit, or delete subjects. A unique color is automatically assigned.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -613,14 +619,14 @@ export default function AdminDashboardPage() {
               <div className="flex justify-between items-center">
                 <CardTitle>Manage Event Categories</CardTitle>
                 <Button onClick={() => {
-                  setAddCategoryFormData({ name: '', color: '#808080', subTypesString: ''});
+                  setAddCategoryFormData({ name: '', subTypesString: ''});
                   setShowAddCategoryDialog(true);
                 }}>
                   <Layers className="mr-2 h-4 w-4" /> Add New Category
                 </Button>
               </div>
               <CardDescription>
-                Add, edit, or delete event categories and their sub-types.
+                Add, edit, or delete event categories and their sub-types. A unique color is automatically assigned.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -667,7 +673,6 @@ export default function AdminDashboardPage() {
         categoriesFromDB={eventCategoriesDB}
       />
 
-      {/* Edit Event Dialog */}
       {currentEventToEdit && (
          <Dialog open={showEditEventDialog} onOpenChange={(isOpen) => {
             if (!isOpen) setCurrentEventToEdit(null);
@@ -760,7 +765,6 @@ export default function AdminDashboardPage() {
         </Dialog>
       )}
 
-      {/* Add Subject Dialog */}
       <Dialog open={showAddSubjectDialog} onOpenChange={(isOpen) => {
         if (!isOpen) setAddSubjectFormData({ name: '' });
         setShowAddSubjectDialog(isOpen);
@@ -784,7 +788,6 @@ export default function AdminDashboardPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Subject Dialog */}
       {currentSubjectToEdit && (
         <Dialog open={showEditSubjectDialog} onOpenChange={(isOpen) => {
           if (!isOpen) setCurrentSubjectToEdit(null);
@@ -812,26 +815,20 @@ export default function AdminDashboardPage() {
         </Dialog>
       )}
 
-      {/* Add Category Dialog */}
       <Dialog open={showAddCategoryDialog} onOpenChange={(isOpen) => {
-        if (!isOpen) setAddCategoryFormData({ name: '', color: '#808080', subTypesString: '' });
+        if (!isOpen) setAddCategoryFormData({ name: '', subTypesString: '' });
         setShowAddCategoryDialog(isOpen);
       }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Add New Event Category</DialogTitle>
-            <DialogDescription>Define a new category, its color, and optional sub-types (comma-separated).</DialogDescription>
+            <DialogDescription>Define a new category and its optional sub-types (comma-separated). A unique color will be automatically assigned.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleAddEventCategoryToDB} className="space-y-4 py-4">
             <div>
               <Label htmlFor="add-category-name">Category Name</Label>
               <Input id="add-category-name" name="name" value={addCategoryFormData.name} 
                 onChange={(e) => setAddCategoryFormData(prev => ({...prev, name: e.target.value}))} required />
-            </div>
-            <div>
-              <Label htmlFor="add-category-color">Color (Hex Code)</Label>
-              <Input id="add-category-color" name="color" value={addCategoryFormData.color} 
-                onChange={(e) => setAddCategoryFormData(prev => ({...prev, color: e.target.value}))} placeholder="e.g., #FFD700" required />
             </div>
             <div>
               <Label htmlFor="add-category-subTypes">Sub-Types (comma-separated)</Label>
@@ -846,7 +843,6 @@ export default function AdminDashboardPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Category Dialog */}
       {currentCategoryToEdit && (
         <Dialog open={showEditCategoryDialog} onOpenChange={(isOpen) => {
           if (!isOpen) setCurrentCategoryToEdit(null);
@@ -880,3 +876,4 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
