@@ -40,22 +40,23 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
-import type { AcademicEvent, EventCategoryName, Subject } from '@/lib/types';
-import { validCategoryNames } from '@/lib/types';
-import { eventCategories } from '@/data/mock-data';
+import type { AcademicEvent, Subject, EventCategory } from '@/lib/types';
+// import { eventCategories as staticEventCategories } from '@/data/mock-data'; // Replaced
 import { cn } from '@/lib/utils';
 
 const NO_SUBJECT_VALUE = "__NONE_SUBJECT__";
+const NO_CATEGORY_VALUE = "__NONE_CATEGORY__";
 
+// Zod schema now expects category as a string (name)
 const eventFormSchema = z.object({
   title: z.string().min(3, { message: "Title must be at least 3 characters." }),
-  category: z.enum(validCategoryNames, { required_error: "Category is required." }),
+  category: z.string().min(1, { message: "Category is required."}), // Category name
   subType: z.string().optional(),
   subjectId: z.string().optional(),
   startDate: z.date({ required_error: "Start date is required." }),
   startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, { message: "Invalid time format (HH:MM)." }),
   endDate: z.date({ required_error: "End date is required." }),
-  endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, { message: "Invalid time format (HH:MM)." }),
+  endTime: z.string().regex(/^([01]\d|2[0-5]\d)$/, { message: "Invalid time format (HH:MM)." }),
   location: z.string().optional(),
   faculty: z.string().optional(),
   description: z.string().optional(),
@@ -80,15 +81,17 @@ interface AddEventDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onAddEvent: (event: Omit<AcademicEvent, 'id'>) => void;
-  subjectsFromDB: Subject[]; // Pass subjects from Firestore
+  subjectsFromDB: Subject[];
+  categoriesFromDB: EventCategory[]; // Pass categories from Firestore
 }
 
-export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFromDB }: AddEventDialogProps) {
+export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFromDB, categoriesFromDB }: AddEventDialogProps) {
   const { toast } = useToast();
   const form = useForm<EventFormData>({
     resolver: zodResolver(eventFormSchema),
     defaultValues: {
       title: "",
+      category: NO_CATEGORY_VALUE, // Use NO_CATEGORY_VALUE or an empty string
       startTime: "09:00",
       endTime: "10:00",
       location: "",
@@ -99,20 +102,24 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
     },
   });
 
-  const selectedCategoryName = form.watch("category");
+  const selectedCategoryName = form.watch("category"); // This is the category name
   const [availableSubTypes, setAvailableSubTypes] = React.useState<string[]>([]);
 
   React.useEffect(() => {
-    if (selectedCategoryName) {
-      const categoryDetails = eventCategories.find(c => c.name === selectedCategoryName);
+    if (selectedCategoryName && selectedCategoryName !== NO_CATEGORY_VALUE) {
+      const categoryDetails = categoriesFromDB.find(c => c.name === selectedCategoryName);
       setAvailableSubTypes(categoryDetails?.subTypes || []);
       form.setValue("subType", ""); // Reset subType when category changes
     } else {
       setAvailableSubTypes([]);
     }
-  }, [selectedCategoryName, form]);
+  }, [selectedCategoryName, categoriesFromDB, form]);
 
   function onSubmit(data: EventFormData) {
+    if (data.category === NO_CATEGORY_VALUE) {
+        toast({ variant: "destructive", title: "Validation Error", description: "Please select an event category."});
+        return;
+    }
     const startDateTime = new Date(data.startDate);
     const [startHours, startMinutes] = data.startTime.split(':').map(Number);
     startDateTime.setHours(startHours, startMinutes);
@@ -123,7 +130,7 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
 
     const newEvent: Omit<AcademicEvent, 'id'> = {
       title: data.title,
-      category: data.category,
+      category: data.category, // Category name
       subType: data.subType || undefined,
       subjectId: data.subjectId === NO_SUBJECT_VALUE || !data.subjectId ? undefined : data.subjectId,
       start: startDateTime,
@@ -137,9 +144,9 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
       title: "Event Added",
       description: `${data.title} has been successfully added to the calendar.`,
     });
-    form.reset({ // Reset with default values explicitly
+    form.reset({ 
         title: "",
-        category: undefined, // Or your default category
+        category: NO_CATEGORY_VALUE,
         subType: "",
         subjectId: NO_SUBJECT_VALUE,
         startDate: undefined,
@@ -157,7 +164,7 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
     <Dialog open={isOpen} onOpenChange={(open) => {
       if (!open) {
         form.reset({
-            title: "", category: undefined, subType: "", subjectId: NO_SUBJECT_VALUE,
+            title: "", category: NO_CATEGORY_VALUE, subType: "", subjectId: NO_SUBJECT_VALUE,
             startDate: undefined, startTime: "09:00", endDate: undefined, endTime: "10:00",
             location: "", faculty: "", description: ""
         });
@@ -194,14 +201,15 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel><Layers className="inline w-4 h-4 mr-1" />Category</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value || NO_CATEGORY_VALUE} defaultValue={field.value || NO_CATEGORY_VALUE}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select a category" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {eventCategories.map(category => (
+                            <SelectItem value={NO_CATEGORY_VALUE} disabled={categoriesFromDB.length > 0}>Select a category</SelectItem>
+                            {categoriesFromDB.map(category => (
                               <SelectItem key={category.id} value={category.name}>
                                 <span className="flex items-center">
                                   <span className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: category.color }} />
@@ -209,6 +217,7 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
                                 </span>
                               </SelectItem>
                             ))}
+                            {categoriesFromDB.length === 0 && <SelectItem value="no-cats-db" disabled>No categories configured</SelectItem>}
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -226,7 +235,7 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
                             onValueChange={field.onChange} 
                             value={field.value || ""} 
                             defaultValue={field.value || ""}
-                            disabled={availableSubTypes.length === 0}
+                            disabled={availableSubTypes.length === 0 || selectedCategoryName === NO_CATEGORY_VALUE}
                         >
                         <FormControl>
                             <SelectTrigger>
@@ -241,8 +250,8 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
                             ))}
                         </SelectContent>
                         </Select>
-                        {availableSubTypes.length === 0 && selectedCategoryName && <FormDescription className="text-xs">No sub-types for selected category.</FormDescription>}
-                        {!selectedCategoryName && <FormDescription className="text-xs">Select a category first.</FormDescription>}
+                        { (selectedCategoryName && selectedCategoryName !== NO_CATEGORY_VALUE && availableSubTypes.length === 0) && <FormDescription className="text-xs">No sub-types for selected category.</FormDescription>}
+                        {(!selectedCategoryName || selectedCategoryName === NO_CATEGORY_VALUE) && <FormDescription className="text-xs">Select a category first.</FormDescription>}
                         <FormMessage />
                     </FormItem>
                     )}
@@ -271,11 +280,11 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
                                </span>
                             </SelectItem>
                           ))}
-                          {subjectsFromDB.length === 0 && <SelectItem value="no-subjects" disabled>No subjects configured in database</SelectItem>}
+                          {subjectsFromDB.length === 0 && <SelectItem value="no-subjects" disabled>No subjects configured</SelectItem>}
                         </SelectContent>
                       </Select>
                       <FormMessage />
-                      {subjectsFromDB.length === 0 && <FormDescription className="text-xs">No subjects found in the database. Add them via the admin panel.</FormDescription>}
+                      {subjectsFromDB.length === 0 && <FormDescription className="text-xs">No subjects found. Add them via admin panel.</FormDescription>}
                     </FormItem>
                   )}
                 />

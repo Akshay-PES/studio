@@ -4,7 +4,7 @@
 import * as React from 'react';
 import { collection, getDocs, query, orderBy, DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import { CalendarIcon, Palette, Tag, Layers, Filter, ListFilter, ChevronsUpDown } from 'lucide-react'; // Added ChevronsUpDown
+import { CalendarIcon, Palette, Tag, Layers, Filter, ListFilter, ChevronsUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -13,8 +13,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import type { EventCategoryName, Subject } from '@/lib/types';
-import { eventCategories } from '@/data/mock-data';
+import type { Subject, EventCategory } from '@/lib/types';
+// import { eventCategories as staticEventCategories } from '@/data/mock-data'; // Replaced
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import {
@@ -29,7 +29,9 @@ import { useToast } from '@/hooks/use-toast';
 export default function SidebarFilters() {
   const { filters, setFilters, colorMode, setColorMode } = useFilters();
   const [subjectsDB, setSubjectsDB] = React.useState<Subject[]>([]);
+  const [eventCategoriesDB, setEventCategoriesDB] = React.useState<EventCategory[]>([]);
   const [isLoadingSubjects, setIsLoadingSubjects] = React.useState(true);
+  const [isLoadingCategories, setIsLoadingCategories] = React.useState(true);
   const { toast } = useToast();
 
   React.useEffect(() => {
@@ -41,12 +43,7 @@ export default function SidebarFilters() {
         const querySnapshot = await getDocs(q);
         const fetchedSubjects: Subject[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
           const data = doc.data();
-          return {
-            id: doc.id,
-            name: data.name,
-            category: data.category,
-            color: data.color,
-          };
+          return { id: doc.id, name: data.name, color: data.color };
         });
         setSubjectsDB(fetchedSubjects);
       } catch (error) {
@@ -59,13 +56,37 @@ export default function SidebarFilters() {
     fetchSubjects();
   }, [toast]);
 
-  const handleCategoryChange = (categoryName: EventCategoryName, checked: boolean) => {
+  React.useEffect(() => {
+    const fetchEventCategories = async () => {
+      setIsLoadingCategories(true);
+      try {
+        const categoriesCollection = collection(db, "eventCategories");
+        const q = query(categoriesCollection, orderBy("name", "asc"));
+        const querySnapshot = await getDocs(q);
+        const fetchedCategories: EventCategory[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
+          const data = doc.data();
+          return { id: doc.id, name: data.name, color: data.color, subTypes: data.subTypes || [] };
+        });
+        setEventCategoriesDB(fetchedCategories);
+      } catch (error) {
+        console.error("Error fetching event categories for filters:", error);
+        toast({ variant: "destructive", title: "Error Fetching Categories for Filters" });
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+    fetchEventCategories();
+  }, [toast]);
+
+
+  // Category filter uses category names
+  const handleCategoryChange = (categoryName: string, checked: boolean) => {
     setFilters(prev => ({
       ...prev,
       categories: checked
         ? [...prev.categories, categoryName]
-        : prev.categories.filter(c => c !== categoryName),
-      subTypes: [], // Reset subTypes when categories change
+        : prev.categories.filter(cName => cName !== categoryName),
+      subTypes: [], 
     }));
   };
 
@@ -103,13 +124,13 @@ export default function SidebarFilters() {
   };
 
   const availableSubTypes = React.useMemo(() => {
-    if (filters.categories.length === 0) return [];
-    const allSelectedSubTypes = eventCategories
-      .filter(category => filters.categories.includes(category.name))
+    if (filters.categories.length === 0 || eventCategoriesDB.length === 0) return [];
+    const allSelectedSubTypes = eventCategoriesDB
+      .filter(category => filters.categories.includes(category.name)) // Filter by name
       .flatMap(category => category.subTypes || [])
       .filter(subType => subType);
     return [...new Set(allSelectedSubTypes)].sort();
-  }, [filters.categories]);
+  }, [filters.categories, eventCategoriesDB]);
 
   return (
     <div className="p-2 space-y-3 h-full flex flex-col text-sidebar-foreground bg-sidebar">
@@ -127,20 +148,25 @@ export default function SidebarFilters() {
               <div className="flex items-center gap-1.5"><Layers className="w-4 h-4" /> Categories</div>
             </AccordionTrigger>
             <AccordionContent className="pt-1 pb-1.5 space-y-1 px-2">
-              {eventCategories.map(category => (
-                <div key={category.id} className="flex items-center space-x-2 p-1 rounded-md hover:bg-sidebar-accent/70">
-                  <Checkbox
-                    id={`cat-${category.id}`}
-                    checked={filters.categories.includes(category.name)}
-                    onCheckedChange={(checked) => handleCategoryChange(category.name, !!checked)}
-                    className="border-sidebar-primary data-[state=checked]:bg-sidebar-primary data-[state=checked]:text-sidebar-primary-foreground"
-                  />
-                  <Label htmlFor={`cat-${category.id}`} className="text-xs font-normal cursor-pointer flex-grow">
-                    {category.name}
-                  </Label>
-                   <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: category.color }} />
-                </div>
-              ))}
+              {isLoadingCategories ? (<p className="text-xs text-muted-foreground/80 px-1 py-2">Loading categories...</p>)
+              : eventCategoriesDB.length === 0 ? (
+                <p className="text-xs text-muted-foreground/80 px-1 py-2">No categories found. Add them via Admin Panel.</p>
+              ) : (
+                eventCategoriesDB.map(category => (
+                  <div key={category.id} className="flex items-center space-x-2 p-1 rounded-md hover:bg-sidebar-accent/70">
+                    <Checkbox
+                      id={`cat-${category.id}`}
+                      checked={filters.categories.includes(category.name)} // Filter by name
+                      onCheckedChange={(checked) => handleCategoryChange(category.name, !!checked)}
+                      className="border-sidebar-primary data-[state=checked]:bg-sidebar-primary data-[state=checked]:text-sidebar-primary-foreground"
+                    />
+                    <Label htmlFor={`cat-${category.id}`} className="text-xs font-normal cursor-pointer flex-grow">
+                      {category.name}
+                    </Label>
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: category.color }} />
+                  </div>
+                ))
+              )}
             </AccordionContent>
           </AccordionItem>
 
@@ -178,7 +204,7 @@ export default function SidebarFilters() {
             <AccordionContent className="pt-1 pb-1.5 space-y-1 px-2">
               {isLoadingSubjects ? (<p className="text-xs text-muted-foreground/80 px-1 py-2">Loading subjects...</p>) 
               : subjectsDB.length === 0 ? (
-                <p className="text-xs text-muted-foreground/80 px-1 py-2">No subjects found in database. Add them via Admin Panel.</p>
+                <p className="text-xs text-muted-foreground/80 px-1 py-2">No subjects found. Add them via Admin Panel.</p>
               ) : (
                 subjectsDB.map(subject => (
                   <div key={subject.id} className="flex items-center space-x-2 p-1 rounded-md hover:bg-sidebar-accent/70">

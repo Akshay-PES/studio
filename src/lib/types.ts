@@ -1,36 +1,21 @@
 
-export type EventCategoryName = "Experiential Learning" | "Quality Control" | "Placement" | "Academics" | "Others";
-
-// Explicit array for Zod enum validation
-export const validCategoryNames: [EventCategoryName, ...EventCategoryName[]] = [
-  "Academics",
-  "Experiential Learning",
-  "Placement",
-  "Quality Control",
-  "Others",
-];
-
 export interface EventCategory {
-  id: string;
-  name: EventCategoryName;
+  id: string; // Firestore document ID
+  name: string; // User-defined category name
   color: string; // Hex color code
-  subTypes?: string[];
+  subTypes?: string[]; // Array of sub-type names
 }
 
 export interface Subject {
   id: string; // Firestore document ID
   name: string;
   color: string; // Hex color code
-  // Optional fields remain, can be added to forms later if needed
-  faculty?: string;
-  semester?: string;
-  courseCode?: string;
 }
 
 export interface AcademicEvent {
   id: string;
   title: string;
-  category: EventCategoryName;
+  category: string; // Stores the NAME of the category
   subType?: string;
   subjectId?: string; // Reference to Subject id
   start: Date;
@@ -52,11 +37,10 @@ export interface User {
 export type UserRole = "student" | "faculty" | "admin" | "placement_coordinator" | "guest";
 
 export interface CalendarFilters {
-  categories: EventCategoryName[];
+  categories: string[]; // Array of category names
   subjects: string[]; // Array of Subject IDs
   subTypes: string[]; // Array of selected sub-types
   dateRange?: { start?: Date; end?: Date };
 }
 
 export type ColorCodingMode = "category" | "subject";
-

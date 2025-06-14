@@ -2,7 +2,7 @@
 "use client";
 
 import type { Dispatch, SetStateAction } from 'react';
-import type { AcademicEvent, CalendarFilters, ColorCodingMode, Subject } from '@/lib/types';
+import type { AcademicEvent, CalendarFilters, ColorCodingMode, Subject, EventCategory } from '@/lib/types';
 import EventCard from './event-card';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react'; 
@@ -23,7 +23,8 @@ import React from 'react';
 
 interface CalendarViewProps {
   allEvents: AcademicEvent[];
-  allSubjects: Subject[]; // Pass all subjects for lookup
+  allSubjects: Subject[];
+  allCategories: EventCategory[]; // Pass all categories
   filters: CalendarFilters;
   colorMode: ColorCodingMode;
   setSelectedEvent: Dispatch<SetStateAction<AcademicEvent | null>>;
@@ -33,6 +34,7 @@ interface CalendarViewProps {
 export default function CalendarView({
   allEvents,
   allSubjects,
+  allCategories, // Receive categories
   filters,
   colorMode,
   setSelectedEvent,
@@ -50,6 +52,7 @@ export default function CalendarView({
       const eventStart = event.start;
       const eventEnd = event.end;
 
+      // Filter by category name
       if (filters.categories.length > 0 && !filters.categories.includes(event.category)) {
         return false;
       }
@@ -74,7 +77,7 @@ export default function CalendarView({
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   const startDate = startOfWeek(monthStart);
-  const endDate = endOfWeek(monthEnd, { weekStartsOn: 0 }); // Ensure week starts on Sunday
+  const endDate = endOfWeek(monthEnd, { weekStartsOn: 0 }); 
 
   const days = eachDayOfInterval({ start: startDate, end: endDate });
   const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -115,7 +118,7 @@ export default function CalendarView({
             </div>
           ))}
         </div>
-        <div className="grid grid-cols-7 grid-rows-6 flex-grow"> {/* Ensure 6 rows for calendar grid */}
+        <div className="grid grid-cols-7 grid-rows-6 flex-grow">
           {days.map(day => {
             const eventsForDay = filteredEvents.filter(event => isSameDay(event.start, day));
             return (
@@ -136,7 +139,8 @@ export default function CalendarView({
                     <EventCard 
                         key={event.id} 
                         event={event} 
-                        allSubjects={allSubjects} // Pass subjects
+                        allSubjects={allSubjects}
+                        allCategories={allCategories} // Pass categories
                         colorMode={colorMode} 
                         onClick={() => handleEventClick(event)} 
                     />

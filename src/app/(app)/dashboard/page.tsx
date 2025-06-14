@@ -7,16 +7,18 @@ import { db } from '@/lib/firebase';
 
 import CalendarView from '@/components/calendar/calendar-view';
 import EventDetailDialog from '@/components/calendar/event-detail-dialog';
-import type { AcademicEvent, Subject } from '@/lib/types';
+import type { AcademicEvent, Subject, EventCategory } from '@/lib/types';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 import { useFilters } from '@/contexts/FilterContext';
 
 export default function DashboardPage() {
   const [events, setEvents] = useState<AcademicEvent[]>([]);
-  const [subjects, setSubjects] = useState<Subject[]>([]); // State for subjects
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [eventCategories, setEventCategories] = useState<EventCategory[]>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
   const [isLoadingSubjects, setIsLoadingSubjects] = useState(true);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const { filters, colorMode } = useFilters();
   const [selectedEvent, setSelectedEvent] = useState<AcademicEvent | null>(null);
   const [showEventDetail, setShowEventDetail] = useState(false);
@@ -34,7 +36,7 @@ export default function DashboardPage() {
         return {
           id: doc.id,
           title: data.title,
-          category: data.category,
+          category: data.category, // Category name
           subType: data.subType,
           subjectId: data.subjectId,
           start: (data.start as Timestamp).toDate(), 
@@ -69,7 +71,6 @@ export default function DashboardPage() {
         return {
           id: doc.id,
           name: data.name,
-          category: data.category,
           color: data.color,
         };
       });
@@ -86,10 +87,39 @@ export default function DashboardPage() {
     }
   }, [toast]);
 
+  const fetchEventCategories = useCallback(async () => {
+    setIsLoadingCategories(true);
+    try {
+      const categoriesCollection = collection(db, "eventCategories");
+      const q = query(categoriesCollection, orderBy("name", "asc"));
+      const querySnapshot = await getDocs(q);
+      const fetchedCategories: EventCategory[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          name: data.name,
+          color: data.color,
+          subTypes: data.subTypes || [],
+        };
+      });
+      setEventCategories(fetchedCategories);
+    } catch (error) {
+      console.error("Error fetching event categories from Firestore:", error);
+      toast({
+        variant: "destructive",
+        title: "Error Fetching Categories",
+        description: "Could not load event categories. Please try again later.",
+      });
+    } finally {
+      setIsLoadingCategories(false);
+    }
+  }, [toast]);
+
   useEffect(() => {
     fetchEvents();
     fetchSubjects();
-  }, [fetchEvents, fetchSubjects]);
+    fetchEventCategories();
+  }, [fetchEvents, fetchSubjects, fetchEventCategories]);
 
 
   useEffect(() => {
@@ -98,7 +128,7 @@ export default function DashboardPage() {
     }
   }, [selectedEvent]);
   
-  const isLoading = isLoadingEvents || isLoadingSubjects;
+  const isLoading = isLoadingEvents || isLoadingSubjects || isLoadingCategories;
 
   if (isLoading && !isMobile) { 
     return (
@@ -118,7 +148,8 @@ export default function DashboardPage() {
         )}
         <CalendarView
           allEvents={events}
-          allSubjects={subjects} // Pass fetched subjects
+          allSubjects={subjects}
+          allCategories={eventCategories} // Pass fetched categories
           filters={filters}
           colorMode={colorMode}
           setSelectedEvent={setSelectedEvent}
@@ -129,7 +160,8 @@ export default function DashboardPage() {
       {selectedEvent && (
         <EventDetailDialog
           event={selectedEvent}
-          allSubjects={subjects} // Pass fetched subjects
+          allSubjects={subjects}
+          allCategories={eventCategories} // Pass fetched categories
           isOpen={showEventDetail}
           onClose={() => {
             setShowEventDetail(false);

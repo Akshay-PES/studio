@@ -1,8 +1,8 @@
 
 "use client";
 
-import type { AcademicEvent, ColorCodingMode, Subject } from '@/lib/types';
-import { getCategoryByName, getSubjectById } from '@/data/mock-data';
+import type { AcademicEvent, ColorCodingMode, Subject, EventCategory } from '@/lib/types';
+import { getCategoryByName, getSubjectById } from '@/data/mock-data'; // getCategoryByName will be used with dynamic list
 import { Card, CardContent } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
@@ -11,14 +11,15 @@ import { format } from 'date-fns';
 
 interface EventCardProps {
   event: AcademicEvent;
-  allSubjects: Subject[]; // Receive all subjects
+  allSubjects: Subject[]; 
+  allCategories: EventCategory[]; // Receive all categories
   colorMode: ColorCodingMode;
   onClick: () => void;
 }
 
-export default function EventCard({ event, allSubjects, colorMode, onClick }: EventCardProps) {
-  const category = getCategoryByName(event.category);
-  // Use the passed allSubjects list for lookup
+export default function EventCard({ event, allSubjects, allCategories, colorMode, onClick }: EventCardProps) {
+  // Use the passed allCategories list for lookup by name
+  const category = getCategoryByName(event.category, allCategories);
   const subject = event.subjectId ? getSubjectById(event.subjectId, allSubjects) : null;
 
   const displayColor = colorMode === 'subject' && subject ? subject.color : category?.color || '#808080';
@@ -49,7 +50,12 @@ export default function EventCard({ event, allSubjects, colorMode, onClick }: Ev
             )}
             {!subject && category && (
                <Badge variant="outline" className="text-xs py-0.5 px-1.5" style={{borderColor: category.color, color: category.color}}>
-                {category.name}
+                {category.name} {/* Display category name */}
+              </Badge>
+            )}
+             {!subject && !category && event.category && ( // Fallback if category not in DB but name exists on event
+               <Badge variant="outline" className="text-xs py-0.5 px-1.5">
+                {event.category}
               </Badge>
             )}
           </CardContent>
@@ -59,6 +65,7 @@ export default function EventCard({ event, allSubjects, colorMode, onClick }: Ev
         <p className="font-semibold">{event.title}</p>
         <p className="text-sm text-muted-foreground">{eventTime}</p>
         {category && <p className="text-xs">Category: {category.name}{event.subType ? ` (${event.subType})` : ''}</p>}
+        {!category && event.category && <p className="text-xs">Category: {event.category}{event.subType ? ` (${event.subType})` : ''}</p>}
         {subject && <p className="text-xs">Subject: {subject.name}</p>}
         {event.location && <p className="text-xs flex items-center"><MapPin className="w-3 h-3 mr-1" /> {event.location}</p>}
         {event.faculty && <p className="text-xs flex items-center"><User className="w-3 h-3 mr-1" /> {event.faculty}</p>}

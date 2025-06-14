@@ -1,8 +1,8 @@
 
 "use client";
 
-import type { AcademicEvent, Subject } from '@/lib/types';
-import { getCategoryByName, getSubjectById } from '@/data/mock-data';
+import type { AcademicEvent, Subject, EventCategory } from '@/lib/types';
+import { getCategoryByName, getSubjectById } from '@/data/mock-data'; // Helpers updated to take dynamic lists
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -12,15 +12,17 @@ import { format } from 'date-fns';
 
 interface EventDetailDialogProps {
   event: AcademicEvent | null;
-  allSubjects: Subject[]; // Receive all subjects
+  allSubjects: Subject[]; 
+  allCategories: EventCategory[]; // Receive all categories
   isOpen: boolean;
   onClose: () => void;
 }
 
-export default function EventDetailDialog({ event, allSubjects, isOpen, onClose }: EventDetailDialogProps) {
+export default function EventDetailDialog({ event, allSubjects, allCategories, isOpen, onClose }: EventDetailDialogProps) {
   if (!event) return null;
 
-  const category = getCategoryByName(event.category);
+  // Use the passed allCategories list for lookup by name
+  const category = getCategoryByName(event.category, allCategories);
   const subject = event.subjectId ? getSubjectById(event.subjectId, allSubjects) : null;
 
   return (
@@ -31,7 +33,13 @@ export default function EventDetailDialog({ event, allSubjects, isOpen, onClose 
           {category && (
             <DialogDescription className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full" style={{ backgroundColor: category.color }} />
-              {category.name}
+              {category.name} {/* Display category name */}
+              {event.subType && ` - ${event.subType}`}
+            </DialogDescription>
+          )}
+          {!category && event.category && ( // Fallback if category not in DB but name exists
+             <DialogDescription className="flex items-center gap-2">
+              {event.category}
               {event.subType && ` - ${event.subType}`}
             </DialogDescription>
           )}
@@ -45,8 +53,7 @@ export default function EventDetailDialog({ event, allSubjects, isOpen, onClose 
                   <BookOpen className="w-4 h-4 text-accent-foreground" /> Subject Details
                 </h4>
                 <p className="text-sm"><strong className="text-accent-foreground">{subject.name}</strong></p>
-                {subject.courseCode && <p className="text-xs text-muted-foreground">Code: {subject.courseCode}</p>}
-                {subject.semester && <p className="text-xs text-muted-foreground">Semester: {subject.semester}</p>}
+                {/* Removed subject.courseCode and subject.semester as they are not in base Subject type */}
                  <div className="mt-1">
                     <Badge variant="outline" style={{ borderColor: subject.color, color: subject.color, backgroundColor: `${subject.color}1A` }}>
                       {subject.name}
