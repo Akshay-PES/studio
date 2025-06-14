@@ -18,14 +18,14 @@ import {
   isSameMonth,
   isSameDay,
   isToday as fnsIsToday,
-  startOfDay, // Added import
+  startOfDay,
 } from 'date-fns';
 import React from 'react';
 
 interface CalendarViewProps {
   allEvents: AcademicEvent[];
   allSubjects: Subject[];
-  allCategories: EventCategory[]; // Pass all categories
+  allCategories: EventCategory[];
   filters: CalendarFilters;
   colorMode: ColorCodingMode;
   setSelectedEvent: Dispatch<SetStateAction<AcademicEvent | null>>;
@@ -35,7 +35,7 @@ interface CalendarViewProps {
 export default function CalendarView({
   allEvents,
   allSubjects,
-  allCategories, // Receive categories
+  allCategories,
   filters,
   colorMode,
   setSelectedEvent,
@@ -53,7 +53,6 @@ export default function CalendarView({
       const eventStart = event.start;
       const eventEnd = event.end;
 
-      // Filter by category name
       if (filters.categories.length > 0 && !filters.categories.includes(event.category)) {
         return false;
       }
@@ -119,7 +118,7 @@ export default function CalendarView({
             </div>
           ))}
         </div>
-        <div className="grid grid-cols-7 grid-rows-6 flex-grow">
+        <div className="grid grid-cols-7 grid-rows-6 flex-grow min-h-0"> {/* Added min-h-0 here */}
           {days.map(day => {
             const eventsForDay = filteredEvents.filter(event => {
               const eventStartDateOnly = startOfDay(event.start);
@@ -146,7 +145,7 @@ export default function CalendarView({
                         key={event.id} 
                         event={event} 
                         allSubjects={allSubjects}
-                        allCategories={allCategories} // Pass categories
+                        allCategories={allCategories}
                         colorMode={colorMode} 
                         onClick={() => handleEventClick(event)} 
                     />
