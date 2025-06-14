@@ -56,7 +56,7 @@ const eventFormSchema = z.object({
   startDate: z.date({ required_error: "Start date is required." }),
   startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, { message: "Invalid time format (HH:MM)." }),
   endDate: z.date({ required_error: "End date is required." }),
-  endTime: z.string().regex(/^([01]\d|2[0-5]\d)$/, { message: "Invalid time format (HH:MM)." }),
+  endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, { message: "Invalid time format (HH:MM)." }), // Corrected regex
   location: z.string().optional(),
   faculty: z.string().optional(),
   description: z.string().optional(),
