@@ -64,7 +64,11 @@ export default function CalendarView({
           return false;
         }
       }
-      if (filters.subjects.length > 0 && (!event.subjectId || !filters.subjects.includes(event.subjectId))) {
+      // Updated subject filter logic:
+      // If subject filters are active, and the event has a subjectId, 
+      // then it must be in the selected subjects.
+      // Events without a subjectId are NOT filtered out by subject filters.
+      if (filters.subjects.length > 0 && event.subjectId && !filters.subjects.includes(event.subjectId)) {
         return false;
       }
       if (filters.dateRange?.start && eventEnd < filters.dateRange.start) {
@@ -113,7 +117,7 @@ export default function CalendarView({
         </div>
       </div>
       
-      <div className="flex-grow overflow-hidden border rounded-lg shadow-sm bg-card flex flex-col">
+      <div className="flex-grow overflow-hidden border rounded-lg shadow-sm bg-card flex flex-col min-h-0">
         <div className="grid grid-cols-7 sticky top-0 bg-card z-10 border-b">
           {dayNames.map(dayName => (
             <div key={dayName} className="p-2 text-center font-medium text-sm text-muted-foreground">

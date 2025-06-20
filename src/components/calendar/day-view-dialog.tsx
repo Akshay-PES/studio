@@ -34,14 +34,14 @@ export default function DayViewDialog({
   
   const eventsForSelectedDate = allEvents
     .filter(event => {
-      // Date filtering (same as before)
+      // Date filtering (ensure event is on selectedDate)
       const eventStartDateOnly = startOfDay(event.start);
       const eventEndDateOnly = startOfDay(event.end);
       const currentDayOnly = startOfDay(selectedDate);
       const isEventOnSelectedDate = currentDayOnly >= eventStartDateOnly && currentDayOnly <= eventEndDateOnly;
       if (!isEventOnSelectedDate) return false;
 
-      // Apply additional filters (categories, subjects, sub-types)
+      // Apply additional filters (categories, sub-types)
       if (filters.categories.length > 0 && !filters.categories.includes(event.category)) {
         return false;
       }
@@ -50,7 +50,11 @@ export default function DayViewDialog({
           return false;
         }
       }
-      if (filters.subjects.length > 0 && (!event.subjectId || !filters.subjects.includes(event.subjectId))) {
+      // Updated subject filter logic:
+      // If subject filters are active, and the event has a subjectId, 
+      // then it must be in the selected subjects.
+      // Events without a subjectId are NOT filtered out by subject filters.
+      if (filters.subjects.length > 0 && event.subjectId && !filters.subjects.includes(event.subjectId)) {
         return false;
       }
       // Date range filter from sidebar filters is not strictly necessary here as we are already focused on a single day.
@@ -144,3 +148,4 @@ export default function DayViewDialog({
     </Dialog>
   );
 }
+
