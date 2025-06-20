@@ -7,6 +7,7 @@ import { db } from '@/lib/firebase';
 
 import CalendarView from '@/components/calendar/calendar-view';
 import EventDetailDialog from '@/components/calendar/event-detail-dialog';
+import DayViewDialog from '@/components/calendar/day-view-dialog'; // Import DayViewDialog
 import type { AcademicEvent, Subject, EventCategory } from '@/lib/types';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
@@ -22,6 +23,11 @@ export default function DashboardPage() {
   const { filters, colorMode } = useFilters();
   const [selectedEvent, setSelectedEvent] = useState<AcademicEvent | null>(null);
   const [showEventDetail, setShowEventDetail] = useState(false);
+
+  // State for Day View Dialog
+  const [selectedDateForDayView, setSelectedDateForDayView] = useState<Date | null>(null);
+  const [showDayViewDialog, setShowDayViewDialog] = useState(false);
+
   const isMobile = useIsMobile();
   const { toast } = useToast();
 
@@ -130,6 +136,23 @@ export default function DashboardPage() {
   
   const isLoading = isLoadingEvents || isLoadingSubjects || isLoadingCategories;
 
+  const handleOpenDayView = (date: Date) => {
+    setSelectedDateForDayView(date);
+    setShowDayViewDialog(true);
+  };
+
+  const handleCloseDayView = () => {
+    setShowDayViewDialog(false);
+    setTimeout(() => setSelectedDateForDayView(null), 300); // Delay to allow for fade-out animation
+  };
+
+  const handleEventClickFromDayView = (event: AcademicEvent) => {
+    setSelectedEvent(event);
+    setShowEventDetail(true);
+    // Optionally close DayViewDialog when an event detail is opened
+    // setShowDayViewDialog(false); 
+  };
+
   if (isLoading && !isMobile) { 
     return (
       <div className="flex flex-1 h-full items-center justify-center">
@@ -149,11 +172,12 @@ export default function DashboardPage() {
         <CalendarView
           allEvents={events}
           allSubjects={subjects}
-          allCategories={eventCategories} // Pass fetched categories
+          allCategories={eventCategories} 
           filters={filters}
           colorMode={colorMode}
           setSelectedEvent={setSelectedEvent}
           setShowEventDetail={setShowEventDetail}
+          onDateClick={handleOpenDayView} // Pass callback to open day view
         />
       </div>
 
@@ -161,7 +185,7 @@ export default function DashboardPage() {
         <EventDetailDialog
           event={selectedEvent}
           allSubjects={subjects}
-          allCategories={eventCategories} // Pass fetched categories
+          allCategories={eventCategories} 
           isOpen={showEventDetail}
           onClose={() => {
             setShowEventDetail(false);
@@ -169,6 +193,19 @@ export default function DashboardPage() {
           }}
         />
       )}
+
+      {selectedDateForDayView && (
+        <DayViewDialog
+          isOpen={showDayViewDialog}
+          onClose={handleCloseDayView}
+          selectedDate={selectedDateForDayView}
+          allEvents={events}
+          allSubjects={subjects}
+          allCategories={eventCategories}
+          onEventClick={handleEventClickFromDayView}
+        />
+      )}
     </div>
   );
 }
+

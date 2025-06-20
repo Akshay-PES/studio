@@ -21,6 +21,7 @@ import {
   startOfDay,
 } from 'date-fns';
 import React from 'react';
+import { cn } from '@/lib/utils';
 
 interface CalendarViewProps {
   allEvents: AcademicEvent[];
@@ -30,6 +31,7 @@ interface CalendarViewProps {
   colorMode: ColorCodingMode;
   setSelectedEvent: Dispatch<SetStateAction<AcademicEvent | null>>;
   setShowEventDetail: Dispatch<SetStateAction<boolean>>;
+  onDateClick: (date: Date) => void; // Callback for when a date number is clicked
 }
 
 export default function CalendarView({
@@ -40,6 +42,7 @@ export default function CalendarView({
   colorMode,
   setSelectedEvent,
   setShowEventDetail,
+  onDateClick, 
 }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = React.useState(new Date());
 
@@ -118,7 +121,7 @@ export default function CalendarView({
             </div>
           ))}
         </div>
-        <div className="grid grid-cols-7 grid-rows-6 flex-grow min-h-0"> {/* Added min-h-0 here */}
+        <div className="grid grid-cols-7 grid-rows-6 flex-grow min-h-0">
           {days.map(day => {
             const eventsForDay = filteredEvents.filter(event => {
               const eventStartDateOnly = startOfDay(event.start);
@@ -129,13 +132,23 @@ export default function CalendarView({
             return (
               <div
                 key={day.toString()}
-                className={`p-1.5 border-b border-r text-sm overflow-hidden flex flex-col 
-                  ${!isSameMonth(day, currentDate) ? 'bg-muted/30' : 'bg-card'}
-                  ${fnsIsToday(day) ? 'border-primary border-2 relative' : ''}`}
+                className={cn(
+                  "p-1.5 border-b border-r text-sm overflow-hidden flex flex-col", 
+                  !isSameMonth(day, currentDate) ? 'bg-muted/30' : 'bg-card',
+                  fnsIsToday(day) ? 'border-primary border-2 relative' : ''
+                )}
               >
-                <span className={`block text-center mb-1 p-1 rounded-full w-7 h-7 flex items-center justify-center mx-auto shrink-0
-                  ${fnsIsToday(day) ? 'bg-primary text-primary-foreground font-bold' : isSameMonth(day, currentDate) ? 'text-foreground' : 'text-muted-foreground/70'}
-                  `}>
+                <span 
+                  className={cn(
+                    "block text-center mb-1 p-1 rounded-full w-7 h-7 flex items-center justify-center mx-auto shrink-0 cursor-pointer hover:bg-accent/50 transition-colors",
+                    fnsIsToday(day) ? 'bg-primary text-primary-foreground font-bold' : isSameMonth(day, currentDate) ? 'text-foreground' : 'text-muted-foreground/70'
+                  )}
+                  onClick={() => onDateClick(day)} // Trigger day view
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && onDateClick(day)}
+                  aria-label={`View events for ${format(day, 'PPP')}`}
+                >
                   {format(day, 'd')}
                 </span>
                 {fnsIsToday(day) && <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary" />}
