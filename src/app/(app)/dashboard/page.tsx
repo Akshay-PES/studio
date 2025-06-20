@@ -202,10 +202,10 @@ export default function DashboardPage() {
           allEvents={events}
           allSubjects={subjects}
           allCategories={eventCategories}
+          filters={filters} // Pass filters to DayViewDialog
           onEventClick={handleEventClickFromDayView}
         />
       )}
     </div>
   );
 }
-

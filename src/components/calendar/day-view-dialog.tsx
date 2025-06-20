@@ -1,7 +1,7 @@
 
 "use client";
 
-import type { AcademicEvent, Subject, EventCategory } from '@/lib/types';
+import type { AcademicEvent, Subject, EventCategory, CalendarFilters } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ interface DayViewDialogProps {
   allEvents: AcademicEvent[];
   allSubjects: Subject[];
   allCategories: EventCategory[];
+  filters: CalendarFilters; // Add filters prop
   onEventClick: (event: AcademicEvent) => void;
 }
 
@@ -27,15 +28,37 @@ export default function DayViewDialog({
   allEvents,
   allSubjects,
   allCategories,
+  filters, // Destructure filters
   onEventClick,
 }: DayViewDialogProps) {
   
   const eventsForSelectedDate = allEvents
     .filter(event => {
+      // Date filtering (same as before)
       const eventStartDateOnly = startOfDay(event.start);
       const eventEndDateOnly = startOfDay(event.end);
       const currentDayOnly = startOfDay(selectedDate);
-      return currentDayOnly >= eventStartDateOnly && currentDayOnly <= eventEndDateOnly;
+      const isEventOnSelectedDate = currentDayOnly >= eventStartDateOnly && currentDayOnly <= eventEndDateOnly;
+      if (!isEventOnSelectedDate) return false;
+
+      // Apply additional filters (categories, subjects, sub-types)
+      if (filters.categories.length > 0 && !filters.categories.includes(event.category)) {
+        return false;
+      }
+      if (filters.subTypes.length > 0) {
+        if (!event.subType || !filters.subTypes.includes(event.subType)) {
+          return false;
+        }
+      }
+      if (filters.subjects.length > 0 && (!event.subjectId || !filters.subjects.includes(event.subjectId))) {
+        return false;
+      }
+      // Date range filter from sidebar filters is not strictly necessary here as we are already focused on a single day.
+      // However, if needed, it could be added:
+      // if (filters.dateRange?.start && event.end < filters.dateRange.start) return false;
+      // if (filters.dateRange?.end && event.start > filters.dateRange.end) return false;
+      
+      return true;
     })
     .sort((a, b) => a.start.getTime() - b.start.getTime());
 
@@ -48,7 +71,7 @@ export default function DayViewDialog({
             Events for {format(selectedDate, 'EEEE, MMMM d, yyyy')}
           </DialogTitle>
           <DialogDescription>
-            All scheduled events for the selected day. Click on an event for more details.
+            All scheduled (and filtered) events for the selected day. Click on an event for more details.
           </DialogDescription>
         </DialogHeader>
         
@@ -110,7 +133,7 @@ export default function DayViewDialog({
           ) : (
             <div className="text-center py-8">
               <Info className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">No events scheduled for this day.</p>
+              <p className="text-muted-foreground">No events scheduled for this day based on current filters.</p>
             </div>
           )}
         </ScrollArea>
@@ -121,4 +144,3 @@ export default function DayViewDialog({
     </Dialog>
   );
 }
-
