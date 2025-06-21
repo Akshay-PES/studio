@@ -13,8 +13,6 @@ const departmentNames: { [key: string]: string } = {
   bcom: "BCom",
   law: "Law",
   psychology: "Psychology",
-  eng: "Engineering",
-  finearts: "Fine Arts",
 };
 
 export default function AdminLayout({
