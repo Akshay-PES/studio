@@ -11,6 +11,8 @@ const departments = [
   { name: "BCom", id: "bcom" },
   { name: "Law", id: "law" },
   { name: "Psychology", id: "psychology" },
+  { name: "Engineering", id: "eng" },
+  { name: "Fine Arts", id: "finearts" },
 ];
 
 export default function HomePage() {
