@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { format } from 'date-fns';
-import { CalendarIcon, Tag, Layers, Clock, MapPin, User as UserIcon, Info, BookOpen, ChevronsUpDown } from 'lucide-react';
+import { CalendarIcon, Tag, Layers, Clock, MapPin, User as UserIcon, Info, BookOpen, ChevronsUpDown, ListFilter } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -53,6 +53,7 @@ const eventFormSchema = z.object({
   category: z.string().min(1, { message: "Category is required."}), // Category name
   subType: z.string().optional(),
   subjectId: z.string().optional(),
+  semester: z.string().optional(),
   startDate: z.date({ required_error: "Start date is required." }),
   startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, { message: "Invalid time format (HH:MM)." }),
   endDate: z.date({ required_error: "End date is required." }),
@@ -91,7 +92,7 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
     resolver: zodResolver(eventFormSchema),
     defaultValues: {
       title: "",
-      category: NO_CATEGORY_VALUE, // Use NO_CATEGORY_VALUE or an empty string
+      category: NO_CATEGORY_VALUE,
       startTime: "09:00",
       endTime: "10:00",
       location: "",
@@ -99,6 +100,7 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
       description: "",
       subType: "",
       subjectId: NO_SUBJECT_VALUE,
+      semester: "",
     },
   });
 
@@ -133,6 +135,7 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
       category: data.category, // Category name
       subType: data.subType || undefined,
       subjectId: data.subjectId === NO_SUBJECT_VALUE || !data.subjectId ? undefined : data.subjectId,
+      semester: data.semester ? parseInt(data.semester, 10) : undefined,
       start: startDateTime,
       end: endDateTime,
       location: data.location,
@@ -149,6 +152,7 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
         category: NO_CATEGORY_VALUE,
         subType: "",
         subjectId: NO_SUBJECT_VALUE,
+        semester: "",
         startDate: undefined,
         startTime: "09:00",
         endDate: undefined,
@@ -164,7 +168,7 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
     <Dialog open={isOpen} onOpenChange={(open) => {
       if (!open) {
         form.reset({
-            title: "", category: NO_CATEGORY_VALUE, subType: "", subjectId: NO_SUBJECT_VALUE,
+            title: "", category: NO_CATEGORY_VALUE, subType: "", subjectId: NO_SUBJECT_VALUE, semester: "",
             startDate: undefined, startTime: "09:00", endDate: undefined, endTime: "10:00",
             location: "", faculty: "", description: ""
         });
@@ -288,6 +292,30 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
                     </FormItem>
                   )}
                 />
+
+                <FormField
+                    control={form.control}
+                    name="semester"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel><ListFilter className="inline w-4 h-4 mr-1" />Semester/Trimester (Optional)</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ""} defaultValue={field.value || ""}>
+                            <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a semester" />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                <SelectItem value="">None</SelectItem>
+                                {Array.from({ length: 8 }, (_, i) => i + 1).map(sem => (
+                                    <SelectItem key={sem} value={String(sem)}>{sem}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField

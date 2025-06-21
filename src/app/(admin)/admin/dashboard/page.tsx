@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import AddEventDialog from '@/components/calendar/add-event-dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Pencil, Trash2, PlusCircle, BookOpen, Layers } from 'lucide-react';
+import { Pencil, Trash2, PlusCircle, BookOpen, Layers, ListFilter } from 'lucide-react';
 import { format } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from '@/components/ui/label';
@@ -28,6 +28,7 @@ interface EditEventFormData {
   description?: string;
   subjectId?: string;
   subType?: string;
+  semester?: string;
 }
 
 interface AddSubjectFormData {
@@ -119,6 +120,7 @@ export default function AdminDashboardPage() {
           category: data.category,
           subType: data.subType,
           subjectId: data.subjectId,
+          semester: data.semester,
           start: (data.start as Timestamp).toDate(),
           end: (data.end as Timestamp).toDate(),
           location: data.location,
@@ -128,6 +130,8 @@ export default function AdminDashboardPage() {
           departmentId: data.departmentId,
         };
       });
+      // This is a temporary client-side sort to fix a missing index issue.
+      // For production, a composite index on [departmentId, start] is recommended.
       const sortedEvents = fetchedEvents.sort((a, b) => a.start.getTime() - b.start.getTime());
       setEvents(sortedEvents);
     } catch (error) {
@@ -143,14 +147,16 @@ export default function AdminDashboardPage() {
     setIsLoadingSubjects(true);
     try {
         const subjectsCollectionRef = collection(db, "subjects");
-        const q = query(subjectsCollectionRef, where("departmentId", "==", departmentId), orderBy("name", "asc"));
+        const q = query(subjectsCollectionRef, where("departmentId", "==", departmentId));
         const querySnapshot = await getDocs(q);
 
         const fetchedSubjects: Subject[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
             const data = doc.data();
             return { id: doc.id, name: data.name, color: data.color, departmentId: data.departmentId };
         });
-        setSubjectsDB(fetchedSubjects);
+        // This is a temporary client-side sort to fix a missing index issue.
+        const sortedSubjects = fetchedSubjects.sort((a,b) => a.name.localeCompare(b.name));
+        setSubjectsDB(sortedSubjects);
     } catch (error) {
         console.error("Error fetching subjects:", error);
         toast({ variant: "destructive", title: "Error Fetching Subjects", description: `Could not load subjects. ${(error as Error).message}` });
@@ -163,13 +169,15 @@ export default function AdminDashboardPage() {
     setIsLoadingCategories(true);
     try {
       const categoriesCollectionRef = collection(db, "eventCategories");
-      const q = query(categoriesCollectionRef, orderBy("name", "asc"));
+      const q = query(categoriesCollectionRef);
       const querySnapshot = await getDocs(q);
       const fetchedCategories: EventCategory[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
         const data = doc.data();
         return { id: doc.id, name: data.name, color: data.color, subTypes: data.subTypes || [] };
       });
-      setEventCategoriesDB(fetchedCategories);
+      // This is a temporary client-side sort to fix a missing index issue.
+      const sortedCategories = fetchedCategories.sort((a,b) => a.name.localeCompare(b.name));
+      setEventCategoriesDB(sortedCategories);
     } catch (error) {
       console.error("Error fetching event categories:", error);
       toast({ variant: "destructive", title: "Error Fetching Categories", description: `Could not load categories. ${(error as Error).message}` });
@@ -199,6 +207,7 @@ export default function AdminDashboardPage() {
         start: Timestamp.fromDate(newEventData.start),
         end: Timestamp.fromDate(newEventData.end),
         subjectId: newEventData.subjectId || null,
+        semester: newEventData.semester || null,
         category: newEventData.category || DEFAULT_EVENT_CATEGORY_ON_DELETE,
         subType: newEventData.subType || null,
       };
@@ -235,6 +244,7 @@ export default function AdminDashboardPage() {
         description: event.description || '',
         subjectId: event.subjectId || '',
         subType: event.subType || '',
+        semester: event.semester ? String(event.semester) : '',
     });
     setShowEditEventDialog(true);
   };
@@ -256,6 +266,10 @@ export default function AdminDashboardPage() {
     setEditEventFormData(prev => ({ ...prev, subType: newSubType }));
   };
 
+  const handleEditEventSemesterChange = (newSemester: string) => {
+    setEditEventFormData(prev => ({ ...prev, semester: newSemester }));
+  };
+  
   const handleUpdateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentEventToEdit || !departmentId) return;
@@ -269,6 +283,7 @@ export default function AdminDashboardPage() {
             location: editEventFormData.location,
             description: editEventFormData.description,
             subjectId: editEventFormData.subjectId || null,
+            semester: editEventFormData.semester ? parseInt(editEventFormData.semester, 10) : null,
             departmentId: departmentId, // Ensure departmentId is preserved/added
         };
         await updateDoc(doc(db, "events", currentEventToEdit.id), updatedEventData as { [x: string]: any });
@@ -563,6 +578,7 @@ export default function AdminDashboardPage() {
                           {categoryDetails && <span className="w-3 h-3 rounded-full mr-1.5 ml-1.5" style={{ backgroundColor: categoryDetails.color }} />}
                           {event.category} {event.subType && `(${event.subType})`}
                         </p>
+                        {event.semester && <p className="text-sm text-muted-foreground">Semester: {event.semester}</p>}
                         {event.location && <p className="text-sm text-muted-foreground">Location: {event.location}</p>}
                         {event.subjectId && subjectsDB.find(s => s.id === event.subjectId) &&
                           <p className="text-sm" style={{color: subjectsDB.find(s => s.id === event.subjectId)?.color || 'inherit'}}>
@@ -741,23 +757,37 @@ export default function AdminDashboardPage() {
                     {(!selectedEditEventCategoryDetails || !selectedEditEventCategoryDetails.subTypes || selectedEditEventCategoryDetails.subTypes.length === 0) && <p className="text-xs text-muted-foreground mt-1">No sub-types for this category.</p>}
                 </div>
               </div>
-              <div>
-                  <Label htmlFor="edit-event-subjectId">Subject (Optional)</Label>
-                  <Select value={editEventFormData.subjectId || NO_SUBJECT_VALUE} onValueChange={handleEditEventSubjectChange}>
-                      <SelectTrigger id="edit-event-subjectId"><SelectValue placeholder="Select a subject" /></SelectTrigger>
-                      <SelectContent>
-                          <SelectItem value={NO_SUBJECT_VALUE}>None</SelectItem>
-                          {subjectsDB.map(subject => (
-                              <SelectItem key={subject.id} value={subject.id}>
-                                  <span className="flex items-center">
-                                      <span className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: subject.color }} />
-                                      {subject.name}
-                                  </span>
-                              </SelectItem>
-                          ))}
-                          {subjectsDB.length === 0 && <SelectItem value="no-subjects" disabled>No subjects configured</SelectItem>}
-                      </SelectContent>
-                  </Select>
+              <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-event-subjectId">Subject (Optional)</Label>
+                    <Select value={editEventFormData.subjectId || NO_SUBJECT_VALUE} onValueChange={handleEditEventSubjectChange}>
+                        <SelectTrigger id="edit-event-subjectId"><SelectValue placeholder="Select a subject" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value={NO_SUBJECT_VALUE}>None</SelectItem>
+                            {subjectsDB.map(subject => (
+                                <SelectItem key={subject.id} value={subject.id}>
+                                    <span className="flex items-center">
+                                        <span className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: subject.color }} />
+                                        {subject.name}
+                                    </span>
+                                </SelectItem>
+                            ))}
+                            {subjectsDB.length === 0 && <SelectItem value="no-subjects" disabled>No subjects configured</SelectItem>}
+                        </SelectContent>
+                    </Select>
+                  </div>
+                   <div>
+                    <Label htmlFor="edit-event-semester">Semester/Trimester</Label>
+                    <Select value={editEventFormData.semester || ''} onValueChange={handleEditEventSemesterChange}>
+                        <SelectTrigger id="edit-event-semester"><SelectValue placeholder="Select semester" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="">None</SelectItem>
+                            {Array.from({ length: 8 }, (_, i) => i + 1).map(sem => (
+                                <SelectItem key={sem} value={String(sem)}>{sem}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                  </div>
               </div>
                <div>
                 <Label htmlFor="edit-event-start">Start Date & Time</Label>

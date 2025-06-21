@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { CalendarDays, Clock, MapPin, Layers, BookOpen, Info } from 'lucide-react';
+import { CalendarDays, Clock, MapPin, Layers, BookOpen, Info, ListFilter } from 'lucide-react';
 import { format, isSameDay, startOfDay } from 'date-fns';
 import { getCategoryByName, getSubjectById } from '@/data/mock-data';
 
@@ -41,7 +41,7 @@ export default function DayViewDialog({
       const isEventOnSelectedDate = currentDayOnly >= eventStartDateOnly && currentDayOnly <= eventEndDateOnly;
       if (!isEventOnSelectedDate) return false;
 
-      // Apply additional filters (categories, sub-types)
+      // Apply additional filters (categories, sub-types, subjects, semesters)
       if (filters.categories.length > 0 && !filters.categories.includes(event.category)) {
         return false;
       }
@@ -50,17 +50,12 @@ export default function DayViewDialog({
           return false;
         }
       }
-      // Updated subject filter logic:
-      // If subject filters are active, and the event has a subjectId, 
-      // then it must be in the selected subjects.
-      // Events without a subjectId are NOT filtered out by subject filters.
       if (filters.subjects.length > 0 && event.subjectId && !filters.subjects.includes(event.subjectId)) {
         return false;
       }
-      // Date range filter from sidebar filters is not strictly necessary here as we are already focused on a single day.
-      // However, if needed, it could be added:
-      // if (filters.dateRange?.start && event.end < filters.dateRange.start) return false;
-      // if (filters.dateRange?.end && event.start > filters.dateRange.end) return false;
+      if (filters.semesters.length > 0 && (!event.semester || !filters.semesters.includes(event.semester))) {
+        return false;
+      }
       
       return true;
     })
@@ -121,6 +116,12 @@ export default function DayViewDialog({
                             {subject.name}
                           </div>
                         )}
+                        {event.semester && (
+                          <div className="flex items-center">
+                            <ListFilter className="w-3.5 h-3.5 mr-1.5" />
+                            Semester: {event.semester}
+                          </div>
+                        )}
                         {event.location && (
                           <div className="flex items-center">
                             <MapPin className="w-3.5 h-3.5 mr-1.5" />
@@ -148,4 +149,3 @@ export default function DayViewDialog({
     </Dialog>
   );
 }
-

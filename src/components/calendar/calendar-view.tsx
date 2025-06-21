@@ -64,11 +64,10 @@ export default function CalendarView({
           return false;
         }
       }
-      // Updated subject filter logic:
-      // If subject filters are active, and the event has a subjectId, 
-      // then it must be in the selected subjects.
-      // Events without a subjectId are NOT filtered out by subject filters.
       if (filters.subjects.length > 0 && event.subjectId && !filters.subjects.includes(event.subjectId)) {
+        return false;
+      }
+      if (filters.semesters.length > 0 && (!event.semester || !filters.semesters.includes(event.semester))) {
         return false;
       }
       if (filters.dateRange?.start && eventEnd < filters.dateRange.start) {
@@ -188,4 +187,3 @@ export default function CalendarView({
     </div>
   );
 }
-

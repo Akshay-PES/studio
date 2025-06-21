@@ -108,6 +108,15 @@ export default function SidebarFilters() {
     }));
   };
   
+  const handleSemesterChange = (semester: number, checked: boolean) => {
+    setFilters(prev => ({
+      ...prev,
+      semesters: checked
+        ? [...prev.semesters, semester]
+        : prev.semesters.filter(s => s !== semester),
+    }));
+  };
+
   const handleDateChange = (field: 'start' | 'end', date?: Date) => {
     setFilters(prev => ({
       ...prev,
@@ -119,7 +128,7 @@ export default function SidebarFilters() {
   };
 
   const clearFilters = () => {
-    setFilters({ categories: [], subjects: [], subTypes: [], dateRange: {} });
+    setFilters({ categories: [], subjects: [], subTypes: [], semesters: [], dateRange: {} });
     setColorMode('category');
   };
 
@@ -142,7 +151,7 @@ export default function SidebarFilters() {
       </div>
       
       <ScrollArea className="flex-grow pr-1">
-        <Accordion type="multiple" defaultValue={['categories', 'subjects', 'sub-types', 'date-range', 'display']} className="w-full">
+        <Accordion type="multiple" defaultValue={['categories', 'subjects', 'sub-types', 'semesters', 'date-range', 'display']} className="w-full">
           <AccordionItem value="categories" className="border-b-sidebar-border">
             <AccordionTrigger className="text-sm font-medium hover:no-underline px-2 py-2.5">
               <div className="flex items-center gap-1.5"><Layers className="w-4 h-4" /> Categories</div>
@@ -221,6 +230,27 @@ export default function SidebarFilters() {
                   </div>
                 ))
               )}
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="semesters" className="border-b-sidebar-border">
+            <AccordionTrigger className="text-sm font-medium hover:no-underline px-2 py-2.5">
+              <div className="flex items-center gap-1.5"><ListFilter className="w-4 h-4" /> Semester/Trimester</div>
+            </AccordionTrigger>
+            <AccordionContent className="pt-1 pb-1.5 space-y-1 px-2">
+              {Array.from({ length: 8 }, (_, i) => i + 1).map(sem => (
+                <div key={sem} className="flex items-center space-x-2 p-1 rounded-md hover:bg-sidebar-accent/70">
+                  <Checkbox
+                    id={`sem-${sem}`}
+                    checked={filters.semesters.includes(sem)}
+                    onCheckedChange={(checked) => handleSemesterChange(sem, !!checked)}
+                    className="border-sidebar-primary data-[state=checked]:bg-sidebar-primary data-[state=checked]:text-sidebar-primary-foreground"
+                  />
+                  <Label htmlFor={`sem-${sem}`} className="text-xs font-normal cursor-pointer flex-grow">
+                    Semester {sem}
+                  </Label>
+                </div>
+              ))}
             </AccordionContent>
           </AccordionItem>
           

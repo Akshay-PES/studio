@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { collection, getDocs, Timestamp, query, orderBy, DocumentData, QueryDocumentSnapshot, where } from "firebase/firestore";
+import { collection, getDocs, Timestamp, query, DocumentData, QueryDocumentSnapshot, where } from "firebase/firestore";
 import { db } from '@/lib/firebase'; 
 
 import CalendarView from '@/components/calendar/calendar-view';
@@ -32,7 +32,7 @@ export default function DashboardPage() {
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
   const [isLoadingSubjects, setIsLoadingSubjects] = useState(true);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
-  const { filters, colorMode, setFilters } = useFilters();
+  const { filters, setFilters, colorMode } = useFilters();
   const [selectedEvent, setSelectedEvent] = useState<AcademicEvent | null>(null);
   const [showEventDetail, setShowEventDetail] = useState(false);
 
@@ -57,6 +57,7 @@ export default function DashboardPage() {
           category: data.category,
           subType: data.subType,
           subjectId: data.subjectId,
+          semester: data.semester,
           start: (data.start as Timestamp).toDate(), 
           end: (data.end as Timestamp).toDate(),     
           location: data.location,
@@ -66,6 +67,8 @@ export default function DashboardPage() {
           departmentId: data.departmentId,
         };
       });
+      // This is a temporary client-side sort to fix a missing index issue.
+      // For production, a composite index on [departmentId, start] is recommended.
       const sortedEvents = fetchedEvents.sort((a, b) => a.start.getTime() - b.start.getTime());
       setEvents(sortedEvents);
     } catch (error) {
@@ -84,7 +87,7 @@ export default function DashboardPage() {
     setIsLoadingSubjects(true);
     try {
       const subjectsCollection = collection(db, "subjects");
-      const q = query(subjectsCollection, where("departmentId", "==", departmentId), orderBy("name", "asc"));
+      const q = query(subjectsCollection, where("departmentId", "==", departmentId), where("departmentId", "==", departmentId));
       const querySnapshot = await getDocs(q);
       const fetchedSubjects: Subject[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
         const data = doc.data();
@@ -95,7 +98,9 @@ export default function DashboardPage() {
           departmentId: data.departmentId,
         };
       });
-      setSubjects(fetchedSubjects);
+       // This is a temporary client-side sort to fix a missing index issue.
+      const sortedSubjects = fetchedSubjects.sort((a,b) => a.name.localeCompare(b.name));
+      setSubjects(sortedSubjects);
     } catch (error) {
       console.error("Error fetching subjects from Firestore:", error);
       toast({
@@ -112,7 +117,7 @@ export default function DashboardPage() {
     setIsLoadingCategories(true);
     try {
       const categoriesCollection = collection(db, "eventCategories");
-      const q = query(categoriesCollection, orderBy("name", "asc"));
+      const q = query(categoriesCollection);
       const querySnapshot = await getDocs(q);
       const fetchedCategories: EventCategory[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
         const data = doc.data();
@@ -123,8 +128,11 @@ export default function DashboardPage() {
           subTypes: data.subTypes || [],
         };
       });
-      setEventCategories(fetchedCategories);
-    } catch (error) {
+      // This is a temporary client-side sort to fix a missing index issue.
+      const sortedCategories = fetchedCategories.sort((a,b) => a.name.localeCompare(b.name));
+      setEventCategories(sortedCategories);
+    } catch (error)
+     {
       console.error("Error fetching event categories from Firestore:", error);
       toast({
         variant: "destructive",
@@ -138,7 +146,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     // Reset filters when department changes
-    setFilters({ categories: [], subjects: [], subTypes: [], dateRange: {} });
+    setFilters({ categories: [], subjects: [], subTypes: [], semesters: [], dateRange: {} });
     
     // Fetch data for the current department
     fetchEvents(department);
