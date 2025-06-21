@@ -183,8 +183,8 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
-            <ScrollArea className="max-h-[60vh] pr-4 py-4">
-              <div className="space-y-4">
+            <ScrollArea className="max-h-[75vh] pr-4">
+              <div className="space-y-4 py-4">
                 <FormField
                   control={form.control}
                   name="title"
@@ -460,16 +460,16 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
                     </FormItem>
                   )}
                 />
+                <DialogFooter className="pt-6">
+                  <DialogClose asChild>
+                    <Button type="button" variant="outline">Cancel</Button>
+                  </DialogClose>
+                  <Button type="submit" disabled={form.formState.isSubmitting}>
+                    {form.formState.isSubmitting ? "Adding..." : "Add Event"}
+                  </Button>
+                </DialogFooter>
               </div>
             </ScrollArea>
-            <DialogFooter className="pt-6">
-              <DialogClose asChild>
-                <Button type="button" variant="outline">Cancel</Button>
-              </DialogClose>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "Adding..." : "Add Event"}
-              </Button>
-            </DialogFooter>
           </form>
         </Form>
       </DialogContent>
