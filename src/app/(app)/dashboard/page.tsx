@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { collection, getDocs, Timestamp, query, DocumentData, QueryDocumentSnapshot, where } from "firebase/firestore";
+import { collection, getDocs, Timestamp, query, DocumentData, QueryDocumentSnapshot, where, orderBy } from "firebase/firestore";
 import { db } from '@/lib/firebase'; 
 
 import CalendarView from '@/components/calendar/calendar-view';
@@ -67,8 +67,7 @@ export default function DashboardPage() {
           departmentId: data.departmentId,
         };
       });
-      // This is a temporary client-side sort to fix a missing index issue.
-      // For production, a composite index on [departmentId, start] is recommended.
+      
       const sortedEvents = fetchedEvents.sort((a, b) => a.start.getTime() - b.start.getTime());
       setEvents(sortedEvents);
     } catch (error) {
@@ -87,7 +86,7 @@ export default function DashboardPage() {
     setIsLoadingSubjects(true);
     try {
       const subjectsCollection = collection(db, "subjects");
-      const q = query(subjectsCollection, where("departmentId", "==", departmentId), where("departmentId", "==", departmentId));
+      const q = query(subjectsCollection, where("departmentId", "==", departmentId), orderBy("name"));
       const querySnapshot = await getDocs(q);
       const fetchedSubjects: Subject[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
         const data = doc.data();
@@ -98,9 +97,7 @@ export default function DashboardPage() {
           departmentId: data.departmentId,
         };
       });
-       // This is a temporary client-side sort to fix a missing index issue.
-      const sortedSubjects = fetchedSubjects.sort((a,b) => a.name.localeCompare(b.name));
-      setSubjects(sortedSubjects);
+      setSubjects(fetchedSubjects);
     } catch (error) {
       console.error("Error fetching subjects from Firestore:", error);
       toast({
@@ -128,7 +125,6 @@ export default function DashboardPage() {
           subTypes: data.subTypes || [],
         };
       });
-      // This is a temporary client-side sort to fix a missing index issue.
       const sortedCategories = fetchedCategories.sort((a,b) => a.name.localeCompare(b.name));
       setEventCategories(sortedCategories);
     } catch (error)

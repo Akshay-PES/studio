@@ -131,8 +131,7 @@ export default function AdminDashboardPage() {
           departmentId: data.departmentId,
         };
       });
-      // This is a temporary client-side sort to fix a missing index issue.
-      // For production, a composite index on [departmentId, start] is recommended.
+      
       const sortedEvents = fetchedEvents.sort((a, b) => a.start.getTime() - b.start.getTime());
       setEvents(sortedEvents);
     } catch (error) {
@@ -148,16 +147,14 @@ export default function AdminDashboardPage() {
     setIsLoadingSubjects(true);
     try {
         const subjectsCollectionRef = collection(db, "subjects");
-        const q = query(subjectsCollectionRef, where("departmentId", "==", departmentId));
+        const q = query(subjectsCollectionRef, where("departmentId", "==", departmentId), orderBy("name"));
         const querySnapshot = await getDocs(q);
 
         const fetchedSubjects: Subject[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
             const data = doc.data();
             return { id: doc.id, name: data.name, color: data.color, departmentId: data.departmentId };
         });
-        // This is a temporary client-side sort to fix a missing index issue.
-        const sortedSubjects = fetchedSubjects.sort((a,b) => a.name.localeCompare(b.name));
-        setSubjectsDB(sortedSubjects);
+        setSubjectsDB(fetchedSubjects);
     } catch (error) {
         console.error("Error fetching subjects:", error);
         toast({ variant: "destructive", title: "Error Fetching Subjects", description: `Could not load subjects. ${(error as Error).message}` });
@@ -176,7 +173,6 @@ export default function AdminDashboardPage() {
         const data = doc.data();
         return { id: doc.id, name: data.name, color: data.color, subTypes: data.subTypes || [] };
       });
-      // This is a temporary client-side sort to fix a missing index issue.
       const sortedCategories = fetchedCategories.sort((a,b) => a.name.localeCompare(b.name));
       setEventCategoriesDB(sortedCategories);
     } catch (error) {
