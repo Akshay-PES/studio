@@ -173,7 +173,7 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
       }
       onClose();
     }}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle className="text-2xl font-headline text-primary">Add New Event</DialogTitle>
           <DialogDescription>Fill in the details below to add a new event to the calendar.</DialogDescription>
