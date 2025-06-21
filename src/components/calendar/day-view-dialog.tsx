@@ -119,7 +119,7 @@ export default function DayViewDialog({
                         {event.semester && (
                           <div className="flex items-center">
                             <ListFilter className="w-3.5 h-3.5 mr-1.5" />
-                            Semester: {event.semester}
+                            Sem/Trimester: {event.semester}
                           </div>
                         )}
                         {event.location && (
