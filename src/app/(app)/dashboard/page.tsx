@@ -47,7 +47,7 @@ export default function DashboardPage() {
     setIsLoadingEvents(true);
     try {
       const eventsCollection = collection(db, "events");
-      const q = query(eventsCollection, where("departmentId", "==", departmentId), orderBy("start"));
+      const q = query(eventsCollection, where("departmentId", "==", departmentId));
       const querySnapshot = await getDocs(q);
       const fetchedEvents: AcademicEvent[] = querySnapshot.docs.map(doc => {
         const data = doc.data();
@@ -68,7 +68,8 @@ export default function DashboardPage() {
         };
       });
       
-      setEvents(fetchedEvents);
+      const sortedEvents = fetchedEvents.sort((a, b) => a.start.getTime() - b.start.getTime());
+      setEvents(sortedEvents);
     } catch (error) {
       console.error("Error fetching events from Firestore:", error);
       toast({
