@@ -108,8 +108,17 @@ export default function AdminDashboardPage() {
     setIsLoadingEvents(true);
     try {
       const eventsCollectionRef = collection(db, "events");
-      const q = query(eventsCollectionRef, where("departmentId", "==", departmentId), orderBy("start", "asc"));
-      const querySnapshot = await getDocs(q);
+      let querySnapshot;
+
+      // TEMPORARY: If MBA admin, fetch all events to find legacy data without departmentId
+      if (departmentId === 'mba') {
+        const q = query(eventsCollectionRef, orderBy("start", "asc"));
+        querySnapshot = await getDocs(q);
+      } else {
+        const q = query(eventsCollectionRef, where("departmentId", "==", departmentId), orderBy("start", "asc"));
+        querySnapshot = await getDocs(q);
+      }
+
       const fetchedEvents: AcademicEvent[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
         const data = doc.data();
         return {
@@ -126,6 +135,13 @@ export default function AdminDashboardPage() {
           attendees: data.attendees,
           departmentId: data.departmentId,
         };
+      }).filter(event => {
+        // For MBA admin, filter client-side to also show events without a departmentId (legacy data)
+        if (departmentId === 'mba') {
+            return event.departmentId === 'mba' || !event.departmentId;
+        }
+        // For other admins, the server query has already filtered correctly.
+        return true;
       });
       setEvents(fetchedEvents);
     } catch (error) {
@@ -140,19 +156,34 @@ export default function AdminDashboardPage() {
     if (!departmentId) return;
     setIsLoadingSubjects(true);
     try {
-      const subjectsCollectionRef = collection(db, "subjects");
-      const q = query(subjectsCollectionRef, where("departmentId", "==", departmentId), orderBy("name", "asc"));
-      const querySnapshot = await getDocs(q);
-      const fetchedSubjects: Subject[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
-        const data = doc.data();
-        return { id: doc.id, name: data.name, color: data.color, departmentId: data.departmentId };
-      });
-      setSubjectsDB(fetchedSubjects);
+        const subjectsCollectionRef = collection(db, "subjects");
+        let querySnapshot;
+
+        // TEMPORARY: If MBA admin, fetch all subjects to find legacy data without departmentId
+        if (departmentId === 'mba') {
+            const q = query(subjectsCollectionRef, orderBy("name", "asc"));
+            querySnapshot = await getDocs(q);
+        } else {
+            const q = query(subjectsCollectionRef, where("departmentId", "==", departmentId), orderBy("name", "asc"));
+            querySnapshot = await getDocs(q);
+        }
+
+        const fetchedSubjects: Subject[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
+            const data = doc.data();
+            return { id: doc.id, name: data.name, color: data.color, departmentId: data.departmentId };
+        }).filter(subject => {
+            // For MBA admin, filter client-side to also show subjects without a departmentId (legacy data)
+            if (departmentId === 'mba') {
+                return subject.departmentId === 'mba' || !subject.departmentId;
+            }
+            return true;
+        });
+        setSubjectsDB(fetchedSubjects);
     } catch (error) {
-      console.error("Error fetching subjects:", error);
-      toast({ variant: "destructive", title: "Error Fetching Subjects", description: `Could not load subjects. ${(error as Error).message}` });
+        console.error("Error fetching subjects:", error);
+        toast({ variant: "destructive", title: "Error Fetching Subjects", description: `Could not load subjects. ${(error as Error).message}` });
     } finally {
-      setIsLoadingSubjects(false);
+        setIsLoadingSubjects(false);
     }
   }, [toast, departmentId]);
 
@@ -266,7 +297,7 @@ export default function AdminDashboardPage() {
             location: editEventFormData.location,
             description: editEventFormData.description,
             subjectId: editEventFormData.subjectId || null,
-            departmentId: departmentId, // Ensure departmentId is preserved
+            departmentId: departmentId, // Ensure departmentId is preserved/added
         };
         await updateDoc(doc(db, "events", currentEventToEdit.id), updatedEventData as { [x: string]: any });
         toast({ title: "Event Updated Successfully" });
@@ -322,12 +353,12 @@ export default function AdminDashboardPage() {
 
   const handleUpdateSubjectInDB = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentSubjectToEdit || !editSubjectFormData.name.trim() || !editSubjectFormData.color.trim()) {
+    if (!currentSubjectToEdit || !editSubjectFormData.name.trim() || !editSubjectFormData.color.trim() || !departmentId) {
       toast({ variant: "destructive", title: "Validation Error", description: "Subject name and color are required." });
       return;
     }
     try {
-      await updateDoc(doc(db, "subjects", currentSubjectToEdit.id), { name: editSubjectFormData.name, color: editSubjectFormData.color });
+      await updateDoc(doc(db, "subjects", currentSubjectToEdit.id), { name: editSubjectFormData.name, color: editSubjectFormData.color, departmentId: departmentId });
       toast({ title: "Subject Updated Successfully" });
       fetchSubjects();
       setShowEditSubjectDialog(false);
@@ -892,3 +923,5 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
+    
