@@ -108,16 +108,8 @@ export default function AdminDashboardPage() {
     setIsLoadingEvents(true);
     try {
       const eventsCollectionRef = collection(db, "events");
-      let querySnapshot;
-
-      // TEMPORARY: If MBA admin, fetch all events to find legacy data without departmentId
-      if (departmentId === 'mba') {
-        const q = query(eventsCollectionRef, orderBy("start", "asc"));
-        querySnapshot = await getDocs(q);
-      } else {
-        const q = query(eventsCollectionRef, where("departmentId", "==", departmentId), orderBy("start", "asc"));
-        querySnapshot = await getDocs(q);
-      }
+      const q = query(eventsCollectionRef, where("departmentId", "==", departmentId), orderBy("start", "asc"));
+      const querySnapshot = await getDocs(q);
 
       const fetchedEvents: AcademicEvent[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
         const data = doc.data();
@@ -135,13 +127,6 @@ export default function AdminDashboardPage() {
           attendees: data.attendees,
           departmentId: data.departmentId,
         };
-      }).filter(event => {
-        // For MBA admin, filter client-side to also show events without a departmentId (legacy data)
-        if (departmentId === 'mba') {
-            return event.departmentId === 'mba' || !event.departmentId;
-        }
-        // For other admins, the server query has already filtered correctly.
-        return true;
       });
       setEvents(fetchedEvents);
     } catch (error) {
@@ -157,26 +142,12 @@ export default function AdminDashboardPage() {
     setIsLoadingSubjects(true);
     try {
         const subjectsCollectionRef = collection(db, "subjects");
-        let querySnapshot;
-
-        // TEMPORARY: If MBA admin, fetch all subjects to find legacy data without departmentId
-        if (departmentId === 'mba') {
-            const q = query(subjectsCollectionRef, orderBy("name", "asc"));
-            querySnapshot = await getDocs(q);
-        } else {
-            const q = query(subjectsCollectionRef, where("departmentId", "==", departmentId), orderBy("name", "asc"));
-            querySnapshot = await getDocs(q);
-        }
+        const q = query(subjectsCollectionRef, where("departmentId", "==", departmentId), orderBy("name", "asc"));
+        const querySnapshot = await getDocs(q);
 
         const fetchedSubjects: Subject[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
             const data = doc.data();
             return { id: doc.id, name: data.name, color: data.color, departmentId: data.departmentId };
-        }).filter(subject => {
-            // For MBA admin, filter client-side to also show subjects without a departmentId (legacy data)
-            if (departmentId === 'mba') {
-                return subject.departmentId === 'mba' || !subject.departmentId;
-            }
-            return true;
         });
         setSubjectsDB(fetchedSubjects);
     } catch (error) {
@@ -923,5 +894,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-
-    
