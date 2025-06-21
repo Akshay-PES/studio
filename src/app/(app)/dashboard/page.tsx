@@ -2,6 +2,8 @@
 import { Suspense } from 'react';
 import DashboardComponent from './DashboardComponent';
 
+export const dynamic = 'force-dynamic';
+
 // A simple loading component to show while the main component is loading.
 // This will be the fallback for the Suspense boundary.
 function DashboardLoading() {
