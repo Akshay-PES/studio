@@ -2,7 +2,8 @@
 "use client";
 
 import * as React from 'react';
-import { collection, getDocs, query, orderBy, DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
+import { useSearchParams } from 'next/navigation';
+import { collection, getDocs, query, orderBy, DocumentData, QueryDocumentSnapshot, where } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import { CalendarIcon, Palette, Tag, Layers, Filter, ListFilter, ChevronsUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -33,17 +34,21 @@ export default function SidebarFilters() {
   const [isLoadingSubjects, setIsLoadingSubjects] = React.useState(true);
   const [isLoadingCategories, setIsLoadingCategories] = React.useState(true);
   const { toast } = useToast();
+  
+  const searchParams = useSearchParams();
+  const department = searchParams.get('department') || 'mba';
 
   React.useEffect(() => {
     const fetchSubjects = async () => {
+      if (!department) return;
       setIsLoadingSubjects(true);
       try {
         const subjectsCollection = collection(db, "subjects");
-        const q = query(subjectsCollection, orderBy("name", "asc"));
+        const q = query(subjectsCollection, where("departmentId", "==", department), orderBy("name", "asc"));
         const querySnapshot = await getDocs(q);
         const fetchedSubjects: Subject[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
           const data = doc.data();
-          return { id: doc.id, name: data.name, color: data.color };
+          return { id: doc.id, name: data.name, color: data.color, departmentId: data.departmentId };
         });
         setSubjectsDB(fetchedSubjects);
       } catch (error) {
@@ -53,8 +58,10 @@ export default function SidebarFilters() {
         setIsLoadingSubjects(false);
       }
     };
-    fetchSubjects();
-  }, [toast]);
+    if (department) {
+        fetchSubjects();
+    }
+  }, [toast, department]);
 
   React.useEffect(() => {
     const fetchEventCategories = async () => {
@@ -213,7 +220,7 @@ export default function SidebarFilters() {
             <AccordionContent className="pt-1 pb-1.5 space-y-1 px-2">
               {isLoadingSubjects ? (<p className="text-xs text-muted-foreground/80 px-1 py-2">Loading subjects...</p>) 
               : subjectsDB.length === 0 ? (
-                <p className="text-xs text-muted-foreground/80 px-1 py-2">No subjects found. Add them via Admin Panel.</p>
+                <p className="text-xs text-muted-foreground/80 px-1 py-2">No subjects found for this department.</p>
               ) : (
                 subjectsDB.map(subject => (
                   <div key={subject.id} className="flex items-center space-x-2 p-1 rounded-md hover:bg-sidebar-accent/70">
