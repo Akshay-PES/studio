@@ -182,7 +182,7 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
             <ScrollArea className="flex-1 -mr-6 pr-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-4 py-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 py-4">
                 <div className="md:col-span-2">
                     <FormField
                     control={form.control}
