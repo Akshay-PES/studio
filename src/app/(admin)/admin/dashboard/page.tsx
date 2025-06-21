@@ -55,6 +55,7 @@ interface EditCategoryFormData {
 
 const NO_SUBJECT_VALUE = "__NONE_SUBJECT__";
 const NO_CATEGORY_VALUE = "__NONE_CATEGORY__";
+const NO_SEMESTER_VALUE = "__NONE_SEMESTER__";
 const DEFAULT_EVENT_CATEGORY_ON_DELETE = "Others";
 
 const PREDEFINED_SUBJECT_COLORS = [
@@ -244,7 +245,7 @@ export default function AdminDashboardPage() {
         description: event.description || '',
         subjectId: event.subjectId || '',
         subType: event.subType || '',
-        semester: event.semester ? String(event.semester) : '',
+        semester: event.semester ? String(event.semester) : NO_SEMESTER_VALUE,
     });
     setShowEditEventDialog(true);
   };
@@ -283,7 +284,7 @@ export default function AdminDashboardPage() {
             location: editEventFormData.location,
             description: editEventFormData.description,
             subjectId: editEventFormData.subjectId || null,
-            semester: editEventFormData.semester ? parseInt(editEventFormData.semester, 10) : null,
+            semester: editEventFormData.semester && editEventFormData.semester !== NO_SEMESTER_VALUE ? parseInt(editEventFormData.semester, 10) : null,
             departmentId: departmentId, // Ensure departmentId is preserved/added
         };
         await updateDoc(doc(db, "events", currentEventToEdit.id), updatedEventData as { [x: string]: any });
@@ -778,10 +779,10 @@ export default function AdminDashboardPage() {
                   </div>
                    <div>
                     <Label htmlFor="edit-event-semester">Semester/Trimester</Label>
-                    <Select value={editEventFormData.semester || ''} onValueChange={handleEditEventSemesterChange}>
+                    <Select value={editEventFormData.semester || NO_SEMESTER_VALUE} onValueChange={handleEditEventSemesterChange}>
                         <SelectTrigger id="edit-event-semester"><SelectValue placeholder="Select semester" /></SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="">None</SelectItem>
+                            <SelectItem value={NO_SEMESTER_VALUE}>None</SelectItem>
                             {Array.from({ length: 8 }, (_, i) => i + 1).map(sem => (
                                 <SelectItem key={sem} value={String(sem)}>{sem}</SelectItem>
                             ))}

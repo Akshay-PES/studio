@@ -46,6 +46,7 @@ import { cn } from '@/lib/utils';
 
 const NO_SUBJECT_VALUE = "__NONE_SUBJECT__";
 const NO_CATEGORY_VALUE = "__NONE_CATEGORY__";
+const NO_SEMESTER_VALUE = "__NONE_SEMESTER__";
 
 // Zod schema now expects category as a string (name)
 const eventFormSchema = z.object({
@@ -100,7 +101,7 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
       description: "",
       subType: "",
       subjectId: NO_SUBJECT_VALUE,
-      semester: "",
+      semester: NO_SEMESTER_VALUE,
     },
   });
 
@@ -135,7 +136,7 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
       category: data.category, // Category name
       subType: data.subType || undefined,
       subjectId: data.subjectId === NO_SUBJECT_VALUE || !data.subjectId ? undefined : data.subjectId,
-      semester: data.semester ? parseInt(data.semester, 10) : undefined,
+      semester: data.semester && data.semester !== NO_SEMESTER_VALUE ? parseInt(data.semester, 10) : undefined,
       start: startDateTime,
       end: endDateTime,
       location: data.location,
@@ -152,7 +153,7 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
         category: NO_CATEGORY_VALUE,
         subType: "",
         subjectId: NO_SUBJECT_VALUE,
-        semester: "",
+        semester: NO_SEMESTER_VALUE,
         startDate: undefined,
         startTime: "09:00",
         endDate: undefined,
@@ -168,7 +169,7 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
     <Dialog open={isOpen} onOpenChange={(open) => {
       if (!open) {
         form.reset({
-            title: "", category: NO_CATEGORY_VALUE, subType: "", subjectId: NO_SUBJECT_VALUE, semester: "",
+            title: "", category: NO_CATEGORY_VALUE, subType: "", subjectId: NO_SUBJECT_VALUE, semester: NO_SEMESTER_VALUE,
             startDate: undefined, startTime: "09:00", endDate: undefined, endTime: "10:00",
             location: "", faculty: "", description: ""
         });
@@ -299,14 +300,14 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
                     render={({ field }) => (
                         <FormItem>
                         <FormLabel><ListFilter className="inline w-4 h-4 mr-1" />Semester/Trimester (Optional)</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || ""} defaultValue={field.value || ""}>
+                        <Select onValueChange={field.onChange} value={field.value || NO_SEMESTER_VALUE} defaultValue={field.value || NO_SEMESTER_VALUE}>
                             <FormControl>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select a semester" />
                             </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                                <SelectItem value="">None</SelectItem>
+                                <SelectItem value={NO_SEMESTER_VALUE}>None</SelectItem>
                                 {Array.from({ length: 8 }, (_, i) => i + 1).map(sem => (
                                     <SelectItem key={sem} value={String(sem)}>{sem}</SelectItem>
                                 ))}
