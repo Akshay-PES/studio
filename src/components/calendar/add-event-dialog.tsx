@@ -83,9 +83,10 @@ interface AddEventDialogProps {
   onAddEvent: (event: Omit<AcademicEvent, 'id'>) => void;
   subjectsFromDB: Subject[];
   categoriesFromDB: EventCategory[];
+  departmentId: string;
 }
 
-export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFromDB, categoriesFromDB }: AddEventDialogProps) {
+export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFromDB, categoriesFromDB, departmentId }: AddEventDialogProps) {
   const { toast } = useToast();
   const form = useForm<EventFormData>({
     resolver: zodResolver(eventFormSchema),
@@ -121,6 +122,10 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
         toast({ variant: "destructive", title: "Validation Error", description: "Please select an event category."});
         return;
     }
+    if (!departmentId) {
+        toast({ variant: "destructive", title: "System Error", description: "Department ID is missing."});
+        return;
+    }
     const startDateTime = new Date(data.startDate);
     const [startHours, startMinutes] = data.startTime.split(':').map(Number);
     startDateTime.setHours(startHours, startMinutes);
@@ -131,6 +136,7 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
 
     const newEvent: Omit<AcademicEvent, 'id'> = {
       title: data.title,
+      departmentId: departmentId,
       category: data.category,
       subType: data.subType || undefined,
       subjectId: data.subjectId === NO_SUBJECT_VALUE || !data.subjectId ? undefined : data.subjectId,

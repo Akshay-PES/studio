@@ -193,14 +193,13 @@ export default function AdminDashboardPage() {
   }, [departmentId, fetchEvents, fetchSubjects, fetchEventCategories]);
 
   const handleAddEvent = async (newEventData: Omit<AcademicEvent, 'id'>) => {
-    if (!departmentId) {
-        toast({ variant: "destructive", title: "Error", description: "No department identified for admin." });
+    if (!departmentId || newEventData.departmentId !== departmentId) {
+        toast({ variant: "destructive", title: "Error", description: "Department ID is missing or mismatched." });
         return;
     }
     try {
       const eventDataForFirestore = {
         ...newEventData,
-        departmentId: departmentId, // Add departmentId
         start: Timestamp.fromDate(newEventData.start),
         end: Timestamp.fromDate(newEventData.end),
         subjectId: newEventData.subjectId || null,
@@ -703,6 +702,7 @@ export default function AdminDashboardPage() {
         onAddEvent={handleAddEvent}
         subjectsFromDB={subjectsDB}
         categoriesFromDB={eventCategoriesDB}
+        departmentId={departmentId || ''}
       />
 
       {currentEventToEdit && (
