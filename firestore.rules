@@ -1,0 +1,59 @@
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    function getAdminDepartment() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.departmentId;
+    }
+
+    function isDepartmentAdmin() {
+      return request.auth != null 
+             && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+             && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'department_admin';
+    }
+
+    // Users can only read their own profile. Writes should be handled server-side or via console.
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false; 
+    }
+
+    // Event Categories are global. Anyone can read. Any department admin can write.
+    match /eventCategories/{categoryId} {
+      allow read: if true;
+      allow write: if isDepartmentAdmin();
+    }
+
+    // Subjects are department-specific.
+    match /subjects/{subjectId} {
+      allow read: if true;
+      allow create: if isDepartmentAdmin() && request.resource.data.departmentId == getAdminDepartment();
+      allow update: if isDepartmentAdmin()
+                      && resource.data.departmentId == getAdminDepartment()
+                      && request.resource.data.departmentId == getAdminDepartment();
+      allow delete: if isDepartmentAdmin() && resource.data.departmentId == getAdminDepartment();
+    }
+    
+    // Events are department-specific, with an exception for global category updates.
+    match /events/{eventId} {
+      allow read: if true;
+      allow create: if isDepartmentAdmin() && request.resource.data.departmentId == getAdminDepartment();
+      
+      // Standard update by the department's own admin
+      function isStandardUpdate() {
+        return resource.data.departmentId == getAdminDepartment()
+               && request.resource.data.departmentId == getAdminDepartment();
+      }
+
+      // Global category/subType update by any admin
+      function isCategoryUpdate() {
+        let changedKeys = request.resource.data.diff(resource.data).affectedKeys();
+        return changedKeys.hasOnly(['category', 'subType']) || changedKeys.hasOnly(['category']);
+      }
+      
+      allow update: if isDepartmentAdmin() && (isStandardUpdate() || isCategoryUpdate());
+      allow delete: if isDepartmentAdmin() && resource.data.departmentId == getAdminDepartment();
+    }
+  }
+}
