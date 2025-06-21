@@ -1,3 +1,4 @@
+
 {
   "indexes": [
     {
@@ -38,6 +39,20 @@
         },
         {
           "fieldPath": "departmentId",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "category",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "start",
           "order": "ASCENDING"
         }
       ]
