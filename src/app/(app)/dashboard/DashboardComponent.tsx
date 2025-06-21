@@ -15,11 +15,18 @@ import { useToast } from '@/hooks/use-toast';
 import { useFilters } from '@/contexts/FilterContext';
 
 const departmentNames: { [key: string]: string } = {
-  mba: "MBA",
-  bba: "BBA",
-  bcom: "BCom",
-  law: "Law",
-  psychology: "Psychology",
+    "mba": "MBA",
+    "bba": "BBA",
+    "bba-hons-ba": "BBA (Hons) Business Analytics",
+    "bcom": "B.Com",
+    "bcom-hons-acca": "B.Com (Hons) ACCA",
+    "bcom-hons-cma": "B.Com (Hons) CMA",
+    "bsc-hons-eco": "B.Sc (Hons) Economics",
+    "bsc-hons-psy": "B.Sc (Hons) Psychology",
+    "msc-psy": "M.Sc Psychology",
+    "bba-llb": "BBA-LLB",
+    "ba-llb": "BA-LLB",
+    "llb-hons": "LLB (Hons)",
 };
 
 export default function DashboardComponent() {

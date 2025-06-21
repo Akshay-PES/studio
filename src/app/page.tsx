@@ -6,11 +6,18 @@ import Link from "next/link";
 // import Image from 'next/image'; // Logo removed
 
 const departments = [
-  { name: "MBA", id: "mba" },
-  { name: "BBA", id: "bba" },
-  { name: "BCom", id: "bcom" },
-  { name: "Law", id: "law" },
-  { name: "Psychology", id: "psychology" },
+    { name: "MBA", id: "mba" },
+    { name: "BBA", id: "bba" },
+    { name: "BBA (Hons) Business Analytics", id: "bba-hons-ba" },
+    { name: "B.Com", id: "bcom" },
+    { name: "B.Com (Hons) ACCA", id: "bcom-hons-acca" },
+    { name: "B.Com (Hons) CMA", id: "bcom-hons-cma" },
+    { name: "B.Sc (Hons) Economics", id: "bsc-hons-eco" },
+    { name: "B.Sc (Hons) Psychology", id: "bsc-hons-psy" },
+    { name: "M.Sc Psychology", id: "msc-psy" },
+    { name: "BBA-LLB", id: "bba-llb" },
+    { name: "BA-LLB", id: "ba-llb" },
+    { name: "LLB (Hons)", id: "llb-hons" },
 ];
 
 export default function HomePage() {
