@@ -247,7 +247,7 @@ export default function SidebarFilters() {
                     className="border-sidebar-primary data-[state=checked]:bg-sidebar-primary data-[state=checked]:text-sidebar-primary-foreground"
                   />
                   <Label htmlFor={`sem-${sem}`} className="text-xs font-normal cursor-pointer flex-grow">
-                    Semester {sem}
+                    Sem/Trimester {sem}
                   </Label>
                 </div>
               ))}

@@ -784,7 +784,7 @@ export default function AdminDashboardPage() {
                         <SelectContent>
                             <SelectItem value={NO_SEMESTER_VALUE}>None</SelectItem>
                             {Array.from({ length: 8 }, (_, i) => i + 1).map(sem => (
-                                <SelectItem key={sem} value={String(sem)}>{sem}</SelectItem>
+                                <SelectItem key={sem} value={String(sem)}>Sem/Trimester {sem}</SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
