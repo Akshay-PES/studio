@@ -110,7 +110,7 @@ export default function AdminDashboardPage() {
     setIsLoadingEvents(true);
     try {
       const eventsCollectionRef = collection(db, "events");
-      const q = query(eventsCollectionRef, where("departmentId", "==", departmentId));
+      const q = query(eventsCollectionRef, where("departmentId", "==", departmentId), orderBy("start"));
       const querySnapshot = await getDocs(q);
 
       const fetchedEvents: AcademicEvent[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
@@ -132,8 +132,7 @@ export default function AdminDashboardPage() {
         };
       });
       
-      const sortedEvents = fetchedEvents.sort((a, b) => a.start.getTime() - b.start.getTime());
-      setEvents(sortedEvents);
+      setEvents(fetchedEvents);
     } catch (error) {
       console.error("Error fetching events:", error);
       toast({ variant: "destructive", title: "Error Fetching Events", description: `Could not load events. ${(error as Error).message}` });
