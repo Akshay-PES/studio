@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { collection, getDocs, Timestamp, query, orderBy, DocumentData, QueryDocumentSnapshot, where } from "firebase/firestore";
 import { db } from '@/lib/firebase'; 
 
@@ -21,8 +22,9 @@ const departmentNames: { [key: string]: string } = {
   psychology: "Psychology",
 };
 
-export default function DashboardPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
-  const department = typeof searchParams.department === 'string' ? searchParams.department : 'mba'; // Default to 'mba'
+export default function DashboardPage() {
+  const searchParams = useSearchParams();
+  const department = searchParams.get('department') || 'mba'; // Default to 'mba'
   
   const [events, setEvents] = useState<AcademicEvent[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
