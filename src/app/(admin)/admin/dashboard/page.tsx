@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import AddEventDialog from '@/components/calendar/add-event-dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Pencil, Trash2, PlusCircle, BookOpen, Layers } from 'lucide-react';
@@ -20,7 +21,7 @@ import { Label } from '@/components/ui/label';
 
 interface EditEventFormData {
   title: string;
-  category: string; // Category Name
+  category: string;
   start: string;
   end: string;
   location?: string;
@@ -40,22 +41,20 @@ interface EditSubjectFormData {
 
 interface AddCategoryFormData {
   name: string;
-  // color: string; // Color is now auto-assigned
-  subTypesString: string; // Comma-separated
+  subTypesString: string;
 }
 
 interface EditCategoryFormData {
   id: string;
   name: string;
   color: string;
-  subTypesString: string; // Comma-separated
-  originalName?: string; // To track if name changed
+  subTypesString: string;
+  originalName?: string;
 }
 
 const NO_SUBJECT_VALUE = "__NONE_SUBJECT__";
 const NO_CATEGORY_VALUE = "__NONE_CATEGORY__";
 const DEFAULT_EVENT_CATEGORY_ON_DELETE = "Others";
-
 
 const PREDEFINED_SUBJECT_COLORS = [
   '#FF5733', '#33FF57', '#3357FF', '#FF33A1', '#A133FF',
@@ -75,6 +74,7 @@ const PREDEFINED_CATEGORY_COLORS = [
 const FALLBACK_CATEGORY_COLOR = '#BDBDBD';
 
 export default function AdminDashboardPage() {
+  const { userProfile } = useAuth();
   const [events, setEvents] = useState<AcademicEvent[]>([]);
   const [subjectsDB, setSubjectsDB] = useState<Subject[]>([]);
   const [eventCategoriesDB, setEventCategoriesDB] = useState<EventCategory[]>([]);
@@ -101,11 +101,14 @@ export default function AdminDashboardPage() {
 
   const { toast } = useToast();
 
+  const departmentId = userProfile?.departmentId;
+
   const fetchEvents = useCallback(async () => {
+    if (!departmentId) return;
     setIsLoadingEvents(true);
     try {
       const eventsCollectionRef = collection(db, "events");
-      const q = query(eventsCollectionRef, orderBy("start", "asc"));
+      const q = query(eventsCollectionRef, where("departmentId", "==", departmentId), orderBy("start", "asc"));
       const querySnapshot = await getDocs(q);
       const fetchedEvents: AcademicEvent[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
         const data = doc.data();
@@ -121,6 +124,7 @@ export default function AdminDashboardPage() {
           faculty: data.faculty,
           description: data.description,
           attendees: data.attendees,
+          departmentId: data.departmentId,
         };
       });
       setEvents(fetchedEvents);
@@ -130,17 +134,18 @@ export default function AdminDashboardPage() {
     } finally {
       setIsLoadingEvents(false);
     }
-  }, [toast]);
+  }, [toast, departmentId]);
 
   const fetchSubjects = useCallback(async () => {
+    if (!departmentId) return;
     setIsLoadingSubjects(true);
     try {
       const subjectsCollectionRef = collection(db, "subjects");
-      const q = query(subjectsCollectionRef, orderBy("name", "asc"));
+      const q = query(subjectsCollectionRef, where("departmentId", "==", departmentId), orderBy("name", "asc"));
       const querySnapshot = await getDocs(q);
       const fetchedSubjects: Subject[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
         const data = doc.data();
-        return { id: doc.id, name: data.name, color: data.color };
+        return { id: doc.id, name: data.name, color: data.color, departmentId: data.departmentId };
       });
       setSubjectsDB(fetchedSubjects);
     } catch (error) {
@@ -149,7 +154,7 @@ export default function AdminDashboardPage() {
     } finally {
       setIsLoadingSubjects(false);
     }
-  }, [toast]);
+  }, [toast, departmentId]);
 
   const fetchEventCategories = useCallback(async () => {
     setIsLoadingCategories(true);
@@ -159,12 +164,7 @@ export default function AdminDashboardPage() {
       const querySnapshot = await getDocs(q);
       const fetchedCategories: EventCategory[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
         const data = doc.data();
-        return {
-          id: doc.id,
-          name: data.name,
-          color: data.color,
-          subTypes: data.subTypes || [],
-        };
+        return { id: doc.id, name: data.name, color: data.color, subTypes: data.subTypes || [] };
       });
       setEventCategoriesDB(fetchedCategories);
     } catch (error) {
@@ -177,15 +177,22 @@ export default function AdminDashboardPage() {
 
 
   useEffect(() => {
-    fetchEvents();
-    fetchSubjects();
+    if (departmentId) {
+      fetchEvents();
+      fetchSubjects();
+    }
     fetchEventCategories();
-  }, [fetchEvents, fetchSubjects, fetchEventCategories]);
+  }, [departmentId, fetchEvents, fetchSubjects, fetchEventCategories]);
 
   const handleAddEvent = async (newEventData: Omit<AcademicEvent, 'id'>) => {
+    if (!departmentId) {
+        toast({ variant: "destructive", title: "Error", description: "No department identified for admin." });
+        return;
+    }
     try {
       const eventDataForFirestore = {
         ...newEventData,
+        departmentId: departmentId, // Add departmentId
         start: Timestamp.fromDate(newEventData.start),
         end: Timestamp.fromDate(newEventData.end),
         subjectId: newEventData.subjectId || null,
@@ -203,25 +210,14 @@ export default function AdminDashboardPage() {
   };
 
   const handleDeleteEvent = async (eventId: string) => {
-    console.log(`AdminDashboard: Attempting to delete event: ${eventId}`);
-    if (!window.confirm("Are you sure you want to delete this event?")) {
-        console.log("AdminDashboard: Event deletion cancelled by user.");
-        return;
-    }
+    if (!window.confirm("Are you sure you want to delete this event?")) return;
     try {
-      console.log(`AdminDashboard: Proceeding with delete operation for event: ${eventId}`);
       await deleteDoc(doc(db, "events", eventId));
-      console.log(`AdminDashboard: Event ${eventId} successfully deleted from Firestore (according to client).`);
       toast({ title: "Event Deleted Successfully" });
       fetchEvents();
     } catch (error) {
-      console.error(`AdminDashboard: Error deleting event ${eventId} (raw error object):`, error);
-      const firebaseError = error as { code?: string; message: string };
-      toast({
-          variant: "destructive",
-          title: "Error Deleting Event",
-          description: `Firebase Error (${firebaseError.code || 'UNKNOWN'}): ${firebaseError.message}`
-      });
+      console.error("Error deleting event:", error);
+      toast({ variant: "destructive", title: "Error Deleting Event", description: `Details: ${(error as Error)?.message}`});
     }
   };
 
@@ -259,7 +255,7 @@ export default function AdminDashboardPage() {
 
   const handleUpdateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentEventToEdit) return;
+    if (!currentEventToEdit || !departmentId) return;
     try {
         const updatedEventData = {
             title: editEventFormData.title,
@@ -270,6 +266,7 @@ export default function AdminDashboardPage() {
             location: editEventFormData.location,
             description: editEventFormData.description,
             subjectId: editEventFormData.subjectId || null,
+            departmentId: departmentId, // Ensure departmentId is preserved
         };
         await updateDoc(doc(db, "events", currentEventToEdit.id), updatedEventData as { [x: string]: any });
         toast({ title: "Event Updated Successfully" });
@@ -284,6 +281,10 @@ export default function AdminDashboardPage() {
 
   const handleAddSubjectToDB = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!departmentId) {
+      toast({ variant: "destructive", title: "Error", description: "No department identified for admin." });
+      return;
+    }
     if (!addSubjectFormData.name.trim()) {
       toast({ variant: "destructive", title: "Validation Error", description: "Subject name is required." });
       return;
@@ -296,11 +297,8 @@ export default function AdminDashboardPage() {
         break;
       }
     }
-    if (assignedColor === FALLBACK_SUBJECT_COLOR && PREDEFINED_SUBJECT_COLORS.length > 0 && usedColors.size >= PREDEFINED_SUBJECT_COLORS.length) {
-        console.warn("All predefined subject colors are in use. Assigning fallback color.");
-    }
     try {
-      await addDoc(collection(db, "subjects"), { name: addSubjectFormData.name, color: assignedColor });
+      await addDoc(collection(db, "subjects"), { name: addSubjectFormData.name, color: assignedColor, departmentId: departmentId });
       toast({ title: "Subject Added Successfully", description: `Assigned color: ${assignedColor}` });
       fetchSubjects();
       setShowAddSubjectDialog(false);
@@ -341,43 +339,33 @@ export default function AdminDashboardPage() {
   };
 
   const handleDeleteSubjectFromDB = async (subjectId: string) => {
-    console.log(`AdminDashboard: Attempting to delete subject: ${subjectId}`);
-    if (!window.confirm("Are you sure you want to delete this subject? This will also remove its association from any events.")) {
-      console.log("AdminDashboard: Subject deletion cancelled by user.");
-      return;
-    }
-    console.log(`AdminDashboard: Proceeding with delete operation for subject: ${subjectId}`);
+    if (!window.confirm("Are you sure you want to delete this subject? This will also remove its association from any events in this department.")) return;
+    if (!departmentId) return;
+
     try {
       const batch = writeBatch(db);
       const subjectDocRef = doc(db, "subjects", subjectId);
       batch.delete(subjectDocRef);
-      console.log(`AdminDashboard: Subject ${subjectId} added to delete batch.`);
-      const eventsQuery = query(collection(db, "events"), where("subjectId", "==", subjectId));
+      
+      const eventsQuery = query(collection(db, "events"), where("subjectId", "==", subjectId), where("departmentId", "==", departmentId));
       const eventSnapshots = await getDocs(eventsQuery);
-      console.log(`AdminDashboard: Found ${eventSnapshots.docs.length} events associated with subject ${subjectId}.`);
+
       eventSnapshots.forEach(eventDoc => {
         const eventDocRef = doc(db, "events", eventDoc.id);
         batch.update(eventDocRef, { subjectId: null });
-        console.log(`AdminDashboard: Event ${eventDoc.id} added to batch for subjectId update to null.`);
       });
-      console.log("AdminDashboard: Committing batch delete for subject and update for associated events...");
+
       await batch.commit();
-      console.log("AdminDashboard: Batch commit successful (according to client).");
       toast({ title: "Subject Deleted Successfully" });
-      console.log("AdminDashboard: Re-fetching subjects and events post-deletion...");
       fetchSubjects();
       fetchEvents();
     } catch (error) {
-      console.error(`AdminDashboard: Error deleting subject ${subjectId} (raw error object):`, error);
-      const firebaseError = error as { code?: string; message: string };
-      toast({
-        variant: "destructive",
-        title: "Error Deleting Subject",
-        description: `Firebase Error (${firebaseError.code || 'UNKNOWN'}): ${firebaseError.message}`
-      });
+      console.error("Error deleting subject:", error);
+      toast({ variant: "destructive", title: "Error Deleting Subject", description: `Details: ${(error as Error)?.message}` });
     }
   };
 
+  // Category management is global and does not depend on department
   const handleAddEventCategoryToDB = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!addCategoryFormData.name.trim()) {
@@ -396,9 +384,6 @@ export default function AdminDashboardPage() {
             assignedColor = color;
             break;
         }
-    }
-    if (assignedColor === FALLBACK_CATEGORY_COLOR && PREDEFINED_CATEGORY_COLORS.length > 0 && usedColors.size >= PREDEFINED_CATEGORY_COLORS.length) {
-        console.warn("All predefined category colors are in use. Assigning fallback color.");
     }
 
     const subTypesArray = addCategoryFormData.subTypesString.split(',').map(st => st.trim()).filter(st => st);
@@ -423,7 +408,7 @@ export default function AdminDashboardPage() {
     setEditCategoryFormData({
       id: category.id,
       name: category.name,
-      originalName: category.name, // Store original name
+      originalName: category.name,
       color: category.color,
       subTypesString: (category.subTypes || []).join(', '),
     });
@@ -443,7 +428,7 @@ export default function AdminDashboardPage() {
     }
 
     const newName = editCategoryFormData.name.trim();
-    const originalName = editCategoryFormData.originalName; // Use the stored original name
+    const originalName = editCategoryFormData.originalName;
 
     if (newName.toLowerCase() !== originalName?.toLowerCase() &&
         eventCategoriesDB.some(cat => cat.id !== currentCategoryToEdit.id && cat.name.toLowerCase() === newName.toLowerCase())) {
@@ -461,41 +446,36 @@ export default function AdminDashboardPage() {
       subTypes: subTypesArray,
     });
 
-    // If category name changed, update all associated events
+    // This is a global change. When a category name changes, it affects events in ALL departments.
     let eventsUpdatedCount = 0;
     if (originalName && newName !== originalName) {
-      console.log(`AdminDashboard: Category name changed from "${originalName}" to "${newName}". Querying events to update.`);
+      // Note: This query is NOT scoped by department, which is intentional for global category updates.
       const eventsQuery = query(collection(db, "events"), where("category", "==", originalName));
       try {
         const eventSnapshots = await getDocs(eventsQuery);
-        console.log(`AdminDashboard: Found ${eventSnapshots.docs.length} events with category "${originalName}".`);
         eventSnapshots.forEach(eventDoc => {
           const eventDocRef = doc(db, "events", eventDoc.id);
           batch.update(eventDocRef, { category: newName });
           eventsUpdatedCount++;
-          console.log(`AdminDashboard: Event ${eventDoc.id} added to batch for category update to "${newName}".`);
         });
       } catch (queryError) {
         console.error("Error querying events for category update:", queryError);
         toast({ variant: "destructive", title: "Error Updating Events", description: `Could not find events to update category name. ${(queryError as Error).message}` });
-        return; // Prevent committing partial changes if query fails
+        return;
       }
     }
 
     try {
-      console.log("AdminDashboard: Committing category update batch...");
       await batch.commit();
-      console.log("AdminDashboard: Batch commit successful.");
       let successMessage = "Category Updated Successfully";
       if (eventsUpdatedCount > 0) {
-        successMessage += ` and ${eventsUpdatedCount} event(s) were updated with the new category name.`;
+        successMessage += ` and ${eventsUpdatedCount} event(s) were updated globally with the new category name.`;
       }
       toast({ title: successMessage });
 
       fetchEventCategories();
       if (originalName && newName !== originalName) {
-         console.log("AdminDashboard: Category name changed, re-fetching events.");
-         fetchEvents(); // Re-fetch events if their category names were updated
+         fetchEvents(); // Re-fetch events for the current department to reflect change
       }
       setShowEditCategoryDialog(false);
       setCurrentCategoryToEdit(null);
@@ -507,7 +487,7 @@ export default function AdminDashboardPage() {
 
 
   const handleDeleteEventCategoryFromDB = async (category: EventCategory) => {
-    if (!window.confirm(`Are you sure you want to delete the category "${category.name}"? Events using this category will be reassigned to "${DEFAULT_EVENT_CATEGORY_ON_DELETE}".`)) {
+    if (!window.confirm(`Are you sure you want to delete the GLOBAL category "${category.name}"? Events in ALL departments using this category will be reassigned to "${DEFAULT_EVENT_CATEGORY_ON_DELETE}".`)) {
       return;
     }
     try {
@@ -534,8 +514,8 @@ export default function AdminDashboardPage() {
 
   const selectedEditEventCategoryDetails = eventCategoriesDB.find(c => c.name === editEventFormData.category);
 
-  if (isLoadingEvents || isLoadingSubjects || isLoadingCategories) {
-    return <div className="flex justify-center items-center h-full"><p>Loading admin data...</p></div>;
+  if (!userProfile) {
+    return <div className="flex justify-center items-center h-full"><p>Loading...</p></div>;
   }
 
   return (
@@ -544,7 +524,7 @@ export default function AdminDashboardPage() {
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="events">Manage Events</TabsTrigger>
           <TabsTrigger value="subjects">Manage Subjects</TabsTrigger>
-          <TabsTrigger value="categories">Manage Categories</TabsTrigger>
+          <TabsTrigger value="categories">Manage Global Categories</TabsTrigger>
         </TabsList>
 
         <TabsContent value="events">
@@ -557,12 +537,13 @@ export default function AdminDashboardPage() {
                  </Button>
               </div>
               <CardDescription>
-                Add, edit, or delete academic events.
+                Add, edit, or delete academic events for your department.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {events.length === 0 ? (
-                <p className="text-center text-muted-foreground">No events found. Add some!</p>
+              {isLoadingEvents ? (<p className="text-center text-muted-foreground">Loading events...</p>) :
+              events.length === 0 ? (
+                <p className="text-center text-muted-foreground">No events found for this department. Add one!</p>
               ) : (
                 <ul className="space-y-4">
                   {events.map((event) => {
@@ -607,7 +588,7 @@ export default function AdminDashboardPage() {
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center">
-                <CardTitle>Manage Subjects</CardTitle>
+                <CardTitle>Manage Department Subjects</CardTitle>
                 <Button onClick={() => {
                   setAddSubjectFormData({ name: '' });
                   setShowAddSubjectDialog(true);
@@ -616,7 +597,7 @@ export default function AdminDashboardPage() {
                 </Button>
               </div>
               <CardDescription>
-                Add, edit, or delete subjects. A unique color is automatically assigned.
+                Add, edit, or delete subjects for your department.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -652,7 +633,7 @@ export default function AdminDashboardPage() {
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center">
-                <CardTitle>Manage Event Categories</CardTitle>
+                <CardTitle>Manage Global Event Categories</CardTitle>
                 <Button onClick={() => {
                   setAddCategoryFormData({ name: '', subTypesString: ''});
                   setShowAddCategoryDialog(true);
@@ -661,7 +642,7 @@ export default function AdminDashboardPage() {
                 </Button>
               </div>
               <CardDescription>
-                Add, edit, or delete event categories and their sub-types. A unique color is automatically assigned.
+                These categories are GLOBAL and shared across all departments.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -807,7 +788,7 @@ export default function AdminDashboardPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Add New Subject</DialogTitle>
-            <DialogDescription>Define a new subject. A unique color will be automatically assigned.</DialogDescription>
+            <DialogDescription>Define a new subject for your department. A unique color will be automatically assigned.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleAddSubjectToDB} className="space-y-4 py-4">
             <div>
@@ -856,8 +837,8 @@ export default function AdminDashboardPage() {
       }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add New Event Category</DialogTitle>
-            <DialogDescription>Define a new category and its optional sub-types (comma-separated). A unique color will be automatically assigned.</DialogDescription>
+            <DialogTitle>Add New Global Category</DialogTitle>
+            <DialogDescription>This category will be available to ALL departments.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleAddEventCategoryToDB} className="space-y-4 py-4">
             <div>
@@ -885,7 +866,7 @@ export default function AdminDashboardPage() {
         }}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Edit Category: {currentCategoryToEdit.name}</DialogTitle>
+              <DialogTitle>Edit Global Category: {currentCategoryToEdit.name}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleUpdateEventCategoryInDB} className="space-y-4 py-4">
               <div>
@@ -911,4 +892,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-

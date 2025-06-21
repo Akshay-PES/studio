@@ -1,9 +1,17 @@
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 // import Image from 'next/image'; // Logo removed
+
+const departments = [
+  { name: "MBA", id: "mba" },
+  { name: "BBA", id: "bba" },
+  { name: "BCom", id: "bcom" },
+  { name: "Law", id: "law" },
+  { name: "Psychology", id: "psychology" },
+];
 
 export default function HomePage() {
   return (
@@ -16,17 +24,24 @@ export default function HomePage() {
             Your Unified Academic Planner
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col items-center space-y-6">
-          <p className="text-center text-foreground">
-            Streamline your academic schedule, manage events, and stay organized with AcademiaSync.
+        <CardContent className="flex flex-col items-center space-y-4">
+          <p className="text-center text-foreground pb-2">
+            Select a department to view its academic calendar.
           </p>
-          <Link href="/dashboard">
-            <Button size="lg" className="w-full font-semibold group">
-              Go to Dashboard
-              <ArrowRight className="w-5 h-5 ml-2 transition-transform duration-200 group-hover:translate-x-1" />
-            </Button>
-          </Link>
+          {departments.map((dept) => (
+            <Link key={dept.id} href={`/dashboard?department=${dept.id}`} className="w-full">
+              <Button size="lg" className="w-full font-semibold group">
+                {dept.name} Calendar
+                <ArrowRight className="w-5 h-5 ml-2 transition-transform duration-200 group-hover:translate-x-1" />
+              </Button>
+            </Link>
+          ))}
         </CardContent>
+        <CardFooter className="flex justify-center pt-4">
+            <Link href="/login">
+                <Button variant="link">Admin Login</Button>
+            </Link>
+        </CardFooter>
       </Card>
       <footer className="mt-12 text-center text-muted-foreground">
         <p>&copy; {new Date().getFullYear()} AcademiaSync. Built for modern academic institutions.</p>

@@ -3,80 +3,58 @@
 
 import React, { useEffect } from 'react';
 import Link from 'next/link';
-// import Image from 'next/image'; // Logo removed
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-// import { ShieldCheck } from 'lucide-react'; // ShieldCheck no longer used
+
+const departmentNames: { [key: string]: string } = {
+  mba: "MBA",
+  bba: "BBA",
+  bcom: "BCom",
+  law: "Law",
+  psychology: "Psychology",
+};
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { currentUser, loading, isAdmin } = useAuth();
+  const { currentUser, userProfile, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    console.log("AdminLayout: useEffect triggered. Loading:", loading, "CurrentUser:", currentUser?.email, "IsAdmin:", isAdmin);
-
     if (loading) {
-      console.log("AdminLayout: Still loading auth state. Waiting...");
-      return; // Wait until loading is false before making decisions
+      return; 
     }
 
-    if (!currentUser) {
-      console.log("AdminLayout: No currentUser. Redirecting to login.");
-      router.push('/login?redirect=/admin/dashboard');
-    } else if (!isAdmin) {
-      console.log("AdminLayout: CurrentUser exists, but NOT admin. Redirecting to dashboard with error. User email:", currentUser.email);
-      router.push('/dashboard?error=unauthorized');
-    } else {
-      console.log("AdminLayout: Admin access GRANTED for user:", currentUser.email);
-      // User is authenticated and is an admin, allow access.
+    if (!currentUser || !userProfile || userProfile.role !== 'department_admin') {
+      router.push('/login?error=unauthorized');
     }
-  }, [currentUser, loading, isAdmin, router]);
+  }, [currentUser, userProfile, loading, router]);
 
-  if (loading) {
+  if (loading || !currentUser || !userProfile) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p className="text-lg text-muted-foreground">Loading admin section...</p>
+        <p className="text-lg text-muted-foreground">Verifying admin access...</p>
       </div>
     );
   }
 
-  // This part will only be reached if loading is false.
-  // The useEffect above will handle redirection if currentUser is null or !isAdmin.
-  // So, if we reach here and currentUser is null or !isAdmin, it means redirection is about to happen
-  // or has just been triggered. We show a fallback UI.
-  if (!currentUser || !isAdmin) {
-    // This is a fallback display while redirection initiated by useEffect is in progress,
-    // or if somehow the redirection doesn't happen immediately.
-    console.log("AdminLayout: Fallback UI - Access Denied or Not Logged In (currentUser:", currentUser?.email, "isAdmin:", isAdmin, ")");
-    return (
-       <div className="flex flex-col items-center justify-center min-h-screen">
-        <p className="text-lg text-muted-foreground mb-4">Verifying access...</p>
-        {/* Optionally show a login button if detection is truly stuck, but useEffect should handle it */}
-        {/* <Button asChild><Link href="/login?redirect=/admin/dashboard">Go to Login</Link></Button> */}
-      </div>
-    );
-  }
+  const departmentName = departmentNames[userProfile.departmentId] || userProfile.departmentId.toUpperCase();
 
-  // If authenticated and admin, render the admin layout
-  console.log("AdminLayout: Rendering admin content for user:", currentUser.email);
   return (
     <div className="flex flex-col min-h-screen">
       <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 border-b bg-card shadow-sm sm:px-6">
         <Link href="/admin/dashboard" className="flex items-center gap-2 text-lg font-semibold text-primary">
-          {/* <Image src="/pes-logo.png" alt="PES University Logo" width={67} height={24} /> */}
-          AcademiaSync - Admin Panel
+          AcademiaSync - {departmentName} Admin
         </Link>
         <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground hidden md:inline">
-              Logged in as: {currentUser.email}
+              {currentUser.email}
             </span>
           <Button variant="outline" size="sm" asChild>
-            <Link href="/dashboard">View Public Calendar</Link>
+            <Link href={`/dashboard?department=${userProfile.departmentId}`}>View Public Calendar</Link>
           </Button>
         </div>
       </header>

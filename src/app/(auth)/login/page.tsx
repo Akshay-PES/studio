@@ -12,9 +12,6 @@ import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { AuthError } from 'firebase/auth';
 
-// The designated admin email for this login page
-const ADMIN_LOGIN_EMAIL = "mbaoffice.rr@pes.edu";
-
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -28,10 +25,8 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     setIsLoggingIn(true);
-    console.log("LoginPage: handleSubmit initiated for", email);
 
     const result = await signIn(email, password);
-    console.log("LoginPage: signIn result received in LoginPage:", result);
 
     if (result && 'code' in result && (result as AuthError).code) {
       const authError = result as AuthError;
@@ -45,17 +40,14 @@ export default function LoginPage() {
       }
       setError(userFriendlyError);
       toast({ variant: "destructive", title: "Login Failed", description: userFriendlyError });
-      console.error("LoginPage: Login failed with AuthError:", authError);
-    } else if (result && 'uid' in result) { // Firebase User object
-        console.log("LoginPage: Firebase login successful for", result.email, ". Redirecting to /admin/dashboard.");
+    } else if (result && 'uid' in result) {
         toast({ title: "Login Successful", description: "Redirecting..." });
-        // Always redirect to /admin/dashboard. AdminLayout will handle authorization.
+        // The AuthContext will fetch the user's role. The AdminLayout will
+        // handle authorization and redirection if the user is not an admin.
         router.push('/admin/dashboard');
     } else {
-      // Fallback for unexpected result, though signIn should return FirebaseUser or AuthError
       setError("An unexpected error occurred during login.");
       toast({ variant: "destructive", title: "Login Error", description: "An unexpected error occurred."});
-      console.error("LoginPage: Unexpected login result:", result);
     }
     setIsLoggingIn(false);
   };
@@ -64,7 +56,7 @@ export default function LoginPage() {
     <Card className="w-full max-w-sm shadow-2xl">
       <CardHeader className="text-center">
         <CardTitle className="text-3xl font-headline text-primary">Admin Login</CardTitle>
-        <CardDescription>Enter your credentials to access the admin panel.</CardDescription>
+        <CardDescription>Enter your department credentials to access the admin panel.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -75,7 +67,7 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@example.com"
+              placeholder="department-admin@example.com"
               required
             />
           </div>
@@ -98,10 +90,10 @@ export default function LoginPage() {
       </CardContent>
        <CardFooter className="flex flex-col items-center text-sm">
          <p className="text-muted-foreground">
-            Use '{ADMIN_LOGIN_EMAIL}' for admin access.
+            Only authorized department admins can log in.
           </p>
-        <Link href="/dashboard" className="mt-2 text-primary hover:underline">
-          Back to Public Calendar
+        <Link href="/" className="mt-2 text-primary hover:underline">
+          Back to Department Selection
         </Link>
       </CardFooter>
     </Card>

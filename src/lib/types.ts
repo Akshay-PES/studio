@@ -10,6 +10,7 @@ export interface Subject {
   id: string; // Firestore document ID
   name: string;
   color: string; // Hex color code
+  departmentId: string; // e.g., "mba", "bba"
 }
 
 export interface AcademicEvent {
@@ -24,8 +25,17 @@ export interface AcademicEvent {
   description?: string;
   location?: string;
   attendees?: string[]; // Array of user IDs or names
+  departmentId: string; // e.g., "mba", "bba"
 }
 
+export interface UserProfile {
+  uid: string;
+  email: string;
+  role: "department_admin";
+  departmentId: string; // e.g., "mba", "bba"
+}
+
+// Kept for legacy compatibility if needed, but UserProfile is preferred
 export interface User {
   id: string;
   role: UserRole[];

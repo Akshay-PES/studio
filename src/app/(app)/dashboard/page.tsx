@@ -1,26 +1,36 @@
 
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { collection, getDocs, Timestamp, query, orderBy, DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { collection, getDocs, Timestamp, query, orderBy, DocumentData, QueryDocumentSnapshot, where } from "firebase/firestore";
 import { db } from '@/lib/firebase'; 
 
 import CalendarView from '@/components/calendar/calendar-view';
 import EventDetailDialog from '@/components/calendar/event-detail-dialog';
-import DayViewDialog from '@/components/calendar/day-view-dialog'; // Import DayViewDialog
+import DayViewDialog from '@/components/calendar/day-view-dialog';
 import type { AcademicEvent, Subject, EventCategory } from '@/lib/types';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 import { useFilters } from '@/contexts/FilterContext';
 
-export default function DashboardPage() {
+const departmentNames: { [key: string]: string } = {
+  mba: "MBA",
+  bba: "BBA",
+  bcom: "BCom",
+  law: "Law",
+  psychology: "Psychology",
+};
+
+export default function DashboardPage({ searchParams }: { searchParams: { [key: string]: string | string[] | undefined } }) {
+  const department = typeof searchParams.department === 'string' ? searchParams.department : 'mba'; // Default to 'mba'
+  
   const [events, setEvents] = useState<AcademicEvent[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [eventCategories, setEventCategories] = useState<EventCategory[]>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
   const [isLoadingSubjects, setIsLoadingSubjects] = useState(true);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
-  const { filters, colorMode } = useFilters();
+  const { filters, colorMode, setFilters } = useFilters();
   const [selectedEvent, setSelectedEvent] = useState<AcademicEvent | null>(null);
   const [showEventDetail, setShowEventDetail] = useState(false);
 
@@ -31,18 +41,18 @@ export default function DashboardPage() {
   const isMobile = useIsMobile();
   const { toast } = useToast();
 
-  const fetchEvents = useCallback(async () => {
+  const fetchEvents = useCallback(async (departmentId: string) => {
     setIsLoadingEvents(true);
     try {
       const eventsCollection = collection(db, "events");
-      const q = query(eventsCollection, orderBy("start", "asc")); 
+      const q = query(eventsCollection, where("departmentId", "==", departmentId), orderBy("start", "asc")); 
       const querySnapshot = await getDocs(q);
       const fetchedEvents: AcademicEvent[] = querySnapshot.docs.map(doc => {
         const data = doc.data();
         return {
           id: doc.id,
           title: data.title,
-          category: data.category, // Category name
+          category: data.category,
           subType: data.subType,
           subjectId: data.subjectId,
           start: (data.start as Timestamp).toDate(), 
@@ -51,6 +61,7 @@ export default function DashboardPage() {
           faculty: data.faculty,
           description: data.description,
           attendees: data.attendees,
+          departmentId: data.departmentId,
         };
       });
       setEvents(fetchedEvents);
@@ -66,11 +77,11 @@ export default function DashboardPage() {
     }
   }, [toast]);
 
-  const fetchSubjects = useCallback(async () => {
+  const fetchSubjects = useCallback(async (departmentId: string) => {
     setIsLoadingSubjects(true);
     try {
       const subjectsCollection = collection(db, "subjects");
-      const q = query(subjectsCollection, orderBy("name", "asc"));
+      const q = query(subjectsCollection, where("departmentId", "==", departmentId), orderBy("name", "asc"));
       const querySnapshot = await getDocs(q);
       const fetchedSubjects: Subject[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
         const data = doc.data();
@@ -78,6 +89,7 @@ export default function DashboardPage() {
           id: doc.id,
           name: data.name,
           color: data.color,
+          departmentId: data.departmentId,
         };
       });
       setSubjects(fetchedSubjects);
@@ -122,11 +134,16 @@ export default function DashboardPage() {
   }, [toast]);
 
   useEffect(() => {
-    fetchEvents();
-    fetchSubjects();
-    fetchEventCategories();
-  }, [fetchEvents, fetchSubjects, fetchEventCategories]);
-
+    // Reset filters when department changes
+    setFilters({ categories: [], subjects: [], subTypes: [], dateRange: {} });
+    
+    // Fetch data for the current department
+    fetchEvents(department);
+    fetchSubjects(department);
+    if (eventCategories.length === 0) {
+      fetchEventCategories();
+    }
+  }, [department, fetchEvents, fetchSubjects, fetchEventCategories, setFilters, eventCategories.length]);
 
   useEffect(() => {
     if (!selectedEvent) {
@@ -135,6 +152,8 @@ export default function DashboardPage() {
   }, [selectedEvent]);
   
   const isLoading = isLoadingEvents || isLoadingSubjects || isLoadingCategories;
+
+  const departmentDisplayName = useMemo(() => departmentNames[department] || department.toUpperCase(), [department]);
 
   const handleOpenDayView = (date: Date) => {
     setSelectedDateForDayView(date);
@@ -149,20 +168,24 @@ export default function DashboardPage() {
   const handleEventClickFromDayView = (event: AcademicEvent) => {
     setSelectedEvent(event);
     setShowEventDetail(true);
-    // Optionally close DayViewDialog when an event detail is opened
-    // setShowDayViewDialog(false); 
   };
 
   if (isLoading && !isMobile) { 
     return (
       <div className="flex flex-1 h-full items-center justify-center">
-        <p className="text-lg text-muted-foreground">Loading calendar data...</p>
+        <p className="text-lg text-muted-foreground">Loading {departmentDisplayName} calendar data...</p>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col flex-1 h-full">
+      <div className="p-4 md:px-6 md:pt-6 md:pb-0">
+          <h1 className="text-2xl font-bold text-primary">
+              {departmentDisplayName} Department Calendar
+          </h1>
+          <p className="text-muted-foreground">Academic events and schedules for the {departmentDisplayName} department.</p>
+      </div>
       <div className="flex-1 overflow-auto min-h-0">
       {isLoading && isMobile && ( 
           <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-50">
@@ -177,7 +200,7 @@ export default function DashboardPage() {
           colorMode={colorMode}
           setSelectedEvent={setSelectedEvent}
           setShowEventDetail={setShowEventDetail}
-          onDateClick={handleOpenDayView} // Pass callback to open day view
+          onDateClick={handleOpenDayView}
         />
       </div>
 
@@ -202,7 +225,7 @@ export default function DashboardPage() {
           allEvents={events}
           allSubjects={subjects}
           allCategories={eventCategories}
-          filters={filters} // Pass filters to DayViewDialog
+          filters={filters}
           onEventClick={handleEventClickFromDayView}
         />
       )}

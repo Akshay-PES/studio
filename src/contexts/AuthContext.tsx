@@ -3,15 +3,17 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, signOut as firebaseSignOut, User as FirebaseUser, signInWithEmailAndPassword, AuthError } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-import { useRouter } from 'next/navigation'; // Use next/navigation for App Router
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
+import type { UserProfile } from '@/lib/types';
+import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
   currentUser: FirebaseUser | null;
+  userProfile: UserProfile | null;
   loading: boolean;
-  signIn: (email: string, pass: string) => Promise<FirebaseUser | AuthError>;
+  signIn: (email: string, pass:string) => Promise<FirebaseUser | AuthError>;
   signOut: () => Promise<void>;
-  isAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,84 +26,75 @@ export const useAuth = (): AuthContextType => {
   return context;
 };
 
-const ADMIN_EMAIL = "mbaoffice.rr@pes.edu";
-
 interface AuthProviderProps {
   children: ReactNode;
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    console.log("AuthContext: onAuthStateChanged EFFECT RUNNING/SUBSCRIBING");
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      console.log("AuthContext: onAuthStateChanged CALLBACK FIRED. User email:", user?.email);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
-      if (user && user.email === ADMIN_EMAIL) {
-        console.log("AuthContext: User is ADMIN. Setting isAdmin to true.");
-        setIsAdmin(true);
+      if (user) {
+        // User is logged in, fetch their profile from Firestore
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists()) {
+          const profileData = userDocSnap.data() as Omit<UserProfile, 'uid'>;
+          setUserProfile({ uid: user.uid, ...profileData });
+        } else {
+          // User exists in Auth, but not in our 'users' collection. Treat as guest/unauthorized.
+          setUserProfile(null);
+        }
       } else {
-        console.log("AuthContext: User is NOT ADMIN or no user. Setting isAdmin to false.");
-        setIsAdmin(false);
+        // No user logged in
+        setUserProfile(null);
       }
       setLoading(false);
-      console.log("AuthContext: setLoading(false). isAdmin state is now:", (user && user.email === ADMIN_EMAIL));
     });
 
-    return () => {
-      console.log("AuthContext: onAuthStateChanged unsubscribing");
-      unsubscribe();
-    };
-  }, []); // Empty dependency array: runs once on mount, cleans up on unmount.
+    return () => unsubscribe();
+  }, []);
 
   const signIn = async (email: string, pass: string): Promise<FirebaseUser | AuthError> => {
-    setLoading(true); // Indicate that a sign-in process has started
-    console.log("AuthContext: signIn initiated for", email);
+    setLoading(true);
     try {
         const userCredential = await signInWithEmailAndPassword(auth, email, pass);
-        // onAuthStateChanged will now handle setting currentUser, isAdmin, and setLoading(false)
-        // This ensures all state related to auth is updated consistently.
-        console.log("AuthContext: Firebase signInWithEmailAndPassword successful for", userCredential.user.email);
-        // setLoading(false) will be called by onAuthStateChanged
+        // onAuthStateChanged will handle setting user and profile state
         return userCredential.user;
     } catch (error) {
-        console.error("AuthContext: Error in signInWithEmailAndPassword:", error);
-        setIsAdmin(false); // Ensure isAdmin is false on error
-        setLoading(false); // Critical to set loading false on error to unlock UI
+        setUserProfile(null);
+        setLoading(false);
         return error as AuthError;
     }
   };
 
   const signOut = async () => {
     setLoading(true);
-    console.log("AuthContext: signOut initiated");
     try {
       await firebaseSignOut(auth);
-      // onAuthStateChanged will fire with user as null.
-      // It will set currentUser to null, isAdmin to false, and setLoading(false).
-      console.log("AuthContext: Firebase signOut successful");
+      // onAuthStateChanged will clear user and profile state
       router.push('/login');
     } catch (error) {
       console.error("AuthContext: Error signing out: ", error);
-      setLoading(false); // Ensure loading is false if signOut fails for some reason
+      setLoading(false);
     }
   };
 
   const value = {
     currentUser,
+    userProfile,
     loading,
     signIn,
     signOut,
-    isAdmin,
   };
 
   return (
     <AuthContext.Provider value={value}>
-      {/* Render children immediately. Loading state will gate content in layouts/pages. */}
       {children}
     </AuthContext.Provider>
   );
