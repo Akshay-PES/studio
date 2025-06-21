@@ -1,73 +1,55 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper function to check if a user is an admin for a specific department.
-    function isAdmin(departmentId) {
-      // Check if the user is authenticated and their user profile exists.
-      // Then, check if their role is 'department_admin' and their departmentId matches.
+    
+    // A helper function to check if the requester is an admin of a specific department.
+    function isDepartmentAdmin(departmentId) {
+      let userProfile = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
       return request.auth != null &&
-             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'department_admin' &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.departmentId == departmentId;
+             userProfile.role == 'department_admin' &&
+             userProfile.departmentId == departmentId;
     }
 
-    // Helper function to check if a user is an admin for ANY department.
+    // A helper function to check if the requester is any admin.
     function isAnyAdmin() {
+      let userProfile = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
       return request.auth != null &&
-             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'department_admin';
+             userProfile.role == 'department_admin';
     }
 
-    // Rules for user profiles.
+    // Users collection can only be read by the user themselves.
+    // User creation is open (for signup), but updates are restricted.
     match /users/{userId} {
-      // Any authenticated user can read their own profile.
       allow read: if request.auth != null && request.auth.uid == userId;
-
-      // A user can update their own profile, BUT they cannot change their role or department.
-      // This prevents privilege escalation.
-      allow update: if request.auth != null && request.auth.uid == userId &&
-                       request.resource.data.role == resource.data.role &&
-                       request.resource.data.departmentId == resource.data.departmentId;
-
-      // Allow any admin to create a new user profile.
-      // Note: User creation itself is through Firebase Auth. This is for the Firestore document.
-      allow create: if isAnyAdmin();
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if false; 
     }
 
-    // Rules for academic events.
-    match /events/{eventId} {
-      // Anyone can read events. This makes the calendar public.
-      allow read: if true;
-
-      // Only an admin of the correct department can create an event.
-      allow create: if isAdmin(request.resource.data.departmentId);
-
-      // Only an admin of the correct department can update or delete an event.
-      allow update, delete: if isAdmin(resource.data.departmentId);
-    }
-
-    // Rules for subjects.
+    // Subjects can be read by anyone.
     match /subjects/{subjectId} {
-      // Anyone can read subjects.
       allow read: if true;
-
-      // Only an admin of the correct department can create a subject.
-      allow create: if isAdmin(request.resource.data.departmentId);
-
-      // Only an admin of the correct department can update or delete a subject.
-      allow update, delete: if isAdmin(resource.data.departmentId);
+      // On create, check the incoming data's departmentId.
+      allow create: if isDepartmentAdmin(request.resource.data.departmentId);
+      // On update/delete, check the existing data's departmentId.
+      allow update, delete: if isDepartmentAdmin(resource.data.departmentId);
     }
 
-    // Rules for event categories. These are global.
+    // Event Categories are global. They can be read by anyone.
+    // Only any admin can manage them.
     match /eventCategories/{categoryId} {
-      // Anyone can read event categories.
       allow read: if true;
-
-      // Any authenticated admin can create, update, or delete categories.
       allow create, update, delete: if isAnyAdmin();
+    }
+
+    // Events can be read by anyone.
+    match /events/{eventId} {
+      allow read: if true;
+      // On create, check the incoming data's departmentId.
+      allow create: if isDepartmentAdmin(request.resource.data.departmentId);
+      // On update/delete, check the existing data's departmentId.
+      allow update, delete: if isDepartmentAdmin(resource.data.departmentId);
     }
   }
 }
