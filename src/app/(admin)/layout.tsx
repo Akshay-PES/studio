@@ -40,13 +40,13 @@ export default function AdminLayout({
       return; 
     }
 
-    // Make role check case-insensitive
-    if (!currentUser || !userProfile || userProfile.role?.toLowerCase() !== 'department_admin') {
-      router.push('/login?error=unauthorized');
+    // Redirect if user is not a valid department admin or is missing critical data
+    if (!currentUser || !userProfile || userProfile.role?.toLowerCase() !== 'department_admin' || !userProfile.departmentId) {
+      router.push('/login?error=unauthorized_or_missing_data');
     }
   }, [currentUser, userProfile, loading, router]);
 
-  if (loading || !currentUser || !userProfile) {
+  if (loading || !currentUser || !userProfile || !userProfile.departmentId) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p className="text-lg text-muted-foreground">Verifying admin access...</p>
@@ -54,7 +54,7 @@ export default function AdminLayout({
     );
   }
 
-  // Make departmentId lookup case-insensitive to handle potential data-entry errors
+  // At this point, userProfile and userProfile.departmentId are guaranteed to exist.
   const departmentIdKey = userProfile.departmentId.toLowerCase();
   const departmentName = departmentNames[departmentIdKey] || userProfile.departmentId.toUpperCase();
 

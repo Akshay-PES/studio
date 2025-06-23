@@ -78,7 +78,12 @@ export default function Header({ sidebarTrigger }: HeaderProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>My Account <span className="text-xs text-primary">({userProfile.departmentId.toUpperCase()} Admin)</span></DropdownMenuLabel>
+              <DropdownMenuLabel>
+                My Account
+                {isDepartmentAdmin && userProfile.departmentId && (
+                  <span className="text-xs text-primary"> ({userProfile.departmentId.toUpperCase()} Admin)</span>
+                )}
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
               {isDepartmentAdmin && (
                 <Link href="/admin/dashboard">
