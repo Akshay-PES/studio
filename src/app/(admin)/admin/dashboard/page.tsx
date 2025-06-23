@@ -29,6 +29,7 @@ interface EditEventFormData {
   subjectId?: string;
   subType?: string;
   semester?: string;
+  section?: string;
 }
 
 interface AddSubjectFormData {
@@ -56,6 +57,7 @@ interface EditCategoryFormData {
 const NO_SUBJECT_VALUE = "__NONE_SUBJECT__";
 const NO_CATEGORY_VALUE = "__NONE_CATEGORY__";
 const NO_SEMESTER_VALUE = "__NONE_SEMESTER__";
+const NO_SECTION_VALUE = "__NONE_SECTION__";
 const DEFAULT_EVENT_CATEGORY_ON_DELETE = "Others";
 
 const PREDEFINED_SUBJECT_COLORS = [
@@ -129,6 +131,7 @@ export default function AdminDashboardPage() {
             subType: data.subType,
             subjectId: data.subjectId,
             semester: data.semester,
+            section: data.section,
             start: data.start.toDate(),
             end: data.end.toDate(),
             location: data.location,
@@ -220,6 +223,7 @@ export default function AdminDashboardPage() {
         end: Timestamp.fromDate(newEventData.end),
         subjectId: newEventData.subjectId || null,
         semester: newEventData.semester || null,
+        section: newEventData.section || null,
         category: newEventData.category || DEFAULT_EVENT_CATEGORY_ON_DELETE,
         subType: newEventData.subType || null,
       };
@@ -257,6 +261,7 @@ export default function AdminDashboardPage() {
         subjectId: event.subjectId || '',
         subType: event.subType || '',
         semester: event.semester ? String(event.semester) : NO_SEMESTER_VALUE,
+        section: event.section || NO_SECTION_VALUE,
     });
     setShowEditEventDialog(true);
   };
@@ -282,6 +287,10 @@ export default function AdminDashboardPage() {
     setEditEventFormData(prev => ({ ...prev, semester: newSemester }));
   };
   
+  const handleEditEventSectionChange = (newSection: string) => {
+    setEditEventFormData(prev => ({ ...prev, section: newSection }));
+  };
+
   const handleUpdateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentEventToEdit || !departmentId) return;
@@ -296,6 +305,7 @@ export default function AdminDashboardPage() {
             description: editEventFormData.description,
             subjectId: editEventFormData.subjectId || null,
             semester: editEventFormData.semester && editEventFormData.semester !== NO_SEMESTER_VALUE ? parseInt(editEventFormData.semester, 10) : null,
+            section: editEventFormData.section && editEventFormData.section !== NO_SECTION_VALUE ? editEventFormData.section : null,
             departmentId: departmentId, // Ensure departmentId is preserved/added
         };
         await updateDoc(doc(db, "events", currentEventToEdit.id), updatedEventData as { [x: string]: any });
@@ -591,6 +601,7 @@ export default function AdminDashboardPage() {
                           {event.category} {event.subType && `(${event.subType})`}
                         </p>
                         {event.semester && <p className="text-sm text-muted-foreground">Semester: {event.semester}</p>}
+                        {event.section && <p className="text-sm text-muted-foreground">Section: {event.section}</p>}
                         {event.location && <p className="text-sm text-muted-foreground">Location: {event.location}</p>}
                         {event.subjectId && subjectsDB.find(s => s.id === event.subjectId) &&
                           <p className="text-sm" style={{color: subjectsDB.find(s => s.id === event.subjectId)?.color || 'inherit'}}>
@@ -770,26 +781,26 @@ export default function AdminDashboardPage() {
                     {(!selectedEditEventCategoryDetails || !selectedEditEventCategoryDetails.subTypes || selectedEditEventCategoryDetails.subTypes.length === 0) && <p className="text-xs text-muted-foreground mt-1">No sub-types for this category.</p>}
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-event-subjectId">Subject (Optional)</Label>
+                <Select value={editEventFormData.subjectId || NO_SUBJECT_VALUE} onValueChange={handleEditEventSubjectChange}>
+                    <SelectTrigger id="edit-event-subjectId"><SelectValue placeholder="Select a subject" /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value={NO_SUBJECT_VALUE}>None</SelectItem>
+                        {subjectsDB.map(subject => (
+                            <SelectItem key={subject.id} value={subject.id}>
+                                <span className="flex items-center">
+                                    <span className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: subject.color }} />
+                                    {subject.name}
+                                </span>
+                            </SelectItem>
+                        ))}
+                        {subjectsDB.length === 0 && <SelectItem value="no-subjects" disabled>No subjects configured</SelectItem>}
+                    </SelectContent>
+                </Select>
+              </div>
+               <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="edit-event-subjectId">Subject (Optional)</Label>
-                    <Select value={editEventFormData.subjectId || NO_SUBJECT_VALUE} onValueChange={handleEditEventSubjectChange}>
-                        <SelectTrigger id="edit-event-subjectId"><SelectValue placeholder="Select a subject" /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value={NO_SUBJECT_VALUE}>None</SelectItem>
-                            {subjectsDB.map(subject => (
-                                <SelectItem key={subject.id} value={subject.id}>
-                                    <span className="flex items-center">
-                                        <span className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: subject.color }} />
-                                        {subject.name}
-                                    </span>
-                                </SelectItem>
-                            ))}
-                            {subjectsDB.length === 0 && <SelectItem value="no-subjects" disabled>No subjects configured</SelectItem>}
-                        </SelectContent>
-                    </Select>
-                  </div>
-                   <div>
                     <Label htmlFor="edit-event-semester">Semester/Trimester</Label>
                     <Select value={editEventFormData.semester || NO_SEMESTER_VALUE} onValueChange={handleEditEventSemesterChange}>
                         <SelectTrigger id="edit-event-semester"><SelectValue placeholder="Select semester" /></SelectTrigger>
@@ -797,6 +808,18 @@ export default function AdminDashboardPage() {
                             <SelectItem value={NO_SEMESTER_VALUE}>None</SelectItem>
                             {Array.from({ length: 8 }, (_, i) => i + 1).map(sem => (
                                 <SelectItem key={sem} value={String(sem)}>Sem/Trimester {sem}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-event-section">Section</Label>
+                    <Select value={editEventFormData.section || NO_SECTION_VALUE} onValueChange={handleEditEventSectionChange}>
+                        <SelectTrigger id="edit-event-section"><SelectValue placeholder="Select section" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value={NO_SECTION_VALUE}>None</SelectItem>
+                            {['A', 'B', 'C', 'D'].map(sec => (
+                                <SelectItem key={sec} value={String(sec)}>Section {sec}</SelectItem>
                             ))}
                         </SelectContent>
                     </Select>

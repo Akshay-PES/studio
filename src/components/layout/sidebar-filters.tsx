@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useSearchParams } from 'next/navigation';
 import { collection, getDocs, query, orderBy, DocumentData, QueryDocumentSnapshot, where } from "firebase/firestore";
 import { db } from '@/lib/firebase';
-import { CalendarIcon, Palette, Tag, Layers, Filter, ListFilter, ChevronsUpDown } from 'lucide-react';
+import { CalendarIcon, Palette, Tag, Layers, Filter, ListFilter, ChevronsUpDown, Bookmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -124,6 +124,15 @@ export default function SidebarFilters() {
     }));
   };
 
+  const handleSectionChange = (section: string, checked: boolean) => {
+    setFilters(prev => ({
+      ...prev,
+      sections: checked
+        ? [...prev.sections, section]
+        : prev.sections.filter(s => s !== section),
+    }));
+  };
+
   const handleDateChange = (field: 'start' | 'end', date?: Date) => {
     setFilters(prev => ({
       ...prev,
@@ -135,7 +144,7 @@ export default function SidebarFilters() {
   };
 
   const clearFilters = () => {
-    setFilters({ categories: [], subjects: [], subTypes: [], semesters: [], dateRange: {} });
+    setFilters({ categories: [], subjects: [], subTypes: [], semesters: [], sections: [], dateRange: {} });
     setColorMode('category');
   };
 
@@ -255,6 +264,27 @@ export default function SidebarFilters() {
                   />
                   <Label htmlFor={`sem-${sem}`} className="text-xs font-normal cursor-pointer flex-grow">
                     Sem/Trimester {sem}
+                  </Label>
+                </div>
+              ))}
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="sections" className="border-b-sidebar-border">
+            <AccordionTrigger className="text-sm font-medium hover:no-underline px-2 py-2.5">
+              <div className="flex items-center gap-1.5"><Bookmark className="w-4 h-4" /> Section</div>
+            </AccordionTrigger>
+            <AccordionContent className="pt-1 pb-1.5 space-y-1 px-2">
+              {['A', 'B', 'C', 'D'].map(sec => (
+                <div key={sec} className="flex items-center space-x-2 p-1 rounded-md hover:bg-sidebar-accent/70">
+                  <Checkbox
+                    id={`sec-${sec}`}
+                    checked={filters.sections.includes(sec)}
+                    onCheckedChange={(checked) => handleSectionChange(sec, !!checked)}
+                    className="border-sidebar-primary data-[state=checked]:bg-sidebar-primary data-[state=checked]:text-sidebar-primary-foreground"
+                  />
+                  <Label htmlFor={`sec-${sec}`} className="text-xs font-normal cursor-pointer flex-grow">
+                    Section {sec}
                   </Label>
                 </div>
               ))}

@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { CalendarDays, Clock, MapPin, User, Info, BookOpen, Users, ListFilter } from 'lucide-react';
+import { CalendarDays, Clock, MapPin, User, Info, BookOpen, Users, ListFilter, Bookmark } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface EventDetailDialogProps {
@@ -101,6 +101,15 @@ export default function EventDetailDialog({ event, allSubjects, allCategories, i
                   <div>
                     <strong>Semester/Trimester:</strong>
                     <p>{event.semester}</p>
+                  </div>
+                </div>
+              )}
+              {event.section && (
+                <div className="flex items-start">
+                  <Bookmark className="w-4 h-4 mr-2 mt-0.5 text-primary" />
+                  <div>
+                    <strong>Section:</strong>
+                    <p>{event.section}</p>
                   </div>
                 </div>
               )}

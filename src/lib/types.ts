@@ -20,6 +20,7 @@ export interface AcademicEvent {
   subType?: string;
   subjectId?: string; // Reference to Subject id
   semester?: number;
+  section?: string;
   start: Date;
   end: Date;
   faculty?: string;
@@ -52,6 +53,7 @@ export interface CalendarFilters {
   subjects: string[]; // Array of Subject IDs
   subTypes: string[]; // Array of selected sub-types
   semesters: number[];
+  sections: string[];
   dateRange?: { start?: Date; end?: Date };
 }
 

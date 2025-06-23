@@ -26,6 +26,7 @@ export const FilterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     subjects: [],
     subTypes: [],
     semesters: [],
+    sections: [],
     dateRange: {},
   });
   const [colorMode, setColorMode] = useState<ColorCodingMode>('category');

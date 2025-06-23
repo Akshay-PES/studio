@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { CalendarDays, Clock, MapPin, Layers, BookOpen, Info, ListFilter } from 'lucide-react';
+import { CalendarDays, Clock, MapPin, Layers, BookOpen, Info, ListFilter, Bookmark } from 'lucide-react';
 import { format, isSameDay, startOfDay } from 'date-fns';
 import { getCategoryByName, getSubjectById } from '@/data/mock-data';
 
@@ -53,9 +53,10 @@ export default function DayViewDialog({
       if (filters.subjects.length > 0 && event.subjectId && !filters.subjects.includes(event.subjectId)) {
         return false;
       }
-      // If semester filters are active, only hide events that HAVE a semester which is NOT in the filter list.
-      // Events without a semester should always be shown.
       if (filters.semesters.length > 0 && event.semester && !filters.semesters.includes(event.semester)) {
+        return false;
+      }
+      if (filters.sections.length > 0 && event.section && !filters.sections.includes(event.section)) {
         return false;
       }
       
@@ -122,6 +123,12 @@ export default function DayViewDialog({
                           <div className="flex items-center">
                             <ListFilter className="w-3.5 h-3.5 mr-1.5" />
                             Sem/Trimester: {event.semester}
+                          </div>
+                        )}
+                        {event.section && (
+                          <div className="flex items-center">
+                            <Bookmark className="w-3.5 h-3.5 mr-1.5" />
+                            Section: {event.section}
                           </div>
                         )}
                         {event.location && (
