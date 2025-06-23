@@ -61,7 +61,7 @@ export default function DashboardComponent() {
       const eventsCollection = collection(db, "events");
       const q = query(eventsCollection, where("departmentId", "==", departmentId));
       const querySnapshot = await getDocs(q);
-      const fetchedEvents: AcademicEvent[] = querySnapshot.docs
+      const fetchedEvents = querySnapshot.docs
         .map(doc => {
           const data = doc.data();
           if (!(data.start instanceof Timestamp) || !(data.end instanceof Timestamp)) {

@@ -115,7 +115,7 @@ export default function AdminDashboardPage() {
       const querySnapshot = await getDocs(q);
 
       const invalidEventTitles: string[] = [];
-      const fetchedEvents: AcademicEvent[] = querySnapshot.docs
+      const fetchedEvents = querySnapshot.docs
         .map((doc: QueryDocumentSnapshot<DocumentData>) => {
           const data = doc.data();
           if (!(data.start instanceof Timestamp) || !(data.end instanceof Timestamp)) {
