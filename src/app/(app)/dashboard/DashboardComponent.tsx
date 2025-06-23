@@ -61,24 +61,30 @@ export default function DashboardComponent() {
       const eventsCollection = collection(db, "events");
       const q = query(eventsCollection, where("departmentId", "==", departmentId));
       const querySnapshot = await getDocs(q);
-      const fetchedEvents: AcademicEvent[] = querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          title: data.title,
-          category: data.category,
-          subType: data.subType,
-          subjectId: data.subjectId,
-          semester: data.semester,
-          start: (data.start as Timestamp).toDate(), 
-          end: (data.end as Timestamp).toDate(),     
-          location: data.location,
-          faculty: data.faculty,
-          description: data.description,
-          attendees: data.attendees,
-          departmentId: data.departmentId,
-        };
-      });
+      const fetchedEvents: AcademicEvent[] = querySnapshot.docs
+        .map(doc => {
+          const data = doc.data();
+          if (!(data.start instanceof Timestamp) || !(data.end instanceof Timestamp)) {
+            console.warn(`Skipping malformed event on public dashboard (ID: ${doc.id}).`);
+            return null; // Silently skip on public view
+          }
+          return {
+            id: doc.id,
+            title: data.title,
+            category: data.category,
+            subType: data.subType,
+            subjectId: data.subjectId,
+            semester: data.semester,
+            start: data.start.toDate(),
+            end: data.end.toDate(),
+            location: data.location,
+            faculty: data.faculty,
+            description: data.description,
+            attendees: data.attendees,
+            departmentId: data.departmentId,
+          };
+        })
+        .filter((event): event is AcademicEvent => event !== null);
       
       const sortedEvents = fetchedEvents.sort((a, b) => a.start.getTime() - b.start.getTime());
       setEvents(sortedEvents);
