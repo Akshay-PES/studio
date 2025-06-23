@@ -75,6 +75,7 @@ export default function DashboardComponent() {
             subType: data.subType,
             subjectId: data.subjectId,
             semester: data.semester,
+            section: data.section,
             start: data.start.toDate(),
             end: data.end.toDate(),
             location: data.location,
@@ -160,7 +161,7 @@ export default function DashboardComponent() {
 
   useEffect(() => {
     // Reset filters when department changes
-    setFilters({ categories: [], subjects: [], subTypes: [], semesters: [], dateRange: {} });
+    setFilters({ categories: [], subjects: [], subTypes: [], semesters: [], sections: [], dateRange: {} });
     
     // Fetch data for the current department
     fetchEvents(department);
