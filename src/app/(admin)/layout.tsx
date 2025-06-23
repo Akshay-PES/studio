@@ -20,6 +20,11 @@ const departmentNames: { [key: string]: string } = {
     "bba-llb": "BBA-LLB",
     "ba-llb": "BA-LLB",
     "llb-hons": "LLB (Hons)",
+    "bba-ec": "BBA (EC Campus)",
+    "bcom-ec": "B.Com(EC Campus)",
+    "bba-hem": "BBA (Hospitality and Event management)",
+    "bsc-jmc": "B.Sc(JMC)",
+    "ma-pp": "M A Public policy",
 };
 
 export default function AdminLayout({

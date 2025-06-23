@@ -18,6 +18,11 @@ const departments = [
     { name: "BBA-LLB", id: "bba-llb" },
     { name: "BA-LLB", id: "ba-llb" },
     { name: "LLB (Hons)", id: "llb-hons" },
+    { name: "BBA (EC Campus)", id: "bba-ec" },
+    { name: "B.Com(EC Campus)", id: "bcom-ec" },
+    { name: "BBA (Hospitality and Event management)", id: "bba-hem" },
+    { name: "B.Sc(JMC)", id: "bsc-jmc" },
+    { name: "M A Public policy", id: "ma-pp" },
 ];
 
 export default function HomePage() {
