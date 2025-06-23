@@ -53,7 +53,9 @@ export default function DayViewDialog({
       if (filters.subjects.length > 0 && event.subjectId && !filters.subjects.includes(event.subjectId)) {
         return false;
       }
-      if (filters.semesters.length > 0 && (!event.semester || !filters.semesters.includes(event.semester))) {
+      // If semester filters are active, only hide events that HAVE a semester which is NOT in the filter list.
+      // Events without a semester should always be shown.
+      if (filters.semesters.length > 0 && event.semester && !filters.semesters.includes(event.semester)) {
         return false;
       }
       
