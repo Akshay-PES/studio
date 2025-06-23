@@ -41,6 +41,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { AcademicEvent, Subject, EventCategory } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 
 const NO_SUBJECT_VALUE = "__NONE_SUBJECT__";
 const NO_CATEGORY_VALUE = "__NONE_CATEGORY__";
@@ -192,307 +193,334 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
             <ScrollArea className="flex-1 -mr-6 pr-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 py-4">
-                <div className="md:col-span-2">
-                    <FormField
-                    control={form.control}
-                    name="title"
-                    render={({ field }) => (
+                <div className="space-y-6 py-4 pr-1">
+                  
+                  {/* --- CORE DETAILS --- */}
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Core Details</h4>
+                    <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="md:col-span-2">
+                        <FormField
+                          control={form.control}
+                          name="title"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Event Title</FormLabel>
+                              <FormControl>
+                                <Input placeholder="e.g., Midterm Exams" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <FormField
+                          control={form.control}
+                          name="category"
+                          render={({ field }) => (
+                          <FormItem>
+                              <FormLabel><Layers className="inline w-4 h-4 mr-1" />Category</FormLabel>
+                              <Select onValueChange={field.onChange} value={field.value || NO_CATEGORY_VALUE} defaultValue={field.value || NO_CATEGORY_VALUE}>
+                              <FormControl>
+                                  <SelectTrigger>
+                                  <SelectValue placeholder="Select a category" />
+                                  </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                  <SelectItem value={NO_CATEGORY_VALUE} disabled={categoriesFromDB.length > 0}>Select a category</SelectItem>
+                                  {categoriesFromDB.map(category => (
+                                  <SelectItem key={category.id} value={category.name}>
+                                      <span className="flex items-center">
+                                      <span className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: category.color }} />
+                                      {category.name}
+                                      </span>
+                                  </SelectItem>
+                                  ))}
+                                  {categoriesFromDB.length === 0 && <SelectItem value="no-cats-db" disabled>No categories configured</SelectItem>}
+                              </SelectContent>
+                              </Select>
+                              <FormMessage />
+                          </FormItem>
+                          )}
+                      />
+                      <FormField
+                          control={form.control}
+                          name="subType"
+                          render={({ field }) => (
+                          <FormItem>
+                              <FormLabel><ChevronsUpDown className="inline w-4 h-4 mr-1 opacity-70" />Sub-Type</FormLabel>
+                              <Select 
+                                  onValueChange={field.onChange} 
+                                  value={field.value || ""} 
+                                  defaultValue={field.value || ""}
+                                  disabled={availableSubTypes.length === 0 || selectedCategoryName === NO_CATEGORY_VALUE}
+                              >
+                              <FormControl>
+                                  <SelectTrigger>
+                                  <SelectValue placeholder="Select a sub-type" />
+                                  </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                  {availableSubTypes.map(subType => (
+                                  <SelectItem key={subType} value={subType}>
+                                      {subType}
+                                  </SelectItem>
+                                  ))}
+                              </SelectContent>
+                              </Select>
+                              { (selectedCategoryName && selectedCategoryName !== NO_CATEGORY_VALUE && availableSubTypes.length === 0) && <FormDescription className="text-xs">No sub-types for selected category.</FormDescription>}
+                              {(!selectedCategoryName || selectedCategoryName === NO_CATEGORY_VALUE) && <FormDescription className="text-xs">Select a category first.</FormDescription>}
+                              <FormMessage />
+                          </FormItem>
+                          )}
+                      />
+                    </div>
+                  </div>
+
+                  <Separator />
+                  
+                  {/* --- DATE & TIME --- */}
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Date & Time</h4>
+                    <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+                      <FormField
+                          control={form.control}
+                          name="startDate"
+                          render={({ field }) => (
+                          <FormItem>
+                              <FormLabel>Start Date</FormLabel>
+                              <Popover>
+                              <PopoverTrigger asChild>
+                                  <FormControl>
+                                  <Button
+                                      variant="outline"
+                                      className={cn(
+                                      "w-full pl-3 text-left font-normal",
+                                      !field.value && "text-muted-foreground"
+                                      )}
+                                  >
+                                      {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                  </Button>
+                                  </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                  <Calendar
+                                  mode="single"
+                                  selected={field.value}
+                                  onSelect={field.onChange}
+                                  initialFocus
+                                  />
+                              </PopoverContent>
+                              </Popover>
+                              <FormMessage />
+                          </FormItem>
+                          )}
+                      />
+                      <FormField
+                          control={form.control}
+                          name="startTime"
+                          render={({ field }) => (
+                          <FormItem>
+                              <FormLabel>Start Time</FormLabel>
+                              <FormControl>
+                              <Input type="time" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                          </FormItem>
+                          )}
+                      />
+
+                      <FormField
+                          control={form.control}
+                          name="endDate"
+                          render={({ field }) => (
+                          <FormItem>
+                              <FormLabel>End Date</FormLabel>
+                              <Popover>
+                              <PopoverTrigger asChild>
+                                  <FormControl>
+                                  <Button
+                                      variant="outline"
+                                      className={cn(
+                                      "w-full pl-3 text-left font-normal",
+                                      !field.value && "text-muted-foreground"
+                                      )}
+                                  >
+                                      {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                  </Button>
+                                  </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                  <Calendar
+                                  mode="single"
+                                  selected={field.value}
+                                  onSelect={field.onChange}
+                                  disabled={(date) =>
+                                      form.getValues("startDate") ? date < form.getValues("startDate") : false
+                                  }
+                                  initialFocus
+                                  />
+                              </PopoverContent>
+                              </Popover>
+                              <FormMessage />
+                          </FormItem>
+                          )}
+                      />
+                      <FormField
+                          control={form.control}
+                          name="endTime"
+                          render={({ field }) => (
+                          <FormItem>
+                              <FormLabel>End Time</FormLabel>
+                              <FormControl>
+                              <Input type="time" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                          </FormItem>
+                          )}
+                      />
+                    </div>
+                  </div>
+                  
+                  <Separator />
+
+                  {/* --- ACADEMIC CONTEXT --- */}
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Academic Context (Optional)</h4>
+                    <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+                      <FormField
+                        control={form.control}
+                        name="subjectId"
+                        render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Event Title</FormLabel>
-                        <FormControl>
-                            <Input placeholder="e.g., Midterm Exams" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                </div>
-
-                <FormField
-                    control={form.control}
-                    name="category"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel><Layers className="inline w-4 h-4 mr-1" />Category</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || NO_CATEGORY_VALUE} defaultValue={field.value || NO_CATEGORY_VALUE}>
-                        <FormControl>
-                            <SelectTrigger>
-                            <SelectValue placeholder="Select a category" />
-                            </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                            <SelectItem value={NO_CATEGORY_VALUE} disabled={categoriesFromDB.length > 0}>Select a category</SelectItem>
-                            {categoriesFromDB.map(category => (
-                            <SelectItem key={category.id} value={category.name}>
-                                <span className="flex items-center">
-                                <span className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: category.color }} />
-                                {category.name}
-                                </span>
-                            </SelectItem>
-                            ))}
-                            {categoriesFromDB.length === 0 && <SelectItem value="no-cats-db" disabled>No categories configured</SelectItem>}
-                        </SelectContent>
-                        </Select>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                
-                <FormField
-                    control={form.control}
-                    name="subType"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel><ChevronsUpDown className="inline w-4 h-4 mr-1 opacity-70" />Sub-Type</FormLabel>
-                        <Select 
-                            onValueChange={field.onChange} 
-                            value={field.value || ""} 
-                            defaultValue={field.value || ""}
-                            disabled={availableSubTypes.length === 0 || selectedCategoryName === NO_CATEGORY_VALUE}
-                        >
-                        <FormControl>
-                            <SelectTrigger>
-                            <SelectValue placeholder="Select a sub-type" />
-                            </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                            {availableSubTypes.map(subType => (
-                            <SelectItem key={subType} value={subType}>
-                                {subType}
-                            </SelectItem>
-                            ))}
-                        </SelectContent>
-                        </Select>
-                        { (selectedCategoryName && selectedCategoryName !== NO_CATEGORY_VALUE && availableSubTypes.length === 0) && <FormDescription className="text-xs">No sub-types for selected category.</FormDescription>}
-                        {(!selectedCategoryName || selectedCategoryName === NO_CATEGORY_VALUE) && <FormDescription className="text-xs">Select a category first.</FormDescription>}
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                
-                <FormField
-                    control={form.control}
-                    name="startDate"
-                    render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                        <FormLabel><CalendarIcon className="inline w-4 h-4 mr-1" />Start Date</FormLabel>
-                        <Popover>
-                        <PopoverTrigger asChild>
+                            <FormLabel><BookOpen className="inline w-4 h-4 mr-1" />Subject</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value || NO_SUBJECT_VALUE} defaultValue={field.value || NO_SUBJECT_VALUE}>
                             <FormControl>
-                            <Button
-                                variant="outline"
-                                className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                                )}
-                            >
-                                {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                            </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            initialFocus
-                            />
-                        </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="startTime"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel><Clock className="inline w-4 h-4 mr-1" />Start Time</FormLabel>
-                        <FormControl>
-                        <Input type="time" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-
-                <FormField
-                    control={form.control}
-                    name="endDate"
-                    render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                        <FormLabel><CalendarIcon className="inline w-4 h-4 mr-1" />End Date</FormLabel>
-                        <Popover>
-                        <PopoverTrigger asChild>
-                            <FormControl>
-                            <Button
-                                variant="outline"
-                                className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                                )}
-                            >
-                                {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                            </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) =>
-                                form.getValues("startDate") ? date < form.getValues("startDate") : false
-                            }
-                            initialFocus
-                            />
-                        </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="endTime"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel><Clock className="inline w-4 h-4 mr-1" />End Time</FormLabel>
-                        <FormControl>
-                        <Input type="time" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-
-                <FormField
-                    control={form.control}
-                    name="subjectId"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel><BookOpen className="inline w-4 h-4 mr-1" />Subject (Optional)</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || NO_SUBJECT_VALUE} defaultValue={field.value || NO_SUBJECT_VALUE}>
-                        <FormControl>
-                            <SelectTrigger>
-                            <SelectValue placeholder="Select a subject" />
-                            </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                            <SelectItem value={NO_SUBJECT_VALUE}>None</SelectItem>
-                            {subjectsFromDB.map(subject => (
-                            <SelectItem key={subject.id} value={subject.id}>
-                                <span className="flex items-center">
-                                <span className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: subject.color }} />
-                                {subject.name}
-                                </span>
-                            </SelectItem>
-                            ))}
-                            {subjectsFromDB.length === 0 && <SelectItem value="no-subjects" disabled>No subjects configured</SelectItem>}
-                        </SelectContent>
-                        </Select>
-                        <FormMessage />
-                        {subjectsFromDB.length === 0 && <FormDescription className="text-xs">No subjects found. Add them via admin panel.</FormDescription>}
-                    </FormItem>
-                    )}
-                />
-
-                <FormField
-                    control={form.control}
-                    name="semester"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel><ListFilter className="inline w-4 h-4 mr-1" />Sem/Trimester (Optional)</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || NO_SEMESTER_VALUE} defaultValue={field.value || NO_SEMESTER_VALUE}>
-                            <FormControl>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select a semester" />
-                            </SelectTrigger>
+                                <SelectTrigger>
+                                <SelectValue placeholder="Select a subject" />
+                                </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                                <SelectItem value={NO_SEMESTER_VALUE}>None</SelectItem>
-                                {Array.from({ length: 8 }, (_, i) => i + 1).map(sem => (
-                                    <SelectItem key={sem} value={String(sem)}>Sem/Trimester {sem}</SelectItem>
+                                <SelectItem value={NO_SUBJECT_VALUE}>None</SelectItem>
+                                {subjectsFromDB.map(subject => (
+                                <SelectItem key={subject.id} value={subject.id}>
+                                    <span className="flex items-center">
+                                    <span className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: subject.color }} />
+                                    {subject.name}
+                                    </span>
+                                </SelectItem>
                                 ))}
+                                {subjectsFromDB.length === 0 && <SelectItem value="no-subjects" disabled>No subjects configured</SelectItem>}
                             </SelectContent>
-                        </Select>
-                        <FormMessage />
+                            </Select>
+                            <FormMessage />
+                            {subjectsFromDB.length === 0 && <FormDescription className="text-xs">No subjects found. Add them via admin panel.</FormDescription>}
                         </FormItem>
-                    )}
-                    />
-                
-                <FormField
-                    control={form.control}
-                    name="section"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel><Bookmark className="inline w-4 h-4 mr-1" />Section (Optional)</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || NO_SECTION_VALUE} defaultValue={field.value || NO_SECTION_VALUE}>
-                            <FormControl>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select a section" />
-                            </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                                <SelectItem value={NO_SECTION_VALUE}>None</SelectItem>
-                                {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].map(sec => (
-                                    <SelectItem key={sec} value={String(sec)}>Section {sec}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                
-                <FormField
-                    control={form.control}
-                    name="location"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel><MapPin className="inline w-4 h-4 mr-1" />Location (Optional)</FormLabel>
-                        <FormControl>
-                        <Input placeholder="e.g., Main Auditorium" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="faculty"
-                    render={({ field }) => (
-                    <FormItem>
-                        <FormLabel><UserIcon className="inline w-4 h-4 mr-1" />Faculty/Host (Optional)</FormLabel>
-                        <FormControl>
-                        <Input placeholder="e.g., Prof. John Doe" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                    )}
-                />
-                <div className="md:col-span-2">
-                    <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel><Info className="inline w-4 h-4 mr-1" />Description (Optional)</FormLabel>
-                        <FormControl>
-                            <Textarea placeholder="Provide additional details about the event..." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                </div>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="semester"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel><ListFilter className="inline w-4 h-4 mr-1" />Sem/Trimester</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value || NO_SEMESTER_VALUE} defaultValue={field.value || NO_SEMESTER_VALUE}>
+                                <FormControl>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select a semester" />
+                                </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    <SelectItem value={NO_SEMESTER_VALUE}>None</SelectItem>
+                                    {Array.from({ length: 8 }, (_, i) => i + 1).map(sem => (
+                                        <SelectItem key={sem} value={String(sem)}>Sem/Trimester {sem}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="section"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel><Bookmark className="inline w-4 h-4 mr-1" />Section</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value || NO_SECTION_VALUE} defaultValue={field.value || NO_SECTION_VALUE}>
+                                <FormControl>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select a section" />
+                                </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    <SelectItem value={NO_SECTION_VALUE}>None</SelectItem>
+                                    {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].map(sec => (
+                                        <SelectItem key={sec} value={String(sec)}>Section {sec}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+                  
+                  <Separator />
+                  
+                  {/* --- ADDITIONAL INFO --- */}
+                  <div>
+                    <h4 className="text-sm font-medium text-muted-foreground">Additional Information (Optional)</h4>
+                    <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                       <FormField
+                          control={form.control}
+                          name="location"
+                          render={({ field }) => (
+                          <FormItem>
+                              <FormLabel><MapPin className="inline w-4 h-4 mr-1" />Location</FormLabel>
+                              <FormControl>
+                              <Input placeholder="e.g., Main Auditorium" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                          </FormItem>
+                          )}
+                      />
+                      <FormField
+                          control={form.control}
+                          name="faculty"
+                          render={({ field }) => (
+                          <FormItem>
+                              <FormLabel><UserIcon className="inline w-4 h-4 mr-1" />Faculty/Host</FormLabel>
+                              <FormControl>
+                              <Input placeholder="e.g., Prof. John Doe" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                          </FormItem>
+                          )}
+                      />
+                      <div className="md:col-span-2">
+                        <FormField
+                          control={form.control}
+                          name="description"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel><Info className="inline w-4 h-4 mr-1" />Description</FormLabel>
+                              <FormControl>
+                                  <Textarea placeholder="Provide additional details about the event..." {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
             </ScrollArea>
-            <DialogFooter className="pt-4 flex-shrink-0">
+            <DialogFooter className="pt-4 flex-shrink-0 border-t mt-4">
               <DialogClose asChild>
                 <Button type="button" variant="outline">Cancel</Button>
               </DialogClose>
