@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from 'react';
@@ -440,7 +439,7 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
                             </FormControl>
                             <SelectContent>
                                 <SelectItem value={NO_SECTION_VALUE}>None</SelectItem>
-                                {['A', 'B', 'C', 'D'].map(sec => (
+                                {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].map(sec => (
                                     <SelectItem key={sec} value={String(sec)}>Section {sec}</SelectItem>
                                 ))}
                             </SelectContent>

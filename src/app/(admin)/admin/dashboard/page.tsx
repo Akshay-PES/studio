@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -818,7 +817,7 @@ export default function AdminDashboardPage() {
                         <SelectTrigger id="edit-event-section"><SelectValue placeholder="Select section" /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value={NO_SECTION_VALUE}>None</SelectItem>
-                            {['A', 'B', 'C', 'D'].map(sec => (
+                            {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].map(sec => (
                                 <SelectItem key={sec} value={String(sec)}>Section {sec}</SelectItem>
                             ))}
                         </SelectContent>

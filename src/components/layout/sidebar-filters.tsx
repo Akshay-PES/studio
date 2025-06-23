@@ -1,4 +1,3 @@
-
 "use client";
 
 import * as React from 'react';
@@ -275,7 +274,7 @@ export default function SidebarFilters() {
               <div className="flex items-center gap-1.5"><Bookmark className="w-4 h-4" /> Section</div>
             </AccordionTrigger>
             <AccordionContent className="pt-1 pb-1.5 space-y-1 px-2">
-              {['A', 'B', 'C', 'D'].map(sec => (
+              {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].map(sec => (
                 <div key={sec} className="flex items-center space-x-2 p-1 rounded-md hover:bg-sidebar-accent/70">
                   <Checkbox
                     id={`sec-${sec}`}
