@@ -40,7 +40,8 @@ export default function AdminLayout({
       return; 
     }
 
-    if (!currentUser || !userProfile || userProfile.role !== 'department_admin') {
+    // Make role check case-insensitive
+    if (!currentUser || !userProfile || userProfile.role?.toLowerCase() !== 'department_admin') {
       router.push('/login?error=unauthorized');
     }
   }, [currentUser, userProfile, loading, router]);
@@ -53,7 +54,9 @@ export default function AdminLayout({
     );
   }
 
-  const departmentName = departmentNames[userProfile.departmentId] || userProfile.departmentId.toUpperCase();
+  // Make departmentId lookup case-insensitive to handle potential data-entry errors
+  const departmentIdKey = userProfile.departmentId.toLowerCase();
+  const departmentName = departmentNames[departmentIdKey] || userProfile.departmentId.toUpperCase();
 
   return (
     <div className="flex flex-col min-h-screen">
