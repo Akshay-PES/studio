@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-// import Image from 'next/image'; // Logo removed
+import Image from 'next/image';
 
 const departments = [
     { name: "MBA", id: "mba" },
@@ -29,7 +29,7 @@ export default function HomePage() {
     <main className="flex flex-col items-center justify-center min-h-screen p-8 bg-gradient-to-br from-background to-blue-100">
       <Card className="w-full max-w-md shadow-2xl">
         <CardHeader className="text-center">
-          {/* <Image src="/pes-logo.png" alt="PES University Logo" width={133} height={48} className="mx-auto mb-4" /> */}
+          <Image src="/pes-logo.png" alt="PES University Logo" width={133} height={48} className="mx-auto mb-4" />
           <CardTitle className="text-4xl font-headline text-primary">PESU Playbook</CardTitle>
           <CardDescription className="text-lg text-muted-foreground">
             Your Unified Academic Planner
