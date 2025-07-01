@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { ArrowRight } from "lucide-react";
@@ -31,7 +30,7 @@ export default function HomePage() {
       <Card className="w-full max-w-md shadow-2xl">
         <CardHeader className="text-center">
           {/* <Image src="/pes-logo.png" alt="PES University Logo" width={133} height={48} className="mx-auto mb-4" /> */}
-          <CardTitle className="text-4xl font-headline text-primary">AcademiaSync</CardTitle>
+          <CardTitle className="text-4xl font-headline text-primary">PESU Playbook</CardTitle>
           <CardDescription className="text-lg text-muted-foreground">
             Your Unified Academic Planner
           </CardDescription>
@@ -56,7 +55,7 @@ export default function HomePage() {
         </CardFooter>
       </Card>
       <footer className="mt-12 text-center text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} AcademiaSync. Built for modern academic institutions.</p>
+        <p>&copy; {new Date().getFullYear()} PESU Playbook. Built for modern academic institutions.</p>
       </footer>
     </main>
   );

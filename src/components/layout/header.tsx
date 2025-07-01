@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -42,7 +41,7 @@ export default function Header({ sidebarTrigger }: HeaderProps) {
             <SheetContent side="left" className="sm:max-w-xs bg-sidebar text-sidebar-foreground">
               <nav className="grid gap-6 text-lg font-medium">
                 <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-primary">
-                  <span className="font-headline">AcademiaSync</span>
+                  <span className="font-headline">PESU Playbook</span>
                 </Link>
                 <Link href="/" className="flex items-center gap-4 px-2.5 text-sidebar-foreground hover:text-sidebar-accent-foreground">
                   <Briefcase className="w-5 h-5" />
@@ -59,7 +58,7 @@ export default function Header({ sidebarTrigger }: HeaderProps) {
           </Sheet>
         )}
         <Link href="/" className="hidden md:flex items-center gap-2 text-lg font-semibold text-primary">
-          <span className="font-headline text-xl">AcademiaSync</span>
+          <span className="font-headline text-xl">PESU Playbook</span>
         </Link>
       </div>
       

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect } from 'react';
@@ -62,7 +61,7 @@ export default function AdminLayout({
     <div className="flex flex-col min-h-screen">
       <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 border-b bg-card shadow-sm sm:px-6">
         <Link href="/admin/dashboard" className="flex items-center gap-2 text-lg font-semibold text-primary">
-          AcademiaSync - {departmentName} Admin
+          PESU Playbook - {departmentName} Admin
         </Link>
         <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground hidden md:inline">
@@ -77,7 +76,7 @@ export default function AdminLayout({
         {children}
       </main>
       <footer className="p-4 text-center border-t text-muted-foreground text-sm">
-        AcademiaSync Admin Panel &copy; {new Date().getFullYear()}
+        PESU Playbook Admin Panel &copy; {new Date().getFullYear()}
       </footer>
     </div>
   );
