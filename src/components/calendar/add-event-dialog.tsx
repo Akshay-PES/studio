@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from 'react';
@@ -56,26 +57,37 @@ const eventFormSchema = z.object({
   semester: z.string().optional(),
   section: z.string().optional(),
   startDate: z.date({ required_error: "Start date is required." }),
-  startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, { message: "Invalid time format (HH:MM)." }),
+  startHour: z.string({ required_error: "Hour is required." }),
+  startMinute: z.string({ required_error: "Minute is required." }),
+  startPeriod: z.enum(['AM', 'PM'], { required_error: "AM/PM is required." }),
   endDate: z.date({ required_error: "End date is required." }),
-  endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, { message: "Invalid time format (HH:MM)." }),
+  endHour: z.string({ required_error: "Hour is required." }),
+  endMinute: z.string({ required_error: "Minute is required." }),
+  endPeriod: z.enum(['AM', 'PM'], { required_error: "AM/PM is required." }),
   location: z.string().optional(),
   faculty: z.string().optional(),
   description: z.string().optional(),
 }).refine(data => {
+  if (!data.startDate || !data.endDate) return true; // Defer to individual field validation.
+
   const startDateTime = new Date(data.startDate);
-  const [startHours, startMinutes] = data.startTime.split(':').map(Number);
-  startDateTime.setHours(startHours, startMinutes);
+  let startHour24 = parseInt(data.startHour, 10);
+  if (data.startPeriod === 'PM' && startHour24 < 12) startHour24 += 12;
+  if (data.startPeriod === 'AM' && startHour24 === 12) startHour24 = 0; // Midnight case
+  startDateTime.setHours(startHour24, parseInt(data.startMinute, 10));
 
   const endDateTime = new Date(data.endDate);
-  const [endHours, endMinutes] = data.endTime.split(':').map(Number);
-  endDateTime.setHours(endHours, endMinutes);
+  let endHour24 = parseInt(data.endHour, 10);
+  if (data.endPeriod === 'PM' && endHour24 < 12) endHour24 += 12;
+  if (data.endPeriod === 'AM' && endHour24 === 12) endHour24 = 0; // Midnight case
+  endDateTime.setHours(endHour24, parseInt(data.endMinute, 10));
 
   return endDateTime >= startDateTime;
 }, {
   message: "End date/time must be after start date/time.",
   path: ["endDate"],
 });
+
 
 type EventFormData = z.infer<typeof eventFormSchema>;
 
@@ -88,6 +100,10 @@ interface AddEventDialogProps {
   departmentId: string;
 }
 
+const hoursArray = Array.from({ length: 12 }, (_, i) => String(i + 1));
+const minutesArray = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
+const periodsArray: ('AM' | 'PM')[] = ['AM', 'PM'];
+
 export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFromDB, categoriesFromDB, departmentId }: AddEventDialogProps) {
   const { toast } = useToast();
   const form = useForm<EventFormData>({
@@ -95,8 +111,12 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
     defaultValues: {
       title: "",
       category: NO_CATEGORY_VALUE,
-      startTime: "09:00",
-      endTime: "10:00",
+      startHour: "9",
+      startMinute: "00",
+      startPeriod: 'AM',
+      endHour: "10",
+      endMinute: "00",
+      endPeriod: 'AM',
       location: "",
       faculty: "",
       description: "",
@@ -130,12 +150,16 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
         return;
     }
     const startDateTime = new Date(data.startDate);
-    const [startHours, startMinutes] = data.startTime.split(':').map(Number);
-    startDateTime.setHours(startHours, startMinutes);
+    let startHour24 = parseInt(data.startHour, 10);
+    if (data.startPeriod === 'PM' && startHour24 < 12) startHour24 += 12;
+    if (data.startPeriod === 'AM' && startHour24 === 12) startHour24 = 0;
+    startDateTime.setHours(startHour24, parseInt(data.startMinute, 10));
 
     const endDateTime = new Date(data.endDate);
-    const [endHours, endMinutes] = data.endTime.split(':').map(Number);
-    endDateTime.setHours(endHours, endMinutes);
+    let endHour24 = parseInt(data.endHour, 10);
+    if (data.endPeriod === 'PM' && endHour24 < 12) endHour24 += 12;
+    if (data.endPeriod === 'AM' && endHour24 === 12) endHour24 = 0;
+    endDateTime.setHours(endHour24, parseInt(data.endMinute, 10));
 
     const newEvent: Omit<AcademicEvent, 'id'> = {
       title: data.title,
@@ -164,9 +188,13 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
         semester: NO_SEMESTER_VALUE,
         section: NO_SECTION_VALUE,
         startDate: undefined,
-        startTime: "09:00",
+        startHour: '9',
+        startMinute: '00',
+        startPeriod: 'AM',
         endDate: undefined,
-        endTime: "10:00",
+        endHour: '10',
+        endMinute: '00',
+        endPeriod: 'AM',
         location: "",
         faculty: "",
         description: ""
@@ -179,7 +207,8 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
       if (!open) {
         form.reset({
             title: "", category: NO_CATEGORY_VALUE, subType: "", subjectId: NO_SUBJECT_VALUE, semester: NO_SEMESTER_VALUE, section: NO_SECTION_VALUE,
-            startDate: undefined, startTime: "09:00", endDate: undefined, endTime: "10:00",
+            startDate: undefined, startHour: '9', startMinute: '00', startPeriod: 'AM',
+            endDate: undefined, endHour: '10', endMinute: '00', endPeriod: 'AM',
             location: "", faculty: "", description: ""
         });
       }
@@ -282,105 +311,88 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
                   {/* --- DATE & TIME --- */}
                   <div>
                     <h4 className="text-sm font-medium text-muted-foreground">Date & Time</h4>
-                    <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-                      <FormField
-                          control={form.control}
-                          name="startDate"
-                          render={({ field }) => (
-                          <FormItem>
-                              <FormLabel>Start Date</FormLabel>
-                              <Popover>
-                              <PopoverTrigger asChild>
-                                  <FormControl>
-                                  <Button
-                                      variant="outline"
-                                      className={cn(
-                                      "w-full pl-3 text-left font-normal",
-                                      !field.value && "text-muted-foreground"
-                                      )}
-                                  >
-                                      {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                  </Button>
-                                  </FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="start">
-                                  <Calendar
-                                  mode="single"
-                                  selected={field.value}
-                                  onSelect={field.onChange}
-                                  initialFocus
-                                  />
-                              </PopoverContent>
-                              </Popover>
-                              <FormMessage />
-                          </FormItem>
-                          )}
-                      />
-                      <FormField
-                          control={form.control}
-                          name="startTime"
-                          render={({ field }) => (
-                          <FormItem>
-                              <FormLabel>Start Time</FormLabel>
-                              <FormControl>
-                              <Input type="time" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                          </FormItem>
-                          )}
-                      />
+                     <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                        {/* Start Date / Time */}
+                        <div className="space-y-2">
+                            <FormField
+                                control={form.control}
+                                name="startDate"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Start Date</FormLabel>
+                                    <Popover>
+                                    <PopoverTrigger asChild>
+                                        <FormControl>
+                                        <Button
+                                            variant="outline"
+                                            className={cn( "w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground" )}
+                                        >
+                                            {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                        </Button>
+                                        </FormControl>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                                    </PopoverContent>
+                                    </Popover>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                            <div className="grid grid-cols-3 gap-2">
+                                <FormField control={form.control} name="startHour" render={({ field }) => (
+                                    <FormItem><FormLabel className="text-xs">Hour</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{hoursArray.map(h => <SelectItem key={`start-h-${h}`} value={h}>{h}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                )}/>
+                                <FormField control={form.control} name="startMinute" render={({ field }) => (
+                                    <FormItem><FormLabel className="text-xs">Minute</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{minutesArray.map(m => <SelectItem key={`start-m-${m}`} value={m}>{m}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                )}/>
+                                <FormField control={form.control} name="startPeriod" render={({ field }) => (
+                                    <FormItem><FormLabel className="text-xs">Period</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{periodsArray.map(p => <SelectItem key={`start-p-${p}`} value={p}>{p}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                )}/>
+                            </div>
+                        </div>
 
-                      <FormField
-                          control={form.control}
-                          name="endDate"
-                          render={({ field }) => (
-                          <FormItem>
-                              <FormLabel>End Date</FormLabel>
-                              <Popover>
-                              <PopoverTrigger asChild>
-                                  <FormControl>
-                                  <Button
-                                      variant="outline"
-                                      className={cn(
-                                      "w-full pl-3 text-left font-normal",
-                                      !field.value && "text-muted-foreground"
-                                      )}
-                                  >
-                                      {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                  </Button>
-                                  </FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="start">
-                                  <Calendar
-                                  mode="single"
-                                  selected={field.value}
-                                  onSelect={field.onChange}
-                                  disabled={(date) =>
-                                      form.getValues("startDate") ? date < form.getValues("startDate") : false
-                                  }
-                                  initialFocus
-                                  />
-                              </PopoverContent>
-                              </Popover>
-                              <FormMessage />
-                          </FormItem>
-                          )}
-                      />
-                      <FormField
-                          control={form.control}
-                          name="endTime"
-                          render={({ field }) => (
-                          <FormItem>
-                              <FormLabel>End Time</FormLabel>
-                              <FormControl>
-                              <Input type="time" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                          </FormItem>
-                          )}
-                      />
+                        {/* End Date / Time */}
+                        <div className="space-y-2">
+                            <FormField
+                                control={form.control}
+                                name="endDate"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>End Date</FormLabel>
+                                    <Popover>
+                                    <PopoverTrigger asChild>
+                                        <FormControl>
+                                        <Button
+                                            variant="outline"
+                                            className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground" )}
+                                        >
+                                            {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                        </Button>
+                                        </FormControl>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => form.getValues("startDate") ? date < form.getValues("startDate") : false} initialFocus />
+                                    </PopoverContent>
+                                    </Popover>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                             <div className="grid grid-cols-3 gap-2">
+                                <FormField control={form.control} name="endHour" render={({ field }) => (
+                                    <FormItem><FormLabel className="text-xs">Hour</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{hoursArray.map(h => <SelectItem key={`end-h-${h}`} value={h}>{h}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                )}/>
+                                <FormField control={form.control} name="endMinute" render={({ field }) => (
+                                    <FormItem><FormLabel className="text-xs">Minute</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{minutesArray.map(m => <SelectItem key={`end-m-${m}`} value={m}>{m}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                )}/>
+                                <FormField control={form.control} name="endPeriod" render={({ field }) => (
+                                    <FormItem><FormLabel className="text-xs">Period</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{periodsArray.map(p => <SelectItem key={`end-p-${p}`} value={p}>{p}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                )}/>
+                            </div>
+                        </div>
                     </div>
                   </div>
                   

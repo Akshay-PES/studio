@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -13,22 +14,31 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import AddEventDialog from '@/components/calendar/add-event-dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Pencil, Trash2, PlusCircle, BookOpen, Layers, ListFilter } from 'lucide-react';
+import { Pencil, Trash2, PlusCircle, BookOpen, Layers, ListFilter, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 
 interface EditEventFormData {
   title: string;
   category: string;
-  start: string;
-  end: string;
   location?: string;
   description?: string;
   subjectId?: string;
   subType?: string;
   semester?: string;
   section?: string;
+  startDate?: Date;
+  startHour: string;
+  startMinute: string;
+  startPeriod: 'AM' | 'PM';
+  endDate?: Date;
+  endHour: string;
+  endMinute: string;
+  endPeriod: 'AM' | 'PM';
 }
 
 interface AddSubjectFormData {
@@ -76,6 +86,10 @@ const PREDEFINED_CATEGORY_COLORS = [
 ];
 const FALLBACK_CATEGORY_COLOR = '#BDBDBD';
 
+const hoursArray = Array.from({ length: 12 }, (_, i) => String(i + 1));
+const minutesArray = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
+const periodsArray: ('AM' | 'PM')[] = ['AM', 'PM'];
+
 export default function AdminDashboardPage() {
   const { userProfile } = useAuth();
   const [events, setEvents] = useState<AcademicEvent[]>([]);
@@ -88,7 +102,11 @@ export default function AdminDashboardPage() {
   const [showAddEventDialog, setShowAddEventDialog] = useState(false);
   const [showEditEventDialog, setShowEditEventDialog] = useState(false);
   const [currentEventToEdit, setCurrentEventToEdit] = useState<AcademicEvent | null>(null);
-  const [editEventFormData, setEditEventFormData] = useState<EditEventFormData>({ title: '', category: '', start: '', end: '' });
+  const [editEventFormData, setEditEventFormData] = useState<EditEventFormData>({
+    title: '', category: '',
+    startHour: '09', startMinute: '00', startPeriod: 'AM',
+    endHour: '10', endMinute: '00', endPeriod: 'AM'
+  });
 
   const [showAddSubjectDialog, setShowAddSubjectDialog] = useState(false);
   const [showEditSubjectDialog, setShowEditSubjectDialog] = useState(false);
@@ -250,11 +268,34 @@ export default function AdminDashboardPage() {
 
   const openEditEventDialog = (event: AcademicEvent) => {
     setCurrentEventToEdit(event);
+    
+    const getFormattedTime = (date: Date) => {
+      let hours = date.getHours();
+      const minutes = date.getMinutes();
+      const period = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      hours = hours ? hours : 12; // the hour '0' should be '12'
+      return {
+        hour: String(hours),
+        minute: String(minutes).padStart(2, '0'),
+        period: period as 'AM' | 'PM',
+      };
+    };
+
+    const startTime = getFormattedTime(event.start);
+    const endTime = getFormattedTime(event.end);
+
     setEditEventFormData({
         title: event.title,
         category: event.category,
-        start: format(event.start, "yyyy-MM-dd'T'HH:mm"),
-        end: format(event.end, "yyyy-MM-dd'T'HH:mm"),
+        startDate: event.start,
+        startHour: startTime.hour,
+        startMinute: startTime.minute,
+        startPeriod: startTime.period,
+        endDate: event.end,
+        endHour: endTime.hour,
+        endMinute: endTime.minute,
+        endPeriod: endTime.period,
         location: event.location || '',
         description: event.description || '',
         subjectId: event.subjectId || '',
@@ -267,6 +308,10 @@ export default function AdminDashboardPage() {
 
   const handleEditEventFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    setEditEventFormData(prev => ({ ...prev, [name]: value }));
+  };
+  
+  const handleEditEventSelectChange = (name: string, value: string | Date | undefined) => {
     setEditEventFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -292,20 +337,38 @@ export default function AdminDashboardPage() {
 
   const handleUpdateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentEventToEdit || !departmentId) return;
+    if (!currentEventToEdit || !departmentId || !editEventFormData.startDate || !editEventFormData.endDate) return;
+
+    const constructDate = (date: Date, hourStr: string, minuteStr: string, period: 'AM' | 'PM'): Date => {
+      const newDate = new Date(date);
+      let hour = parseInt(hourStr, 10);
+      if (period === 'PM' && hour < 12) hour += 12;
+      if (period === 'AM' && hour === 12) hour = 0; // Midnight
+      newDate.setHours(hour, parseInt(minuteStr, 10), 0, 0); // Also reset seconds and ms
+      return newDate;
+    };
+    
     try {
+        const startDateTime = constructDate(editEventFormData.startDate, editEventFormData.startHour, editEventFormData.startMinute, editEventFormData.startPeriod);
+        const endDateTime = constructDate(editEventFormData.endDate, editEventFormData.endHour, editEventFormData.endMinute, editEventFormData.endPeriod);
+
+        if(endDateTime < startDateTime) {
+            toast({ variant: "destructive", title: "Validation Error", description: "End date/time must be after start date/time." });
+            return;
+        }
+
         const updatedEventData = {
             title: editEventFormData.title,
             category: editEventFormData.category,
             subType: editEventFormData.subType || null,
-            start: Timestamp.fromDate(new Date(editEventFormData.start)),
-            end: Timestamp.fromDate(new Date(editEventFormData.end)),
+            start: Timestamp.fromDate(startDateTime),
+            end: Timestamp.fromDate(endDateTime),
             location: editEventFormData.location,
             description: editEventFormData.description,
             subjectId: editEventFormData.subjectId || null,
             semester: editEventFormData.semester && editEventFormData.semester !== NO_SEMESTER_VALUE ? parseInt(editEventFormData.semester, 10) : null,
             section: editEventFormData.section && editEventFormData.section !== NO_SECTION_VALUE ? editEventFormData.section : null,
-            departmentId: departmentId, // Ensure departmentId is preserved/added
+            departmentId: departmentId, 
         };
         await updateDoc(doc(db, "events", currentEventToEdit.id), updatedEventData as { [x: string]: any });
         toast({ title: "Event Updated Successfully" });
@@ -824,14 +887,89 @@ export default function AdminDashboardPage() {
                     </Select>
                   </div>
               </div>
-               <div>
-                <Label htmlFor="edit-event-start">Start Date & Time</Label>
-                <Input id="edit-event-start" name="start" type="datetime-local" value={editEventFormData.start} onChange={handleEditEventFormChange} required />
-              </div>
-              <div>
-                <Label htmlFor="edit-event-end">End Date & Time</Label>
-                <Input id="edit-event-end" name="end" type="datetime-local" value={editEventFormData.end} onChange={handleEditEventFormChange} required />
-              </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <Label htmlFor="startDate">Start Date</Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant={"outline"}
+                                    className={cn("w-full justify-start text-left font-normal", !editEventFormData.startDate && "text-muted-foreground")}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {editEventFormData.startDate ? format(editEventFormData.startDate, "PPP") : <span>Pick a date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                    mode="single"
+                                    selected={editEventFormData.startDate}
+                                    onSelect={(date) => handleEditEventSelectChange('startDate', date)}
+                                    initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                    <div>
+                        <Label>Start Time</Label>
+                        <div className="grid grid-cols-3 gap-1">
+                            <Select value={editEventFormData.startHour} onValueChange={(val) => handleEditEventSelectChange('startHour', val)}>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>{hoursArray.map(h => <SelectItem key={`start-h-${h}`} value={h}>{h}</SelectItem>)}</SelectContent>
+                            </Select>
+                             <Select value={editEventFormData.startMinute} onValueChange={(val) => handleEditEventSelectChange('startMinute', val)}>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>{minutesArray.map(m => <SelectItem key={`start-m-${m}`} value={m}>{m}</SelectItem>)}</SelectContent>
+                            </Select>
+                             <Select value={editEventFormData.startPeriod} onValueChange={(val) => handleEditEventSelectChange('startPeriod', val)}>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>{periodsArray.map(p => <SelectItem key={`start-p-${p}`} value={p}>{p}</SelectItem>)}</SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                </div>
+                 <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <Label htmlFor="endDate">End Date</Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant={"outline"}
+                                    className={cn("w-full justify-start text-left font-normal", !editEventFormData.endDate && "text-muted-foreground")}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {editEventFormData.endDate ? format(editEventFormData.endDate, "PPP") : <span>Pick a date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                    mode="single"
+                                    selected={editEventFormData.endDate}
+                                    onSelect={(date) => handleEditEventSelectChange('endDate', date)}
+                                    disabled={(date) => editEventFormData.startDate ? date < editEventFormData.startDate : false}
+                                    initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                    <div>
+                        <Label>End Time</Label>
+                        <div className="grid grid-cols-3 gap-1">
+                            <Select value={editEventFormData.endHour} onValueChange={(val) => handleEditEventSelectChange('endHour', val)}>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>{hoursArray.map(h => <SelectItem key={`end-h-${h}`} value={h}>{h}</SelectItem>)}</SelectContent>
+                            </Select>
+                             <Select value={editEventFormData.endMinute} onValueChange={(val) => handleEditEventSelectChange('endMinute', val)}>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>{minutesArray.map(m => <SelectItem key={`end-m-${m}`} value={m}>{m}</SelectItem>)}</SelectContent>
+                            </Select>
+                             <Select value={editEventFormData.endPeriod} onValueChange={(val) => handleEditEventSelectChange('endPeriod', val)}>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>{periodsArray.map(p => <SelectItem key={`end-p-${p}`} value={p}>{p}</SelectItem>)}</SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                </div>
               <div>
                 <Label htmlFor="edit-event-location">Location (Optional)</Label>
                 <Input id="edit-event-location" name="location" value={editEventFormData.location || ''} onChange={handleEditEventFormChange} />
