@@ -123,6 +123,7 @@ export default function AdminDashboardPage() {
   const { toast } = useToast();
 
   const departmentId = userProfile?.departmentId;
+  const isMbaAdmin = userProfile?.departmentId === 'mba';
 
   const fetchEvents = useCallback(async () => {
     if (!departmentId) return;
@@ -623,10 +624,10 @@ export default function AdminDashboardPage() {
   return (
     <div className="container mx-auto py-8">
       <Tabs defaultValue="events" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className={`grid w-full ${isMbaAdmin ? 'grid-cols-3' : 'grid-cols-2'}`}>
           <TabsTrigger value="events">Manage Events</TabsTrigger>
           <TabsTrigger value="subjects">Manage Subjects</TabsTrigger>
-          <TabsTrigger value="categories">Manage Global Categories</TabsTrigger>
+          {isMbaAdmin && <TabsTrigger value="categories">Manage Global Categories</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="events">
@@ -733,56 +734,58 @@ export default function AdminDashboardPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="categories">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Manage Global Event Categories</CardTitle>
-                <Button onClick={() => {
-                  setAddCategoryFormData({ name: '', subTypesString: ''});
-                  setShowAddCategoryDialog(true);
-                }}>
-                  <Layers className="mr-2 h-4 w-4" /> Add New Category
-                </Button>
-              </div>
-              <CardDescription>
-                These categories are GLOBAL and shared across all departments.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoadingCategories ? (
-                <p className="text-center text-muted-foreground">Loading categories...</p>
-              ) : eventCategoriesDB.length === 0 ? (
-                <p className="text-center text-muted-foreground">No categories found. Add some!</p>
-              ) : (
-                <ul className="space-y-4">
-                  {eventCategoriesDB.map((category) => (
-                    <li key={category.id} className="p-4 border rounded-lg shadow-sm flex justify-between items-center hover:bg-muted/50 transition-colors">
-                      <div>
-                        <h3 className="text-lg font-semibold flex items-center">
-                           <span className="w-4 h-4 rounded-full mr-2" style={{ backgroundColor: category.color }} />
-                           {category.name}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">Color: {category.color}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Sub-types: {(category.subTypes && category.subTypes.length > 0) ? category.subTypes.join(', ') : 'None'}
-                        </p>
-                      </div>
-                      <div className="space-x-2">
-                        <Button variant="outline" size="sm" onClick={() => openEditCategoryDialog(category)}>
-                          <Pencil className="mr-1 h-4 w-4" /> Edit
-                        </Button>
-                        <Button variant="destructive" size="sm" onClick={() => handleDeleteEventCategoryFromDB(category)}>
-                          <Trash2 className="mr-1 h-4 w-4" /> Delete
-                        </Button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+        {isMbaAdmin && (
+          <TabsContent value="categories">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Manage Global Event Categories</CardTitle>
+                  <Button onClick={() => {
+                    setAddCategoryFormData({ name: '', subTypesString: ''});
+                    setShowAddCategoryDialog(true);
+                  }}>
+                    <Layers className="mr-2 h-4 w-4" /> Add New Category
+                  </Button>
+                </div>
+                <CardDescription>
+                  These categories are GLOBAL and shared across all departments.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoadingCategories ? (
+                  <p className="text-center text-muted-foreground">Loading categories...</p>
+                ) : eventCategoriesDB.length === 0 ? (
+                  <p className="text-center text-muted-foreground">No categories found. Add some!</p>
+                ) : (
+                  <ul className="space-y-4">
+                    {eventCategoriesDB.map((category) => (
+                      <li key={category.id} className="p-4 border rounded-lg shadow-sm flex justify-between items-center hover:bg-muted/50 transition-colors">
+                        <div>
+                          <h3 className="text-lg font-semibold flex items-center">
+                             <span className="w-4 h-4 rounded-full mr-2" style={{ backgroundColor: category.color }} />
+                             {category.name}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">Color: {category.color}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Sub-types: {(category.subTypes && category.subTypes.length > 0) ? category.subTypes.join(', ') : 'None'}
+                          </p>
+                        </div>
+                        <div className="space-x-2">
+                          <Button variant="outline" size="sm" onClick={() => openEditCategoryDialog(category)}>
+                            <Pencil className="mr-1 h-4 w-4" /> Edit
+                          </Button>
+                          <Button variant="destructive" size="sm" onClick={() => handleDeleteEventCategoryFromDB(category)}>
+                            <Trash2 className="mr-1 h-4 w-4" /> Delete
+                          </Button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
       </Tabs>
 
       <AddEventDialog
