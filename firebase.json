@@ -9,7 +9,7 @@
     ],
     "frameworksBackend": {
       "region": "us-central1",
-      "project": "academiasync-1kwdq"
+      "project": "academic-calendar-bc5f8"
     }
   },
   "firestore": {
