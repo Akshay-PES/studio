@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -5,9 +6,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, Briefcase, Settings, LogOut, UserCircle, LogIn } from 'lucide-react';
+import { Menu, LogOut, UserCircle, LogIn, Filter } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import SidebarFilters from './sidebar-filters';
+import { Separator } from '../ui/separator';
 
 interface HeaderProps {
   sidebarTrigger?: React.ReactNode;
@@ -30,33 +33,25 @@ export default function Header({ sidebarTrigger }: HeaderProps) {
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 border-b bg-card shadow-sm sm:px-6">
       <div className="flex items-center gap-2">
-        {sidebarTrigger || (
-          <Sheet>
+        {sidebarTrigger}
+        <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="md:hidden">
                 <Menu className="w-6 h-6" />
                 <span className="sr-only">Toggle Menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="sm:max-w-xs bg-sidebar text-sidebar-foreground">
-              <nav className="grid gap-6 text-lg font-medium">
-                <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-primary">
-                  <span className="font-headline">PESU Playbook</span>
-                </Link>
-                <Link href="/" className="flex items-center gap-4 px-2.5 text-sidebar-foreground hover:text-sidebar-accent-foreground">
-                  <Briefcase className="w-5 h-5" />
-                  Calendars
-                </Link>
-                {isDepartmentAdmin && (
-                   <Link href="/admin/dashboard" className="flex items-center gap-4 px-2.5 text-sidebar-foreground hover:text-sidebar-accent-foreground">
-                      <Settings className="w-5 h-5" />
-                      Admin Panel
-                    </Link>
-                )}
-              </nav>
+            <SheetContent side="left" className="sm:max-w-xs bg-sidebar text-sidebar-foreground p-0 flex flex-col">
+                <div className="p-4">
+                  <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-primary">
+                    <span className="font-headline">PESU Playbook</span>
+                  </Link>
+                </div>
+                <Separator className="bg-sidebar-border" />
+                {/* SidebarFilters component is now rendered here for mobile view */}
+                <SidebarFilters />
             </SheetContent>
-          </Sheet>
-        )}
+        </Sheet>
         <Link href="/" className="hidden md:flex items-center gap-2 text-lg font-semibold text-primary">
           <span className="font-headline text-xl">PESU Playbook</span>
         </Link>
