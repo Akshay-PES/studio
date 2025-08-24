@@ -888,7 +888,7 @@ export default function AdminDashboardPage() {
                                             <ChevronDown className="h-4 w-4 opacity-50" />
                                         </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent className="w-full">
+                                    <DropdownMenuContent className="w-56">
                                         <DropdownMenuLabel>Available Sub-Types</DropdownMenuLabel>
                                         <DropdownMenuSeparator />
                                         {availableSubTypesForFilter.map((st) => (
@@ -1322,6 +1322,8 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
+    
 
     
 
