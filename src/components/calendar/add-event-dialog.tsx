@@ -219,15 +219,13 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
           <DialogTitle className="text-2xl font-headline text-primary">Add New Event</DialogTitle>
           <DialogDescription>Fill in the details below to add a new event to the calendar.</DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
-            <ScrollArea className="flex-1 -mr-6 pr-6">
-                <div className="space-y-6 py-4 pr-1">
-                  
+        <div className="flex-1 overflow-y-auto -mr-6 pr-6">
+            <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                   {/* --- CORE DETAILS --- */}
                   <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Core Details</h4>
-                    <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <h4 className="text-sm font-medium text-muted-foreground mb-4">Core Details</h4>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <div className="md:col-span-2">
                         <FormField
                           control={form.control}
@@ -310,8 +308,8 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
                   
                   {/* --- DATE & TIME --- */}
                   <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Date & Time</h4>
-                     <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <h4 className="text-sm font-medium text-muted-foreground mb-4">Date & Time</h4>
+                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         {/* Start Date / Time */}
                         <div className="space-y-2">
                             <FormField
@@ -400,8 +398,8 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
 
                   {/* --- ACADEMIC CONTEXT --- */}
                   <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Academic Context (Optional)</h4>
-                    <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <h4 className="text-sm font-medium text-muted-foreground mb-4">Academic Context (Optional)</h4>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                       <FormField
                         control={form.control}
                         name="subjectId"
@@ -485,8 +483,8 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
                   
                   {/* --- ADDITIONAL INFO --- */}
                   <div>
-                    <h4 className="text-sm font-medium text-muted-foreground">Additional Information (Optional)</h4>
-                    <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <h4 className="text-sm font-medium text-muted-foreground mb-4">Additional Information (Optional)</h4>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                        <FormField
                           control={form.control}
                           name="location"
@@ -530,20 +528,18 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
                       </div>
                     </div>
                   </div>
-                </div>
-            </ScrollArea>
-            <DialogFooter className="pt-4 flex-shrink-0 border-t mt-4">
-              <DialogClose asChild>
-                <Button type="button" variant="outline">Cancel</Button>
-              </DialogClose>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "Adding..." : "Add Event"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+            </form>
+            </Form>
+        </div>
+        <DialogFooter className="pt-4 border-t mt-auto">
+            <DialogClose asChild>
+            <Button type="button" variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button type="button" onClick={form.handleSubmit(onSubmit)} disabled={form.formState.isSubmitting}>
+            {form.formState.isSubmitting ? "Adding..." : "Add Event"}
+            </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
-
