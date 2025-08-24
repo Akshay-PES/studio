@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { collection, getDocs, addDoc, Timestamp, query, orderBy, deleteDoc, doc, updateDoc, DocumentData, QueryDocumentSnapshot, writeBatch, where } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import type { AcademicEvent, Subject, EventCategory } from '@/lib/types';
@@ -14,13 +14,15 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import AddEventDialog from '@/components/calendar/add-event-dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Pencil, Trash2, PlusCircle, BookOpen, Layers, ListFilter, CalendarIcon } from 'lucide-react';
+import { Pencil, Trash2, PlusCircle, BookOpen, Layers, ListFilter, CalendarIcon, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface EditEventFormData {
   title: string;
@@ -68,6 +70,9 @@ const NO_CATEGORY_VALUE = "__NONE_CATEGORY__";
 const NO_SEMESTER_VALUE = "__NONE_SEMESTER__";
 const NO_SECTION_VALUE = "__NONE_SECTION__";
 const DEFAULT_EVENT_CATEGORY_ON_DELETE = "Others";
+const ALL_CATEGORIES = "__ALL_CATEGORIES__";
+const ALL_SUBTYPES = "__ALL_SUBTYPES__";
+
 
 const PREDEFINED_SUBJECT_COLORS = [
   '#FF5733', '#33FF57', '#3357FF', '#FF33A1', '#A133FF',
@@ -119,6 +124,9 @@ export default function AdminDashboardPage() {
   const [currentCategoryToEdit, setCurrentCategoryToEdit] = useState<EventCategory | null>(null);
   const [addCategoryFormData, setAddCategoryFormData] = useState<AddCategoryFormData>({ name: '', subTypesString: '' });
   const [editCategoryFormData, setEditCategoryFormData] = useState<EditCategoryFormData>({ id: '', name: '', color: '#808080', subTypesString: '' });
+
+  const [eventFilterCategory, setEventFilterCategory] = useState<string>(ALL_CATEGORIES);
+  const [eventFilterSubType, setEventFilterSubType] = useState<string>(ALL_SUBTYPES);
 
   const { toast } = useToast();
 
@@ -620,6 +628,79 @@ export default function AdminDashboardPage() {
   const selectedEditEventCategoryDetails = eventCategoriesDB.find(c => c.name === editEventFormData.category);
   const uniqueSubTypesForEdit = selectedEditEventCategoryDetails?.subTypes ? [...new Set(selectedEditEventCategoryDetails.subTypes)] : [];
 
+  const filteredEvents = useMemo(() => {
+    return events.filter(event => {
+      const categoryMatch = eventFilterCategory === ALL_CATEGORIES || event.category === eventFilterCategory;
+      const subTypeMatch = eventFilterSubType === ALL_SUBTYPES || event.subType === eventFilterSubType;
+      return categoryMatch && subTypeMatch;
+    });
+  }, [events, eventFilterCategory, eventFilterSubType]);
+
+  const availableSubTypesForFilter = useMemo(() => {
+    if (eventFilterCategory === ALL_CATEGORIES) {
+      const allSubTypes = eventCategoriesDB.flatMap(c => c.subTypes || []);
+      return [...new Set(allSubTypes)].sort();
+    }
+    const selectedCategory = eventCategoriesDB.find(c => c.name === eventFilterCategory);
+    return selectedCategory?.subTypes?.sort() || [];
+  }, [eventFilterCategory, eventCategoriesDB]);
+
+  const handleFilterCategoryChange = (value: string) => {
+    setEventFilterCategory(value);
+    setEventFilterSubType(ALL_SUBTYPES); // Reset sub-type when category changes
+  };
+
+  const handleDownloadPdf = () => {
+    const doc = new jsPDF();
+    const departmentName = userProfile?.departmentId?.toUpperCase() || 'Department';
+
+    doc.setFontSize(18);
+    doc.text(`Academic Events - ${departmentName}`, 14, 22);
+    doc.setFontSize(11);
+    doc.setTextColor(100);
+
+    let filterText = `Filters: Category: ${eventFilterCategory === ALL_CATEGORIES ? 'All' : eventFilterCategory}`;
+    if (eventFilterSubType !== ALL_SUBTYPES) {
+      filterText += `, Sub-Type: ${eventFilterSubType}`;
+    }
+    doc.text(filterText, 14, 30);
+
+    const tableColumn = ["Title", "Category", "Sub-Type", "Start", "End", "Location"];
+    const tableRows: (string | undefined)[][] = [];
+
+    filteredEvents.forEach(event => {
+      const eventData = [
+        event.title,
+        event.category,
+        event.subType || '-',
+        format(event.start, 'Pp'),
+        format(event.end, 'Pp'),
+        event.location || '-'
+      ];
+      tableRows.push(eventData);
+    });
+
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 35,
+      theme: 'grid',
+      headStyles: { fillColor: [0, 51, 102] }, // Dark blue header
+    });
+    
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(9);
+        doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.width - 25, doc.internal.pageSize.height - 10);
+        doc.text(`Generated on: ${format(new Date(), 'PPP p')}`, 14, doc.internal.pageSize.height - 10);
+    }
+    
+    const fileName = `events_report_${departmentName.toLowerCase()}_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+    doc.save(fileName);
+
+    toast({ title: "PDF Generated", description: "Your event report has been downloaded." });
+  };
 
   if (!userProfile) {
     return <div className="flex justify-center items-center h-full"><p>Loading...</p></div>;
@@ -637,23 +718,59 @@ export default function AdminDashboardPage() {
         <TabsContent value="events">
           <Card>
             <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Manage Academic Events</CardTitle>
+              <div className="flex justify-between items-start flex-col sm:flex-row sm:items-center gap-4">
+                <div>
+                    <CardTitle>Manage Academic Events</CardTitle>
+                    <CardDescription>
+                        Add, edit, or delete academic events for your department.
+                    </CardDescription>
+                </div>
                  <Button onClick={() => setShowAddEventDialog(true)}>
                    <PlusCircle className="mr-2 h-4 w-4" /> Add New Event
                  </Button>
               </div>
-              <CardDescription>
-                Add, edit, or delete academic events for your department.
-              </CardDescription>
+
+               <div className="mt-6 border-t pt-4 flex flex-col sm:flex-row items-center gap-4">
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <Label htmlFor="category-filter" className="text-sm">Filter by:</Label>
+                    <Select value={eventFilterCategory} onValueChange={handleFilterCategoryChange}>
+                        <SelectTrigger id="category-filter" className="w-full sm:w-[180px]">
+                            <SelectValue placeholder="Select Category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value={ALL_CATEGORIES}>All Categories</SelectItem>
+                            {eventCategoriesDB.map(c => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
+                 <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <Select value={eventFilterSubType} onValueChange={setEventFilterSubType} disabled={eventFilterCategory === ALL_CATEGORIES && availableSubTypesForFilter.length === 0}>
+                        <SelectTrigger className="w-full sm:w-[180px]">
+                            <SelectValue placeholder="Select Sub-Type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value={ALL_SUBTYPES}>All Sub-Types</SelectItem>
+                            {availableSubTypesForFilter.map((st, i) => <SelectItem key={`${st}-${i}`} value={st}>{st}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                 </div>
+                 <div className="sm:ml-auto w-full sm:w-auto">
+                    <Button onClick={handleDownloadPdf} disabled={filteredEvents.length === 0}>
+                        <Download className="mr-2 h-4 w-4"/>
+                        Download as PDF
+                    </Button>
+                 </div>
+              </div>
             </CardHeader>
             <CardContent>
               {isLoadingEvents ? (<p className="text-center text-muted-foreground">Loading events...</p>) :
-              events.length === 0 ? (
-                <p className="text-center text-muted-foreground">No events found for this department. Add one!</p>
+              filteredEvents.length === 0 ? (
+                <p className="text-center text-muted-foreground py-10">
+                    {events.length === 0 ? "No events found for this department. Add one!" : "No events match your current filters."}
+                </p>
               ) : (
                 <ul className="space-y-4">
-                  {events.map((event) => {
+                  {filteredEvents.map((event) => {
                     const categoryDetails = eventCategoriesDB.find(c => c.name === event.category);
                     return (
                     <li key={event.id} className="p-4 border rounded-lg shadow-sm flex justify-between items-center hover:bg-muted/50 transition-colors">
@@ -1105,5 +1222,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-
-    
