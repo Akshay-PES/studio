@@ -677,7 +677,14 @@ export default function AdminDashboardPage() {
 
   const handleReportFilterCategoryChange = (value: string) => {
     setReportFilterCategory(value);
-    setReportFilterSubTypes([]); // Reset sub-types when category changes
+    // When category changes, auto-select all of its sub-types
+    if (value === ALL_CATEGORIES) {
+      const allSubTypes = eventCategoriesDB.flatMap(c => c.subTypes || []);
+      setReportFilterSubTypes([...new Set(allSubTypes)].sort());
+    } else {
+      const selectedCategory = eventCategoriesDB.find(c => c.name === value);
+      setReportFilterSubTypes(selectedCategory?.subTypes?.sort() || []);
+    }
   };
 
   const handleReportFilterSubTypeChange = (subType: string) => {
