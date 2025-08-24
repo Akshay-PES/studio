@@ -840,7 +840,7 @@ export default function AdminDashboardPage() {
                     >
                         <SelectTrigger id="edit-event-subType"><SelectValue placeholder="Select sub-type (if any)" /></SelectTrigger>
                         <SelectContent>
-                            {selectedEditEventCategoryDetails?.subTypes?.map(st => <SelectItem key={st} value={st}>{st}</SelectItem>)}
+                            {selectedEditEventCategoryDetails?.subTypes?.map((st, index) => <SelectItem key={`${st}-${index}`} value={st}>{st}</SelectItem>)}
                         </SelectContent>
                     </Select>
                     {(!selectedEditEventCategoryDetails || !selectedEditEventCategoryDetails.subTypes || selectedEditEventCategoryDetails.subTypes.length === 0) && <p className="text-xs text-muted-foreground mt-1">No sub-types for this category.</p>}
@@ -1101,3 +1101,5 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
+    
