@@ -745,12 +745,12 @@ export default function AdminDashboardPage() {
 
         // Table
         const tableColumn = ["Title", "Category", "Sub-Type", "Start", "End", "Location"];
-        const tableRows: (string | undefined)[][] = [];
+        const tableRows: string[][] = [];
 
         filteredEventsForReport.forEach(event => {
             const eventData = [
-                event.title,
-                event.category,
+                event.title || '-',
+                event.category || '-',
                 event.subType || '-',
                 format(event.start, 'Pp'),
                 format(event.end, 'Pp'),
@@ -1423,7 +1423,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-
-    
-
-    
