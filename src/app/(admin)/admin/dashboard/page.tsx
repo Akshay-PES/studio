@@ -546,7 +546,7 @@ export default function AdminDashboardPage() {
       name: category.name,
       originalName: category.name,
       color: category.color,
-      subTypesString: (category.subTypes || []).join(', '),
+      subTypesString: [...new Set(category.subTypes || [])].join(', '),
     });
     setShowEditCategoryDialog(true);
   };
@@ -798,13 +798,23 @@ export default function AdminDashboardPage() {
   return (
     <div className="container mx-auto py-8">
       <Tabs defaultValue="events" className="w-full">
-        <TabsList className={`grid w-full ${isMbaAdmin ? 'grid-cols-4' : 'grid-cols-3'}`}>
-            {tabsConfig.map(tab => (
-                <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
-            ))}
+      <div className="relative border-b">
+        <TabsList className="w-full justify-start rounded-none border-b-0 bg-transparent p-0">
+            <div className="flex items-center gap-4 overflow-x-auto pb-1 custom-scrollbar">
+                {tabsConfig.map(tab => (
+                    <TabsTrigger 
+                        key={tab.value} 
+                        value={tab.value}
+                        className="relative h-9 rounded-none border-b-2 border-b-transparent bg-transparent px-4 pb-3 pt-2 font-semibold text-muted-foreground shadow-none transition-none data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
+                    >
+                        {tab.label}
+                    </TabsTrigger>
+                ))}
+            </div>
         </TabsList>
+      </div>
 
-        <TabsContent value="events">
+        <TabsContent value="events" className="pt-6">
           <Card>
             <CardHeader>
               <div className="flex justify-between items-start flex-col sm:flex-row sm:items-center gap-4">
@@ -867,7 +877,7 @@ export default function AdminDashboardPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="subjects">
+        <TabsContent value="subjects" className="pt-6">
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center">
@@ -915,7 +925,7 @@ export default function AdminDashboardPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="reports">
+        <TabsContent value="reports" className="pt-6">
             <Card>
                 <CardHeader>
                     <CardTitle>Download Event Reports</CardTitle>
@@ -1020,7 +1030,7 @@ export default function AdminDashboardPage() {
         </TabsContent>
 
         {isMbaAdmin && (
-          <TabsContent value="categories">
+          <TabsContent value="categories" className="pt-6">
             <Card>
               <CardHeader>
                 <div className="flex justify-between items-center">
@@ -1072,7 +1082,18 @@ export default function AdminDashboardPage() {
           </TabsContent>
         )}
       </Tabs>
-
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          height: 2px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background-color: hsl(var(--primary));
+          border-radius: 2px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background-color: hsl(var(--muted));
+        }
+      `}</style>
       <AddEventDialog
         isOpen={showAddEventDialog}
         onClose={() => setShowAddEventDialog(false)}
@@ -1413,3 +1434,5 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
+    
