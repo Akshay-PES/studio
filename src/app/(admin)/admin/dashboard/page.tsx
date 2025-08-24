@@ -672,58 +672,89 @@ export default function AdminDashboardPage() {
     const doc = new jsPDF();
     const departmentName = userProfile?.departmentId?.toUpperCase() || 'Department';
 
-    doc.setFontSize(18);
-    doc.text(`Academic Events - ${departmentName}`, 14, 22);
-    doc.setFontSize(11);
-    doc.setTextColor(100);
+    // Function to fetch image and convert to data URI
+    const getImageDataUri = (url: string, callback: (dataUri: string) => void) => {
+        const img = new Image();
+        img.crossOrigin = "Anonymous"; 
+        img.onload = function () {
+            const canvas = document.createElement('canvas');
+            canvas.width = this.naturalWidth;
+            canvas.height = this.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(this, 0, 0);
+            const dataURL = canvas.toDataURL('image/png');
+            callback(dataURL);
+        };
+        img.src = url;
+    };
 
-    let filterText = `Category: ${reportFilterCategory === ALL_CATEGORIES ? 'All' : reportFilterCategory}`;
-    if (reportFilterSubTypes.length > 0) {
-      filterText += `, Sub-Types: ${reportFilterSubTypes.join(', ')}`;
-    }
-    if (reportFilterStartDate) {
-      filterText += `, From: ${format(reportFilterStartDate, 'PPP')}`;
-    }
-     if (reportFilterEndDate) {
-      filterText += `, To: ${format(reportFilterEndDate, 'PPP')}`;
-    }
-    doc.text(`Filters: ${filterText}`, 14, 30);
+    getImageDataUri('/pes-logo.png', (logoDataUri) => {
+        // Header
+        doc.addImage(logoDataUri, 'PNG', 14, 15, 33, 12);
+        doc.setFontSize(22);
+        doc.setFont("helvetica", "bold");
+        doc.text("PES University", 52, 23);
+        doc.setFont("helvetica", "normal");
+        
+        // Sub-header
+        doc.setFontSize(16);
+        doc.text(`Academic Events - ${departmentName}`, 14, 40);
+        
+        doc.setFontSize(10);
+        doc.setTextColor(100);
 
-    const tableColumn = ["Title", "Category", "Sub-Type", "Start", "End", "Location"];
-    const tableRows: (string | undefined)[][] = [];
+        // Filters text
+        let filterText = `Category: ${reportFilterCategory === ALL_CATEGORIES ? 'All' : reportFilterCategory}`;
+        if (reportFilterSubTypes.length > 0) {
+            filterText += `, Sub-Types: ${reportFilterSubTypes.join(', ')}`;
+        }
+        if (reportFilterStartDate) {
+            filterText += `, From: ${format(reportFilterStartDate, 'PPP')}`;
+        }
+        if (reportFilterEndDate) {
+            filterText += `, To: ${format(reportFilterEndDate, 'PPP')}`;
+        }
+        doc.text(`Filters: ${filterText}`, 14, 48);
 
-    filteredEventsForReport.forEach(event => {
-      const eventData = [
-        event.title,
-        event.category,
-        event.subType || '-',
-        format(event.start, 'Pp'),
-        format(event.end, 'Pp'),
-        event.location || '-'
-      ];
-      tableRows.push(eventData);
+        // Table
+        const tableColumn = ["Title", "Category", "Sub-Type", "Start", "End", "Location"];
+        const tableRows: (string | undefined)[][] = [];
+
+        filteredEventsForReport.forEach(event => {
+            const eventData = [
+                event.title,
+                event.category,
+                event.subType || '-',
+                format(event.start, 'Pp'),
+                format(event.end, 'Pp'),
+                event.location || '-'
+            ];
+            tableRows.push(eventData);
+        });
+
+        autoTable(doc, {
+            head: [tableColumn],
+            body: tableRows,
+            startY: 55,
+            theme: 'grid',
+            headStyles: { fillColor: [0, 51, 102] },
+        });
+        
+        // Footer (Pagination)
+        const pageCount = (doc as any).internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.setFontSize(9);
+            doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.width - 25, doc.internal.pageSize.height - 10);
+            doc.text(`Generated on: ${format(new Date(), 'PPP p')}`, 14, doc.internal.pageSize.height - 10);
+        }
+        
+        // Save file
+        const fileName = `events_report_${departmentName.toLowerCase()}_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+        doc.save(fileName);
+
+        toast({ title: "PDF Generated", description: "Your event report has been downloaded." });
     });
-
-    autoTable(doc, {
-      head: [tableColumn],
-      body: tableRows,
-      startY: 38,
-      theme: 'grid',
-      headStyles: { fillColor: [0, 51, 102] },
-    });
-    
-    const pageCount = (doc as any).internal.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(9);
-        doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.width - 25, doc.internal.pageSize.height - 10);
-        doc.text(`Generated on: ${format(new Date(), 'PPP p')}`, 14, doc.internal.pageSize.height - 10);
-    }
-    
-    const fileName = `events_report_${departmentName.toLowerCase()}_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
-    doc.save(fileName);
-
-    toast({ title: "PDF Generated", description: "Your event report has been downloaded." });
   };
 
   if (!userProfile) {
@@ -1064,7 +1095,7 @@ export default function AdminDashboardPage() {
                     >
                         <SelectTrigger id="edit-event-subType"><SelectValue placeholder="Select sub-type (if any)" /></SelectTrigger>
                         <SelectContent>
-                            {uniqueSubTypesForEdit?.map((st, index) => <SelectItem key={`${st}-${index}`} value={st}>{st}</SelectItem>)}
+                            {uniqueSubTypesForEdit?.map((st) => <SelectItem key={`${st}-${Date.now()}`} value={st}>{st}</SelectItem>)}
                         </SelectContent>
                     </Select>
                     {(!selectedEditEventCategoryDetails || !uniqueSubTypesForEdit || uniqueSubTypesForEdit.length === 0) && <p className="text-xs text-muted-foreground mt-1">No sub-types for this category.</p>}
@@ -1325,5 +1356,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-
-    
