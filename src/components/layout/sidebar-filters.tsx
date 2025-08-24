@@ -1,8 +1,9 @@
+
 "use client";
 
 import * as React from 'react';
 import { useSearchParams } from 'next/navigation';
-import { collection, getDocs, query, orderBy, DocumentData, QueryDocumentSnapshot, where } from "firebase/firestore";
+import { collection, query, orderBy, DocumentData, QueryDocumentSnapshot, where, onSnapshot } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import { CalendarIcon, Palette, Tag, Layers, Filter, ListFilter, ChevronsUpDown, Bookmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import type { Subject, EventCategory } from '@/lib/types';
-// import { eventCategories as staticEventCategories } from '@/data/mock-data'; // Replaced
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import {
@@ -38,50 +38,48 @@ export default function SidebarFilters() {
   const department = searchParams.get('department') || 'mba';
 
   React.useEffect(() => {
-    const fetchSubjects = async () => {
-      if (!department) return;
-      setIsLoadingSubjects(true);
-      try {
-        const subjectsCollection = collection(db, "subjects");
-        const q = query(subjectsCollection, where("departmentId", "==", department), orderBy("name", "asc"));
-        const querySnapshot = await getDocs(q);
+    if (!department) return;
+    setIsLoadingSubjects(true);
+    const subjectsCollection = collection(db, "subjects");
+    const q = query(subjectsCollection, where("departmentId", "==", department), orderBy("name", "asc"));
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
         const fetchedSubjects: Subject[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
-          const data = doc.data();
-          return { id: doc.id, name: data.name, color: data.color, departmentId: data.departmentId };
+            const data = doc.data();
+            return { 
+                id: doc.id, 
+                name: data.name, 
+                color: data.color, 
+                departmentId: data.departmentId, 
+                semester: data.semester 
+            };
         });
         setSubjectsDB(fetchedSubjects);
-      } catch (error) {
-        console.error("Error fetching subjects for filters:", error);
-        toast({ variant: "destructive", title: "Error Fetching Subjects for Filters" });
-      } finally {
         setIsLoadingSubjects(false);
-      }
-    };
-    if (department) {
-        fetchSubjects();
-    }
+    }, (error) => {
+        console.error("Error fetching subjects for filters:", error);
+        toast({ variant: "destructive", title: "Error Real-time Subjects" });
+        setIsLoadingSubjects(false);
+    });
+    return () => unsubscribe();
   }, [toast, department]);
 
   React.useEffect(() => {
-    const fetchEventCategories = async () => {
-      setIsLoadingCategories(true);
-      try {
-        const categoriesCollection = collection(db, "eventCategories");
-        const q = query(categoriesCollection, orderBy("name", "asc"));
-        const querySnapshot = await getDocs(q);
+    setIsLoadingCategories(true);
+    const categoriesCollection = collection(db, "eventCategories");
+    const q = query(categoriesCollection, orderBy("name", "asc"));
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
         const fetchedCategories: EventCategory[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
-          const data = doc.data();
-          return { id: doc.id, name: data.name, color: data.color, subTypes: data.subTypes || [] };
+            const data = doc.data();
+            return { id: doc.id, name: data.name, color: data.color, subTypes: data.subTypes || [] };
         });
         setEventCategoriesDB(fetchedCategories);
-      } catch (error) {
-        console.error("Error fetching event categories for filters:", error);
-        toast({ variant: "destructive", title: "Error Fetching Categories for Filters" });
-      } finally {
         setIsLoadingCategories(false);
-      }
-    };
-    fetchEventCategories();
+    }, (error) => {
+        console.error("Error fetching event categories for filters:", error);
+        toast({ variant: "destructive", title: "Error Real-time Categories" });
+        setIsLoadingCategories(false);
+    });
+    return () => unsubscribe();
   }, [toast]);
 
 
