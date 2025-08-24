@@ -11,6 +11,7 @@ export interface Subject {
   name: string;
   color: string; // Hex color code
   departmentId: string; // e.g., "mba", "bba"
+  semester?: number; // Optional semester/trimester number
 }
 
 export interface AcademicEvent {

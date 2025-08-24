@@ -47,11 +47,13 @@ interface EditEventFormData {
 
 interface AddSubjectFormData {
   name: string;
+  semester: string;
 }
 
 interface EditSubjectFormData {
   name: string;
   color: string;
+  semester: string;
 }
 
 interface AddCategoryFormData {
@@ -117,8 +119,8 @@ export default function AdminDashboardPage() {
   const [showAddSubjectDialog, setShowAddSubjectDialog] = useState(false);
   const [showEditSubjectDialog, setShowEditSubjectDialog] = useState(false);
   const [currentSubjectToEdit, setCurrentSubjectToEdit] = useState<Subject | null>(null);
-  const [addSubjectFormData, setAddSubjectFormData] = useState<AddSubjectFormData>({ name: '' });
-  const [editSubjectFormData, setEditSubjectFormData] = useState<EditSubjectFormData>({ name: '', color: '#808080' });
+  const [addSubjectFormData, setAddSubjectFormData] = useState<AddSubjectFormData>({ name: '', semester: NO_SEMESTER_VALUE });
+  const [editSubjectFormData, setEditSubjectFormData] = useState<EditSubjectFormData>({ name: '', color: '#808080', semester: NO_SEMESTER_VALUE });
 
   const [showAddCategoryDialog, setShowAddCategoryDialog] = useState(false);
   const [showEditCategoryDialog, setShowEditCategoryDialog] = useState(false);
@@ -202,7 +204,7 @@ export default function AdminDashboardPage() {
 
         const fetchedSubjects: Subject[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
             const data = doc.data();
-            return { id: doc.id, name: data.name, color: data.color, departmentId: data.departmentId };
+            return { id: doc.id, name: data.name, color: data.color, departmentId: data.departmentId, semester: data.semester };
         });
         setSubjectsDB(fetchedSubjects);
     } catch (error) {
@@ -415,11 +417,16 @@ export default function AdminDashboardPage() {
       }
     }
     try {
-      await addDoc(collection(db, "subjects"), { name: addSubjectFormData.name, color: assignedColor, departmentId: departmentId });
+      await addDoc(collection(db, "subjects"), {
+        name: addSubjectFormData.name,
+        color: assignedColor,
+        departmentId: departmentId,
+        semester: addSubjectFormData.semester && addSubjectFormData.semester !== NO_SEMESTER_VALUE ? parseInt(addSubjectFormData.semester, 10) : null,
+      });
       toast({ title: "Subject Added Successfully", description: `Assigned color: ${assignedColor}` });
       fetchSubjects();
       setShowAddSubjectDialog(false);
-      setAddSubjectFormData({ name: '' });
+      setAddSubjectFormData({ name: '', semester: NO_SEMESTER_VALUE });
     } catch (error) {
       console.error("Error adding subject:", error);
       toast({ variant: "destructive", title: "Error Adding Subject", description: `Details: ${(error as Error)?.message}` });
@@ -428,13 +435,21 @@ export default function AdminDashboardPage() {
 
   const openEditSubjectDialog = (subject: Subject) => {
     setCurrentSubjectToEdit(subject);
-    setEditSubjectFormData({ name: subject.name, color: subject.color });
+    setEditSubjectFormData({
+      name: subject.name,
+      color: subject.color,
+      semester: subject.semester ? String(subject.semester) : NO_SEMESTER_VALUE,
+    });
     setShowEditSubjectDialog(true);
   };
 
   const handleEditSubjectFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setEditSubjectFormData(prev => ({ ...prev, [name]: value }));
+  };
+  
+  const handleEditSubjectSelectChange = (name: string, value: string) => {
+      setEditSubjectFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleUpdateSubjectInDB = async (e: React.FormEvent) => {
@@ -444,7 +459,12 @@ export default function AdminDashboardPage() {
       return;
     }
     try {
-      await updateDoc(doc(db, "subjects", currentSubjectToEdit.id), { name: editSubjectFormData.name, color: editSubjectFormData.color, departmentId: departmentId });
+      await updateDoc(doc(db, "subjects", currentSubjectToEdit.id), {
+        name: editSubjectFormData.name,
+        color: editSubjectFormData.color,
+        departmentId: departmentId,
+        semester: editSubjectFormData.semester && editSubjectFormData.semester !== NO_SEMESTER_VALUE ? parseInt(editSubjectFormData.semester, 10) : null,
+      });
       toast({ title: "Subject Updated Successfully" });
       fetchSubjects();
       setShowEditSubjectDialog(false);
@@ -846,7 +866,7 @@ export default function AdminDashboardPage() {
               <div className="flex justify-between items-center">
                 <CardTitle>Manage Department Subjects</CardTitle>
                 <Button onClick={() => {
-                  setAddSubjectFormData({ name: '' });
+                  setAddSubjectFormData({ name: '', semester: NO_SEMESTER_VALUE });
                   setShowAddSubjectDialog(true);
                 }}>
                   <BookOpen className="mr-2 h-4 w-4" /> Add New Subject
@@ -867,6 +887,9 @@ export default function AdminDashboardPage() {
                     <li key={subject.id} className="p-4 border rounded-lg shadow-sm flex justify-between items-center hover:bg-muted/50 transition-colors">
                       <div>
                         <h3 className="text-lg font-semibold" style={{color: subject.color}}>{subject.name}</h3>
+                        {subject.semester && (
+                          <p className="text-sm text-muted-foreground">Semester/Trimester: {subject.semester}</p>
+                        )}
                         <p className="text-sm text-muted-foreground">Color: {subject.color}</p>
                       </div>
                       <div className="space-x-2">
@@ -1022,7 +1045,7 @@ export default function AdminDashboardPage() {
                           </h3>
                           <p className="text-sm text-muted-foreground">Color: {category.color}</p>
                           <p className="text-sm text-muted-foreground">
-                            Sub-types: {(category.subTypes && category.subTypes.length > 0) ? category.subTypes.join(', ') : 'None'}
+                            Sub-types: {(category.subTypes && category.subTypes.length > 0) ? [...new Set(category.subTypes)].join(', ') : 'None'}
                           </p>
                         </div>
                         <div className="space-x-2">
@@ -1246,7 +1269,7 @@ export default function AdminDashboardPage() {
       )}
 
       <Dialog open={showAddSubjectDialog} onOpenChange={(isOpen) => {
-        if (!isOpen) setAddSubjectFormData({ name: '' });
+        if (!isOpen) setAddSubjectFormData({ name: '', semester: NO_SEMESTER_VALUE });
         setShowAddSubjectDialog(isOpen);
       }}>
         <DialogContent className="sm:max-w-md">
@@ -1259,6 +1282,21 @@ export default function AdminDashboardPage() {
               <Label htmlFor="add-subject-name">Subject Name</Label>
               <Input id="add-subject-name" name="name" value={addSubjectFormData.name}
                 onChange={(e) => setAddSubjectFormData(prev => ({...prev, name: e.target.value}))} required />
+            </div>
+            <div>
+              <Label htmlFor="add-subject-semester">Semester/Trimester</Label>
+              <Select
+                  value={addSubjectFormData.semester}
+                  onValueChange={(value) => setAddSubjectFormData(prev => ({ ...prev, semester: value }))}
+              >
+                  <SelectTrigger id="add-subject-semester"><SelectValue placeholder="Select semester" /></SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value={NO_SEMESTER_VALUE}>None</SelectItem>
+                      {Array.from({ length: 8 }, (_, i) => i + 1).map(sem => (
+                          <SelectItem key={sem} value={String(sem)}>Sem/Trimester {sem}</SelectItem>
+                      ))}
+                  </SelectContent>
+              </Select>
             </div>
             <DialogFooter>
               <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
@@ -1281,6 +1319,18 @@ export default function AdminDashboardPage() {
               <div>
                 <Label htmlFor="edit-subject-name">Subject Name</Label>
                 <Input id="edit-subject-name" name="name" value={editSubjectFormData.name} onChange={handleEditSubjectFormChange} required />
+              </div>
+               <div>
+                <Label htmlFor="edit-subject-semester">Semester/Trimester</Label>
+                <Select value={editSubjectFormData.semester} onValueChange={(value) => handleEditSubjectSelectChange('semester', value)}>
+                    <SelectTrigger id="edit-subject-semester"><SelectValue placeholder="Select semester" /></SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value={NO_SEMESTER_VALUE}>None</SelectItem>
+                        {Array.from({ length: 8 }, (_, i) => i + 1).map(sem => (
+                            <SelectItem key={sem} value={String(sem)}>Sem/Trimester {sem}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label htmlFor="edit-subject-color">Color (Hex Code)</Label>
