@@ -288,8 +288,8 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
                                   </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                  {availableSubTypes.map(subType => (
-                                  <SelectItem key={subType} value={subType}>
+                                  {availableSubTypes.map((subType, index) => (
+                                  <SelectItem key={`${subType}-${index}`} value={subType}>
                                       {subType}
                                   </SelectItem>
                                   ))}
