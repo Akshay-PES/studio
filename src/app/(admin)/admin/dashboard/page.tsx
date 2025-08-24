@@ -14,12 +14,13 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import AddEventDialog from '@/components/calendar/add-event-dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Pencil, Trash2, PlusCircle, BookOpen, Layers, ListFilter, CalendarIcon, Download, FileDown } from 'lucide-react';
+import { Pencil, Trash2, PlusCircle, BookOpen, Layers, ListFilter, CalendarIcon, Download, FileDown, ChevronDown } from 'lucide-react';
 import { format, startOfDay, endOfDay } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from '@/lib/utils';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -71,7 +72,6 @@ const NO_SEMESTER_VALUE = "__NONE_SEMESTER__";
 const NO_SECTION_VALUE = "__NONE_SECTION__";
 const DEFAULT_EVENT_CATEGORY_ON_DELETE = "Others";
 const ALL_CATEGORIES = "__ALL_CATEGORIES__";
-const ALL_SUBTYPES = "__ALL_SUBTYPES__";
 
 
 const PREDEFINED_SUBJECT_COLORS = [
@@ -127,7 +127,7 @@ export default function AdminDashboardPage() {
 
   // Filters for the report generation tab
   const [reportFilterCategory, setReportFilterCategory] = useState<string>(ALL_CATEGORIES);
-  const [reportFilterSubType, setReportFilterSubType] = useState<string>(ALL_SUBTYPES);
+  const [reportFilterSubTypes, setReportFilterSubTypes] = useState<string[]>([]);
   const [reportFilterStartDate, setReportFilterStartDate] = useState<Date | undefined>();
   const [reportFilterEndDate, setReportFilterEndDate] = useState<Date | undefined>();
 
@@ -631,7 +631,7 @@ export default function AdminDashboardPage() {
   const filteredEventsForReport = useMemo(() => {
     return events.filter(event => {
       const categoryMatch = reportFilterCategory === ALL_CATEGORIES || event.category === reportFilterCategory;
-      const subTypeMatch = reportFilterSubType === ALL_SUBTYPES || event.subType === reportFilterSubType;
+      const subTypeMatch = reportFilterSubTypes.length === 0 || (event.subType && reportFilterSubTypes.includes(event.subType));
       
       const dateMatch = (() => {
         if (!reportFilterStartDate && !reportFilterEndDate) return true;
@@ -643,7 +643,7 @@ export default function AdminDashboardPage() {
       
       return categoryMatch && subTypeMatch && dateMatch;
     });
-  }, [events, reportFilterCategory, reportFilterSubType, reportFilterStartDate, reportFilterEndDate]);
+  }, [events, reportFilterCategory, reportFilterSubTypes, reportFilterStartDate, reportFilterEndDate]);
 
   const availableSubTypesForFilter = useMemo(() => {
     if (reportFilterCategory === ALL_CATEGORIES) {
@@ -656,7 +656,15 @@ export default function AdminDashboardPage() {
 
   const handleReportFilterCategoryChange = (value: string) => {
     setReportFilterCategory(value);
-    setReportFilterSubType(ALL_SUBTYPES); // Reset sub-type when category changes
+    setReportFilterSubTypes([]); // Reset sub-types when category changes
+  };
+
+  const handleReportFilterSubTypeChange = (subType: string) => {
+    setReportFilterSubTypes(prev => 
+      prev.includes(subType) 
+        ? prev.filter(st => st !== subType) 
+        : [...prev, subType]
+    );
   };
 
   const handleDownloadPdf = () => {
@@ -669,8 +677,8 @@ export default function AdminDashboardPage() {
     doc.setTextColor(100);
 
     let filterText = `Category: ${reportFilterCategory === ALL_CATEGORIES ? 'All' : reportFilterCategory}`;
-    if (reportFilterSubType !== ALL_SUBTYPES) {
-      filterText += `, Sub-Type: ${reportFilterSubType}`;
+    if (reportFilterSubTypes.length > 0) {
+      filterText += `, Sub-Types: ${reportFilterSubTypes.join(', ')}`;
     }
     if (reportFilterStartDate) {
       filterText += `, From: ${format(reportFilterStartDate, 'PPP')}`;
@@ -865,15 +873,36 @@ export default function AdminDashboardPage() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                             <div className="space-y-2">
+                            <div className="space-y-2">
                                 <Label htmlFor="subtype-filter" className="text-sm">Filter by Sub-Type</Label>
-                                <Select value={reportFilterSubType} onValueChange={setReportFilterSubType} disabled={reportFilterCategory === ALL_CATEGORIES && availableSubTypesForFilter.length === 0}>
-                                    <SelectTrigger id="subtype-filter"><SelectValue placeholder="Select Sub-Type" /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value={ALL_SUBTYPES}>All Sub-Types</SelectItem>
-                                        {availableSubTypesForFilter.map((st, i) => <SelectItem key={`${st}-${i}`} value={st}>{st}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline" className="w-full justify-between" disabled={availableSubTypesForFilter.length === 0}>
+                                            <span>
+                                                {reportFilterSubTypes.length === 0
+                                                    ? "Select Sub-Types"
+                                                    : reportFilterSubTypes.length === availableSubTypesForFilter.length
+                                                        ? "All Sub-Types Selected"
+                                                        : `${reportFilterSubTypes.length} Selected`}
+                                            </span>
+                                            <ChevronDown className="h-4 w-4 opacity-50" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className="w-full">
+                                        <DropdownMenuLabel>Available Sub-Types</DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        {availableSubTypesForFilter.map((st) => (
+                                            <DropdownMenuCheckboxItem
+                                                key={st}
+                                                checked={reportFilterSubTypes.includes(st)}
+                                                onCheckedChange={() => handleReportFilterSubTypeChange(st)}
+                                                onSelect={(e) => e.preventDefault()} // prevent menu closing on item click
+                                            >
+                                                {st}
+                                            </DropdownMenuCheckboxItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="report-start-date">Start Date</Label>
@@ -1293,5 +1322,7 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
+    
 
     
