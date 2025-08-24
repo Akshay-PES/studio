@@ -705,10 +705,10 @@ export default function AdminDashboardPage() {
         img.crossOrigin = "Anonymous"; 
         img.onload = function () {
             const canvas = document.createElement('canvas');
-            canvas.width = this.naturalWidth;
-            canvas.height = this.naturalHeight;
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
             const ctx = canvas.getContext('2d');
-            ctx?.drawImage(this, 0, 0);
+            ctx?.drawImage(img, 0, 0);
             const dataURL = canvas.toDataURL('image/png');
             callback(dataURL);
         };
@@ -1423,5 +1423,7 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
+    
 
     
