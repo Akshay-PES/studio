@@ -15,7 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import AddEventDialog from '@/components/calendar/add-event-dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Pencil, Trash2, PlusCircle, BookOpen, Layers, ListFilter, CalendarIcon, Download, FileDown } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, startOfDay, endOfDay } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -128,6 +128,9 @@ export default function AdminDashboardPage() {
   // Filters for the report generation tab
   const [reportFilterCategory, setReportFilterCategory] = useState<string>(ALL_CATEGORIES);
   const [reportFilterSubType, setReportFilterSubType] = useState<string>(ALL_SUBTYPES);
+  const [reportFilterStartDate, setReportFilterStartDate] = useState<Date | undefined>();
+  const [reportFilterEndDate, setReportFilterEndDate] = useState<Date | undefined>();
+
 
   const { toast } = useToast();
 
@@ -629,9 +632,18 @@ export default function AdminDashboardPage() {
     return events.filter(event => {
       const categoryMatch = reportFilterCategory === ALL_CATEGORIES || event.category === reportFilterCategory;
       const subTypeMatch = reportFilterSubType === ALL_SUBTYPES || event.subType === reportFilterSubType;
-      return categoryMatch && subTypeMatch;
+      
+      const dateMatch = (() => {
+        if (!reportFilterStartDate && !reportFilterEndDate) return true;
+        const eventStart = startOfDay(event.start);
+        if (reportFilterStartDate && eventStart < startOfDay(reportFilterStartDate)) return false;
+        if (reportFilterEndDate && eventStart > endOfDay(reportFilterEndDate)) return false;
+        return true;
+      })();
+      
+      return categoryMatch && subTypeMatch && dateMatch;
     });
-  }, [events, reportFilterCategory, reportFilterSubType]);
+  }, [events, reportFilterCategory, reportFilterSubType, reportFilterStartDate, reportFilterEndDate]);
 
   const availableSubTypesForFilter = useMemo(() => {
     if (reportFilterCategory === ALL_CATEGORIES) {
@@ -656,11 +668,17 @@ export default function AdminDashboardPage() {
     doc.setFontSize(11);
     doc.setTextColor(100);
 
-    let filterText = `Filters: Category: ${reportFilterCategory === ALL_CATEGORIES ? 'All' : reportFilterCategory}`;
+    let filterText = `Category: ${reportFilterCategory === ALL_CATEGORIES ? 'All' : reportFilterCategory}`;
     if (reportFilterSubType !== ALL_SUBTYPES) {
       filterText += `, Sub-Type: ${reportFilterSubType}`;
     }
-    doc.text(filterText, 14, 30);
+    if (reportFilterStartDate) {
+      filterText += `, From: ${format(reportFilterStartDate, 'PPP')}`;
+    }
+     if (reportFilterEndDate) {
+      filterText += `, To: ${format(reportFilterEndDate, 'PPP')}`;
+    }
+    doc.text(`Filters: ${filterText}`, 14, 30);
 
     const tableColumn = ["Title", "Category", "Sub-Type", "Start", "End", "Location"];
     const tableRows: (string | undefined)[][] = [];
@@ -680,7 +698,7 @@ export default function AdminDashboardPage() {
     autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
-      startY: 35,
+      startY: 38,
       theme: 'grid',
       headStyles: { fillColor: [0, 51, 102] },
     });
@@ -831,35 +849,67 @@ export default function AdminDashboardPage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Download Event Reports</CardTitle>
-                    <CardDescription>Filter events by category and sub-type to generate a downloadable PDF report.</CardDescription>
+                    <CardDescription>Filter events to generate a downloadable PDF report.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <div className="p-6 border rounded-lg bg-card-foreground/5">
                         <h4 className="text-lg font-semibold mb-4">Report Filters</h4>
-                        <div className="flex flex-col sm:flex-row items-center gap-4">
-                            <div className="flex items-center gap-2 w-full sm:w-auto">
-                                <Label htmlFor="category-filter" className="text-sm">Filter by Category:</Label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                           <div className="space-y-2">
+                                <Label htmlFor="category-filter" className="text-sm">Filter by Category</Label>
                                 <Select value={reportFilterCategory} onValueChange={handleReportFilterCategoryChange}>
-                                    <SelectTrigger id="category-filter" className="w-full sm:w-[220px]">
-                                        <SelectValue placeholder="Select Category" />
-                                    </SelectTrigger>
+                                    <SelectTrigger id="category-filter"><SelectValue placeholder="Select Category" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value={ALL_CATEGORIES}>All Categories</SelectItem>
                                         {eventCategoriesDB.map(c => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="flex items-center gap-2 w-full sm:w-auto">
-                                <Label htmlFor="subtype-filter" className="text-sm">Filter by Sub-Type:</Label>
+                             <div className="space-y-2">
+                                <Label htmlFor="subtype-filter" className="text-sm">Filter by Sub-Type</Label>
                                 <Select value={reportFilterSubType} onValueChange={setReportFilterSubType} disabled={reportFilterCategory === ALL_CATEGORIES && availableSubTypesForFilter.length === 0}>
-                                    <SelectTrigger id="subtype-filter" className="w-full sm:w-[220px]">
-                                        <SelectValue placeholder="Select Sub-Type" />
-                                    </SelectTrigger>
+                                    <SelectTrigger id="subtype-filter"><SelectValue placeholder="Select Sub-Type" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value={ALL_SUBTYPES}>All Sub-Types</SelectItem>
                                         {availableSubTypesForFilter.map((st, i) => <SelectItem key={`${st}-${i}`} value={st}>{st}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="report-start-date">Start Date</Label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            id="report-start-date"
+                                            variant={"outline"}
+                                            className={cn("w-full justify-start text-left font-normal", !reportFilterStartDate && "text-muted-foreground")}
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {reportFilterStartDate ? format(reportFilterStartDate, "PPP") : <span>Pick a start date</span>}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0">
+                                        <Calendar mode="single" selected={reportFilterStartDate} onSelect={setReportFilterStartDate} initialFocus />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="report-end-date">End Date</Label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            id="report-end-date"
+                                            variant={"outline"}
+                                            className={cn("w-full justify-start text-left font-normal", !reportFilterEndDate && "text-muted-foreground")}
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {reportFilterEndDate ? format(reportFilterEndDate, "PPP") : <span>Pick an end date</span>}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0">
+                                        <Calendar mode="single" selected={reportFilterEndDate} onSelect={setReportFilterEndDate} disabled={(date) => reportFilterStartDate ? date < reportFilterStartDate : false} initialFocus />
+                                    </PopoverContent>
+                                </Popover>
                             </div>
                         </div>
                     </div>
@@ -1243,3 +1293,5 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
+    
