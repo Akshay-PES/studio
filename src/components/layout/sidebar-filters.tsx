@@ -113,12 +113,24 @@ export default function SidebarFilters() {
   };
   
   const handleSemesterChange = (semester: number, checked: boolean) => {
-    setFilters(prev => ({
-      ...prev,
-      semesters: checked
+    setFilters(prev => {
+        const newSemesters = checked
         ? [...prev.semesters, semester]
-        : prev.semesters.filter(s => s !== semester),
-    }));
+        : prev.semesters.filter(s => s !== semester);
+        
+        // When semesters change, we need to un-filter subjects that are no longer relevant
+        const stillValidSubjects = prev.subjects.filter(subjectId => {
+            const subject = subjectsDB.find(s => s.id === subjectId);
+            // Keep subject if it has no semester or its semester is in the new list
+            return !subject?.semester || newSemesters.includes(subject.semester);
+        });
+
+        return {
+            ...prev,
+            semesters: newSemesters,
+            subjects: stillValidSubjects,
+        };
+    });
   };
 
   const handleSectionChange = (section: string, checked: boolean) => {
@@ -153,6 +165,15 @@ export default function SidebarFilters() {
       .filter(subType => subType);
     return [...new Set(allSelectedSubTypes)].sort();
   }, [filters.categories, eventCategoriesDB]);
+
+  const filteredSubjectsForDisplay = React.useMemo(() => {
+    if (filters.semesters.length === 0) {
+      return subjectsDB; // If no semester is selected, show all subjects
+    }
+    return subjectsDB.filter(subject => 
+      subject.semester && filters.semesters.includes(subject.semester)
+    );
+  }, [filters.semesters, subjectsDB]);
 
   return (
     <div className="p-2 space-y-3 h-full flex flex-col text-sidebar-foreground bg-sidebar">
@@ -219,33 +240,6 @@ export default function SidebarFilters() {
             </AccordionContent>
           </AccordionItem>
 
-          <AccordionItem value="subjects" className="border-b-sidebar-border">
-            <AccordionTrigger className="text-sm font-medium hover:no-underline px-2 py-2.5">
-              <div className="flex items-center gap-1.5"><Tag className="w-4 h-4" /> Subjects</div>
-            </AccordionTrigger>
-            <AccordionContent className="pt-1 pb-1.5 space-y-1 px-2">
-              {isLoadingSubjects ? (<p className="text-xs text-muted-foreground/80 px-1 py-2">Loading subjects...</p>) 
-              : subjectsDB.length === 0 ? (
-                <p className="text-xs text-muted-foreground/80 px-1 py-2">No subjects found for this department.</p>
-              ) : (
-                subjectsDB.map(subject => (
-                  <div key={subject.id} className="flex items-center space-x-2 p-1 rounded-md hover:bg-sidebar-accent/70">
-                    <Checkbox
-                      id={`sub-${subject.id}`}
-                      checked={filters.subjects.includes(subject.id)}
-                      onCheckedChange={(checked) => handleSubjectChange(subject.id, !!checked)}
-                      className="border-sidebar-primary data-[state=checked]:bg-sidebar-primary data-[state=checked]:text-sidebar-primary-foreground"
-                    />
-                    <Label htmlFor={`sub-${subject.id}`} className="text-xs font-normal cursor-pointer flex-grow">
-                      {subject.name}
-                    </Label>
-                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: subject.color }} />
-                  </div>
-                ))
-              )}
-            </AccordionContent>
-          </AccordionItem>
-
           <AccordionItem value="semesters" className="border-b-sidebar-border">
             <AccordionTrigger className="text-sm font-medium hover:no-underline px-2 py-2.5">
               <div className="flex items-center gap-1.5"><ListFilter className="w-4 h-4" /> Semester/Trimester</div>
@@ -264,6 +258,33 @@ export default function SidebarFilters() {
                   </Label>
                 </div>
               ))}
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="subjects" className="border-b-sidebar-border">
+            <AccordionTrigger className="text-sm font-medium hover:no-underline px-2 py-2.5">
+              <div className="flex items-center gap-1.5"><Tag className="w-4 h-4" /> Subjects</div>
+            </AccordionTrigger>
+            <AccordionContent className="pt-1 pb-1.5 space-y-1 px-2">
+              {isLoadingSubjects ? (<p className="text-xs text-muted-foreground/80 px-1 py-2">Loading subjects...</p>) 
+              : filteredSubjectsForDisplay.length === 0 ? (
+                <p className="text-xs text-muted-foreground/80 px-1 py-2">No subjects found for the selected criteria.</p>
+              ) : (
+                filteredSubjectsForDisplay.map(subject => (
+                  <div key={subject.id} className="flex items-center space-x-2 p-1 rounded-md hover:bg-sidebar-accent/70">
+                    <Checkbox
+                      id={`sub-${subject.id}`}
+                      checked={filters.subjects.includes(subject.id)}
+                      onCheckedChange={(checked) => handleSubjectChange(subject.id, !!checked)}
+                      className="border-sidebar-primary data-[state=checked]:bg-sidebar-primary data-[state=checked]:text-sidebar-primary-foreground"
+                    />
+                    <Label htmlFor={`sub-${subject.id}`} className="text-xs font-normal cursor-pointer flex-grow">
+                      {subject.name}
+                    </Label>
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: subject.color }} />
+                  </div>
+                ))
+              )}
             </AccordionContent>
           </AccordionItem>
 
