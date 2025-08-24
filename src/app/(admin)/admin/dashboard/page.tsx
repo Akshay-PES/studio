@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import AddEventDialog from '@/components/calendar/add-event-dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Pencil, Trash2, PlusCircle, BookOpen, Layers, ListFilter, CalendarIcon, Download } from 'lucide-react';
+import { Pencil, Trash2, PlusCircle, BookOpen, Layers, ListFilter, CalendarIcon, Download, FileDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from '@/components/ui/label';
@@ -125,8 +125,9 @@ export default function AdminDashboardPage() {
   const [addCategoryFormData, setAddCategoryFormData] = useState<AddCategoryFormData>({ name: '', subTypesString: '' });
   const [editCategoryFormData, setEditCategoryFormData] = useState<EditCategoryFormData>({ id: '', name: '', color: '#808080', subTypesString: '' });
 
-  const [eventFilterCategory, setEventFilterCategory] = useState<string>(ALL_CATEGORIES);
-  const [eventFilterSubType, setEventFilterSubType] = useState<string>(ALL_SUBTYPES);
+  // Filters for the report generation tab
+  const [reportFilterCategory, setReportFilterCategory] = useState<string>(ALL_CATEGORIES);
+  const [reportFilterSubType, setReportFilterSubType] = useState<string>(ALL_SUBTYPES);
 
   const { toast } = useToast();
 
@@ -216,7 +217,6 @@ export default function AdminDashboardPage() {
       const querySnapshot = await getDocs(q);
       const fetchedCategories: EventCategory[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
         const data = doc.data();
-        // De-duplicate sub-types right after fetching
         const uniqueSubTypes = data.subTypes ? [...new Set(data.subTypes.filter((st: any) => typeof st === 'string' && st.trim() !== ''))] as string[] : [];
         return { id: doc.id, name: data.name, color: data.color, subTypes: uniqueSubTypes };
       });
@@ -478,7 +478,6 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Category management is global and does not depend on department
   const handleAddEventCategoryToDB = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!addCategoryFormData.name.trim()) {
@@ -559,10 +558,8 @@ export default function AdminDashboardPage() {
       subTypes: subTypesArray,
     });
 
-    // This is a global change. When a category name changes, it affects events in ALL departments.
     let eventsUpdatedCount = 0;
     if (originalName && newName !== originalName) {
-      // Note: This query is NOT scoped by department, which is intentional for global category updates.
       const eventsQuery = query(collection(db, "events"), where("category", "==", originalName));
       try {
         const eventSnapshots = await getDocs(eventsQuery);
@@ -588,7 +585,7 @@ export default function AdminDashboardPage() {
 
       fetchEventCategories();
       if (originalName && newName !== originalName) {
-         fetchEvents(); // Re-fetch events for the current department to reflect change
+         fetchEvents(); 
       }
       setShowEditCategoryDialog(false);
       setCurrentCategoryToEdit(null);
@@ -628,26 +625,26 @@ export default function AdminDashboardPage() {
   const selectedEditEventCategoryDetails = eventCategoriesDB.find(c => c.name === editEventFormData.category);
   const uniqueSubTypesForEdit = selectedEditEventCategoryDetails?.subTypes ? [...new Set(selectedEditEventCategoryDetails.subTypes)] : [];
 
-  const filteredEvents = useMemo(() => {
+  const filteredEventsForReport = useMemo(() => {
     return events.filter(event => {
-      const categoryMatch = eventFilterCategory === ALL_CATEGORIES || event.category === eventFilterCategory;
-      const subTypeMatch = eventFilterSubType === ALL_SUBTYPES || event.subType === eventFilterSubType;
+      const categoryMatch = reportFilterCategory === ALL_CATEGORIES || event.category === reportFilterCategory;
+      const subTypeMatch = reportFilterSubType === ALL_SUBTYPES || event.subType === reportFilterSubType;
       return categoryMatch && subTypeMatch;
     });
-  }, [events, eventFilterCategory, eventFilterSubType]);
+  }, [events, reportFilterCategory, reportFilterSubType]);
 
   const availableSubTypesForFilter = useMemo(() => {
-    if (eventFilterCategory === ALL_CATEGORIES) {
+    if (reportFilterCategory === ALL_CATEGORIES) {
       const allSubTypes = eventCategoriesDB.flatMap(c => c.subTypes || []);
       return [...new Set(allSubTypes)].sort();
     }
-    const selectedCategory = eventCategoriesDB.find(c => c.name === eventFilterCategory);
+    const selectedCategory = eventCategoriesDB.find(c => c.name === reportFilterCategory);
     return selectedCategory?.subTypes?.sort() || [];
-  }, [eventFilterCategory, eventCategoriesDB]);
+  }, [reportFilterCategory, eventCategoriesDB]);
 
-  const handleFilterCategoryChange = (value: string) => {
-    setEventFilterCategory(value);
-    setEventFilterSubType(ALL_SUBTYPES); // Reset sub-type when category changes
+  const handleReportFilterCategoryChange = (value: string) => {
+    setReportFilterCategory(value);
+    setReportFilterSubType(ALL_SUBTYPES); // Reset sub-type when category changes
   };
 
   const handleDownloadPdf = () => {
@@ -659,16 +656,16 @@ export default function AdminDashboardPage() {
     doc.setFontSize(11);
     doc.setTextColor(100);
 
-    let filterText = `Filters: Category: ${eventFilterCategory === ALL_CATEGORIES ? 'All' : eventFilterCategory}`;
-    if (eventFilterSubType !== ALL_SUBTYPES) {
-      filterText += `, Sub-Type: ${eventFilterSubType}`;
+    let filterText = `Filters: Category: ${reportFilterCategory === ALL_CATEGORIES ? 'All' : reportFilterCategory}`;
+    if (reportFilterSubType !== ALL_SUBTYPES) {
+      filterText += `, Sub-Type: ${reportFilterSubType}`;
     }
     doc.text(filterText, 14, 30);
 
     const tableColumn = ["Title", "Category", "Sub-Type", "Start", "End", "Location"];
     const tableRows: (string | undefined)[][] = [];
 
-    filteredEvents.forEach(event => {
+    filteredEventsForReport.forEach(event => {
       const eventData = [
         event.title,
         event.category,
@@ -685,7 +682,7 @@ export default function AdminDashboardPage() {
       body: tableRows,
       startY: 35,
       theme: 'grid',
-      headStyles: { fillColor: [0, 51, 102] }, // Dark blue header
+      headStyles: { fillColor: [0, 51, 102] },
     });
     
     const pageCount = (doc as any).internal.getNumberOfPages();
@@ -706,13 +703,20 @@ export default function AdminDashboardPage() {
     return <div className="flex justify-center items-center h-full"><p>Loading...</p></div>;
   }
 
+  const tabsConfig = [
+    { value: "events", label: "Manage Events" },
+    { value: "subjects", label: "Manage Subjects" },
+    { value: "reports", label: "Download Reports" },
+    ...(isMbaAdmin ? [{ value: "categories", label: "Manage Global Categories" }] : [])
+  ];
+
   return (
     <div className="container mx-auto py-8">
       <Tabs defaultValue="events" className="w-full">
-        <TabsList className={`grid w-full ${isMbaAdmin ? 'grid-cols-3' : 'grid-cols-2'}`}>
-          <TabsTrigger value="events">Manage Events</TabsTrigger>
-          <TabsTrigger value="subjects">Manage Subjects</TabsTrigger>
-          {isMbaAdmin && <TabsTrigger value="categories">Manage Global Categories</TabsTrigger>}
+        <TabsList className={`grid w-full ${isMbaAdmin ? 'grid-cols-4' : 'grid-cols-3'}`}>
+            {tabsConfig.map(tab => (
+                <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
+            ))}
         </TabsList>
 
         <TabsContent value="events">
@@ -729,48 +733,16 @@ export default function AdminDashboardPage() {
                    <PlusCircle className="mr-2 h-4 w-4" /> Add New Event
                  </Button>
               </div>
-
-               <div className="mt-6 border-t pt-4 flex flex-col sm:flex-row items-center gap-4">
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <Label htmlFor="category-filter" className="text-sm">Filter by:</Label>
-                    <Select value={eventFilterCategory} onValueChange={handleFilterCategoryChange}>
-                        <SelectTrigger id="category-filter" className="w-full sm:w-[180px]">
-                            <SelectValue placeholder="Select Category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value={ALL_CATEGORIES}>All Categories</SelectItem>
-                            {eventCategoriesDB.map(c => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                </div>
-                 <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <Select value={eventFilterSubType} onValueChange={setEventFilterSubType} disabled={eventFilterCategory === ALL_CATEGORIES && availableSubTypesForFilter.length === 0}>
-                        <SelectTrigger className="w-full sm:w-[180px]">
-                            <SelectValue placeholder="Select Sub-Type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value={ALL_SUBTYPES}>All Sub-Types</SelectItem>
-                            {availableSubTypesForFilter.map((st, i) => <SelectItem key={`${st}-${i}`} value={st}>{st}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                 </div>
-                 <div className="sm:ml-auto w-full sm:w-auto">
-                    <Button onClick={handleDownloadPdf} disabled={filteredEvents.length === 0}>
-                        <Download className="mr-2 h-4 w-4"/>
-                        Download as PDF
-                    </Button>
-                 </div>
-              </div>
             </CardHeader>
             <CardContent>
               {isLoadingEvents ? (<p className="text-center text-muted-foreground">Loading events...</p>) :
-              filteredEvents.length === 0 ? (
+              events.length === 0 ? (
                 <p className="text-center text-muted-foreground py-10">
-                    {events.length === 0 ? "No events found for this department. Add one!" : "No events match your current filters."}
+                    No events found for this department. Add one!
                 </p>
               ) : (
                 <ul className="space-y-4">
-                  {filteredEvents.map((event) => {
+                  {events.map((event) => {
                     const categoryDetails = eventCategoriesDB.find(c => c.name === event.category);
                     return (
                     <li key={event.id} className="p-4 border rounded-lg shadow-sm flex justify-between items-center hover:bg-muted/50 transition-colors">
@@ -853,6 +825,55 @@ export default function AdminDashboardPage() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="reports">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Download Event Reports</CardTitle>
+                    <CardDescription>Filter events by category and sub-type to generate a downloadable PDF report.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="p-6 border rounded-lg bg-card-foreground/5">
+                        <h4 className="text-lg font-semibold mb-4">Report Filters</h4>
+                        <div className="flex flex-col sm:flex-row items-center gap-4">
+                            <div className="flex items-center gap-2 w-full sm:w-auto">
+                                <Label htmlFor="category-filter" className="text-sm">Filter by Category:</Label>
+                                <Select value={reportFilterCategory} onValueChange={handleReportFilterCategoryChange}>
+                                    <SelectTrigger id="category-filter" className="w-full sm:w-[220px]">
+                                        <SelectValue placeholder="Select Category" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value={ALL_CATEGORIES}>All Categories</SelectItem>
+                                        {eventCategoriesDB.map(c => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex items-center gap-2 w-full sm:w-auto">
+                                <Label htmlFor="subtype-filter" className="text-sm">Filter by Sub-Type:</Label>
+                                <Select value={reportFilterSubType} onValueChange={setReportFilterSubType} disabled={reportFilterCategory === ALL_CATEGORIES && availableSubTypesForFilter.length === 0}>
+                                    <SelectTrigger id="subtype-filter" className="w-full sm:w-[220px]">
+                                        <SelectValue placeholder="Select Sub-Type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value={ALL_SUBTYPES}>All Sub-Types</SelectItem>
+                                        {availableSubTypesForFilter.map((st, i) => <SelectItem key={`${st}-${i}`} value={st}>{st}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex justify-center">
+                        <Button onClick={handleDownloadPdf} disabled={filteredEventsForReport.length === 0}>
+                            <FileDown className="mr-2 h-4 w-4"/>
+                            Download as PDF ({filteredEventsForReport.length} event{filteredEventsForReport.length !== 1 ? 's' : ''})
+                        </Button>
+                    </div>
+                    {filteredEventsForReport.length === 0 && (
+                        <p className="text-center text-muted-foreground pt-4">No events match your current filter criteria.</p>
+                    )}
+                </CardContent>
+            </Card>
         </TabsContent>
 
         {isMbaAdmin && (
