@@ -24,6 +24,7 @@ import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMe
 import { cn } from '@/lib/utils';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface EditEventFormData {
   title: string;
@@ -891,16 +892,18 @@ export default function AdminDashboardPage() {
                                     <DropdownMenuContent className="w-56">
                                         <DropdownMenuLabel>Available Sub-Types</DropdownMenuLabel>
                                         <DropdownMenuSeparator />
-                                        {availableSubTypesForFilter.map((st) => (
-                                            <DropdownMenuCheckboxItem
-                                                key={st}
-                                                checked={reportFilterSubTypes.includes(st)}
-                                                onCheckedChange={() => handleReportFilterSubTypeChange(st)}
-                                                onSelect={(e) => e.preventDefault()} // prevent menu closing on item click
-                                            >
-                                                {st}
-                                            </DropdownMenuCheckboxItem>
-                                        ))}
+                                        <ScrollArea className="h-40">
+                                            {availableSubTypesForFilter.map((st) => (
+                                                <DropdownMenuCheckboxItem
+                                                    key={st}
+                                                    checked={reportFilterSubTypes.includes(st)}
+                                                    onCheckedChange={() => handleReportFilterSubTypeChange(st)}
+                                                    onSelect={(e) => e.preventDefault()} // prevent menu closing on item click
+                                                >
+                                                    {st}
+                                                </DropdownMenuCheckboxItem>
+                                            ))}
+                                        </ScrollArea>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </div>
@@ -1322,9 +1325,5 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-
-    
-
-    
 
     
