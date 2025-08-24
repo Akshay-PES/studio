@@ -1082,18 +1082,7 @@ export default function AdminDashboardPage() {
           </TabsContent>
         )}
       </Tabs>
-      <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          height: 2px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background-color: hsl(var(--primary));
-          border-radius: 2px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background-color: hsl(var(--muted));
-        }
-      `}</style>
+      
       <AddEventDialog
         isOpen={showAddEventDialog}
         onClose={() => setShowAddEventDialog(false)}

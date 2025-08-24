@@ -98,3 +98,17 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    height: 2px;
+    width: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--primary));
+    border-radius: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background-color: hsl(var(--muted));
+  }
+}
