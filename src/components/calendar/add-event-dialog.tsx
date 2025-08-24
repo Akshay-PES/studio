@@ -546,3 +546,4 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
     </Dialog>
   );
 }
+
