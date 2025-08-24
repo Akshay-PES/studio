@@ -133,7 +133,9 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
   React.useEffect(() => {
     if (selectedCategoryName && selectedCategoryName !== NO_CATEGORY_VALUE) {
       const categoryDetails = categoriesFromDB.find(c => c.name === selectedCategoryName);
-      setAvailableSubTypes(categoryDetails?.subTypes || []);
+      // Ensure sub-types are unique before setting them
+      const uniqueSubTypes = categoryDetails?.subTypes ? [...new Set(categoryDetails.subTypes)] : [];
+      setAvailableSubTypes(uniqueSubTypes);
       form.setValue("subType", "");
     } else {
       setAvailableSubTypes([]);

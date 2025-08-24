@@ -208,7 +208,9 @@ export default function AdminDashboardPage() {
       const querySnapshot = await getDocs(q);
       const fetchedCategories: EventCategory[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
         const data = doc.data();
-        return { id: doc.id, name: data.name, color: data.color, subTypes: data.subTypes || [] };
+        // De-duplicate sub-types right after fetching
+        const uniqueSubTypes = data.subTypes ? [...new Set(data.subTypes.filter((st: any) => typeof st === 'string' && st.trim() !== ''))] as string[] : [];
+        return { id: doc.id, name: data.name, color: data.color, subTypes: uniqueSubTypes };
       });
       const sortedCategories = fetchedCategories.sort((a,b) => a.name.localeCompare(b.name));
       setEventCategoriesDB(sortedCategories);
@@ -489,7 +491,7 @@ export default function AdminDashboardPage() {
         }
     }
 
-    const subTypesArray = addCategoryFormData.subTypesString.split(',').map(st => st.trim()).filter(st => st);
+    const subTypesArray = [...new Set(addCategoryFormData.subTypesString.split(',').map(st => st.trim()).filter(st => st))];
     try {
       await addDoc(collection(db, "eventCategories"), {
         name: addCategoryFormData.name.trim(),
@@ -539,7 +541,7 @@ export default function AdminDashboardPage() {
         return;
     }
 
-    const subTypesArray = editCategoryFormData.subTypesString.split(',').map(st => st.trim()).filter(st => st);
+    const subTypesArray = [...new Set(editCategoryFormData.subTypesString.split(',').map(st => st.trim()).filter(st => st))];
     const batch = writeBatch(db);
     const categoryDocRef = doc(db, "eventCategories", currentCategoryToEdit.id);
 
@@ -616,6 +618,8 @@ export default function AdminDashboardPage() {
   };
 
   const selectedEditEventCategoryDetails = eventCategoriesDB.find(c => c.name === editEventFormData.category);
+  const uniqueSubTypesForEdit = selectedEditEventCategoryDetails?.subTypes ? [...new Set(selectedEditEventCategoryDetails.subTypes)] : [];
+
 
   if (!userProfile) {
     return <div className="flex justify-center items-center h-full"><p>Loading...</p></div>;
@@ -836,14 +840,14 @@ export default function AdminDashboardPage() {
                     <Select
                         value={editEventFormData.subType || ""}
                         onValueChange={handleEditEventSubTypeChange}
-                        disabled={!selectedEditEventCategoryDetails || !selectedEditEventCategoryDetails.subTypes || selectedEditEventCategoryDetails.subTypes.length === 0}
+                        disabled={!selectedEditEventCategoryDetails || !uniqueSubTypesForEdit || uniqueSubTypesForEdit.length === 0}
                     >
                         <SelectTrigger id="edit-event-subType"><SelectValue placeholder="Select sub-type (if any)" /></SelectTrigger>
                         <SelectContent>
-                            {selectedEditEventCategoryDetails?.subTypes?.map((st, index) => <SelectItem key={`${st}-${index}`} value={st}>{st}</SelectItem>)}
+                            {uniqueSubTypesForEdit?.map((st, index) => <SelectItem key={`${st}-${index}`} value={st}>{st}</SelectItem>)}
                         </SelectContent>
                     </Select>
-                    {(!selectedEditEventCategoryDetails || !selectedEditEventCategoryDetails.subTypes || selectedEditEventCategoryDetails.subTypes.length === 0) && <p className="text-xs text-muted-foreground mt-1">No sub-types for this category.</p>}
+                    {(!selectedEditEventCategoryDetails || !uniqueSubTypesForEdit || uniqueSubTypesForEdit.length === 0) && <p className="text-xs text-muted-foreground mt-1">No sub-types for this category.</p>}
                 </div>
               </div>
               <div>
