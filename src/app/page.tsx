@@ -40,8 +40,8 @@ export default function HomePage() {
           <p className="text-center text-foreground pb-2">
             Select a department to view its academic calendar.
           </p>
-          {departments.map((dept, index) => (
-            <Link key={`${dept.id}-${index}`} href={`/dashboard?department=${dept.id}`} className="w-full">
+          {departments.map((dept) => (
+            <Link key={dept.id} href={`/dashboard?department=${dept.id}`} className="w-full">
               <Button size="lg" className="w-full font-semibold group">
                 {dept.name} Calendar
                 <ArrowRight className="w-5 h-5 ml-2 transition-transform duration-200 group-hover:translate-x-1" />
