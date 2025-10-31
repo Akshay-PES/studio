@@ -408,14 +408,15 @@ export default function AdminDashboardPage() {
       toast({ variant: "destructive", title: "Validation Error", description: "Subject name is required." });
       return;
     }
+
     const usedColors = new Set(subjectsDB.map(s => s.color));
-    let assignedColor = FALLBACK_SUBJECT_COLOR;
-    for (const color of PREDEFINED_SUBJECT_COLORS) {
-      if (!usedColors.has(color)) {
-        assignedColor = color;
-        break;
-      }
+    let assignedColor: string | undefined = PREDEFINED_SUBJECT_COLORS.find(c => !usedColors.has(c));
+
+    if (!assignedColor) {
+      // Fallback to a random color if all predefined are used
+      assignedColor = `#${Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')}`;
     }
+    
     try {
       await addDoc(collection(db, "subjects"), {
         name: addSubjectFormData.name,
