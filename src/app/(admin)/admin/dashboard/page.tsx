@@ -75,6 +75,8 @@ const NO_SEMESTER_VALUE = "__NONE_SEMESTER__";
 const NO_SECTION_VALUE = "__NONE_SECTION__";
 const DEFAULT_EVENT_CATEGORY_ON_DELETE = "Others";
 const ALL_CATEGORIES = "__ALL_CATEGORIES__";
+const ALL_SUBJECTS = "__ALL_SUBJECTS__";
+const ALL_SEMESTERS = "__ALL_SEMESTERS__";
 
 
 const PREDEFINED_SUBJECT_COLORS = [
@@ -128,8 +130,11 @@ export default function AdminDashboardPage() {
   const [addCategoryFormData, setAddCategoryFormData] = useState<AddCategoryFormData>({ name: '', subTypesString: '' });
   const [editCategoryFormData, setEditCategoryFormData] = useState<EditCategoryFormData>({ id: '', name: '', color: '#808080', subTypesString: '' });
 
-  // Filter for Manage Events tab
+  // Filters for Manage Events tab
   const [eventSearchQuery, setEventSearchQuery] = useState('');
+  const [eventFilterCategory, setEventFilterCategory] = useState<string>(ALL_CATEGORIES);
+  const [eventFilterSubject, setEventFilterSubject] = useState<string>(ALL_SUBJECTS);
+  const [eventFilterSemester, setEventFilterSemester] = useState<string>(ALL_SEMESTERS);
 
   // Filters for the report generation tab
   const [reportFilterCategory, setReportFilterCategory] = useState<string>(ALL_CATEGORIES);
@@ -653,13 +658,15 @@ export default function AdminDashboardPage() {
   const uniqueSubTypesForEdit = selectedEditEventCategoryDetails?.subTypes ? [...new Set(selectedEditEventCategoryDetails.subTypes)] : [];
 
   const filteredEventsForList = useMemo(() => {
-    if (!eventSearchQuery) {
-      return events;
-    }
-    return events.filter(event =>
-      event.title.toLowerCase().includes(eventSearchQuery.toLowerCase())
-    );
-  }, [events, eventSearchQuery]);
+    return events.filter(event => {
+      const titleMatch = !eventSearchQuery || event.title.toLowerCase().includes(eventSearchQuery.toLowerCase());
+      const categoryMatch = eventFilterCategory === ALL_CATEGORIES || event.category === eventFilterCategory;
+      const subjectMatch = eventFilterSubject === ALL_SUBJECTS || event.subjectId === eventFilterSubject;
+      const semesterMatch = eventFilterSemester === ALL_SEMESTERS || (event.semester && String(event.semester) === eventFilterSemester);
+      
+      return titleMatch && categoryMatch && subjectMatch && semesterMatch;
+    });
+  }, [events, eventSearchQuery, eventFilterCategory, eventFilterSubject, eventFilterSemester]);
 
   const filteredEventsForReport = useMemo(() => {
     return events.filter(event => {
@@ -842,16 +849,54 @@ export default function AdminDashboardPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="mb-6">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder="Search for events by title..."
-                    value={eventSearchQuery}
-                    onChange={(e) => setEventSearchQuery(e.target.value)}
-                    className="pl-10 w-full max-w-sm"
-                  />
+              <div className="p-4 border rounded-lg bg-muted/50 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
+                    <div className="sm:col-span-2 md:col-span-1">
+                        <Label htmlFor="event-search-query" className="text-xs">Search by Title</Label>
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                id="event-search-query"
+                                type="text"
+                                placeholder="Search..."
+                                value={eventSearchQuery}
+                                onChange={(e) => setEventSearchQuery(e.target.value)}
+                                className="pl-10"
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        <Label htmlFor="event-category-filter" className="text-xs">Category</Label>
+                        <Select value={eventFilterCategory} onValueChange={setEventFilterCategory}>
+                            <SelectTrigger id="event-category-filter"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value={ALL_CATEGORIES}>All Categories</SelectItem>
+                                {eventCategoriesDB.map(c => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div>
+                        <Label htmlFor="event-subject-filter" className="text-xs">Subject</Label>
+                        <Select value={eventFilterSubject} onValueChange={setEventFilterSubject}>
+                            <SelectTrigger id="event-subject-filter"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value={ALL_SUBJECTS}>All Subjects</SelectItem>
+                                {subjectsDB.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                     <div>
+                        <Label htmlFor="event-semester-filter" className="text-xs">Semester</Label>
+                        <Select value={eventFilterSemester} onValueChange={setEventFilterSemester}>
+                            <SelectTrigger id="event-semester-filter"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value={ALL_SEMESTERS}>All Semesters</SelectItem>
+                                {Array.from({ length: 8 }, (_, i) => i + 1).map(sem => (
+                                  <SelectItem key={sem} value={String(sem)}>Sem/Trimester {sem}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
               </div>
               {isLoadingEvents ? (<p className="text-center text-muted-foreground">Loading events...</p>) :
@@ -859,7 +904,7 @@ export default function AdminDashboardPage() {
                 <div className="text-center text-muted-foreground py-10">
                     <p className="font-semibold">No events found.</p>
                     <p className="text-sm">
-                        {eventSearchQuery ? "Try adjusting your search query." : "No events have been created for this department yet."}
+                        Try adjusting your search or filter criteria.
                     </p>
                 </div>
               ) : (
@@ -1451,4 +1496,5 @@ export default function AdminDashboardPage() {
   );
 }
 
+    
     
