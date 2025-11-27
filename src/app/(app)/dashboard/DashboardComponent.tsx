@@ -250,7 +250,7 @@ export default function DashboardComponent() {
         <EventDetailDialog
           event={selectedEvent}
           allSubjects={subjects}
-          allCategories={allCategories} 
+          allCategories={eventCategories} 
           isOpen={showEventDetail}
           onClose={() => {
             setShowEventDetail(false);
@@ -266,7 +266,7 @@ export default function DashboardComponent() {
           selectedDate={selectedDateForDayView}
           allEvents={events}
           allSubjects={subjects}
-          allCategories={allCategories}
+          allCategories={eventCategories}
           filters={filters}
           onEventClick={handleEventClickFromDayView}
         />
