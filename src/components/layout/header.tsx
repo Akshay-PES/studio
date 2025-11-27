@@ -35,11 +35,7 @@ export default function Header({ children }: HeaderProps) {
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 border-b bg-card shadow-sm sm:px-6">
       <div className="flex items-center gap-3">
-        <SidebarTrigger asChild className="hidden md:flex p-0 h-auto w-auto">
-             <button className="flex items-center gap-2 text-lg font-semibold text-primary">
-                <Image src="/pes-logo.png" alt="PES University Logo" width={100} height={36} className="w-auto h-7" />
-             </button>
-        </SidebarTrigger>
+        <SidebarTrigger className="hidden md:flex" />
         
         <Sheet>
             <SheetTrigger asChild>
@@ -63,6 +59,7 @@ export default function Header({ children }: HeaderProps) {
         <Separator orientation="vertical" className="h-6 hidden md:block" />
 
         <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-primary">
+          <Image src="/pes-logo.png" alt="PES University Logo" width={100} height={36} className="w-auto h-7 hidden md:block" />
           <span className="font-headline text-xl">PESU Playbook</span>
         </Link>
       </div>
