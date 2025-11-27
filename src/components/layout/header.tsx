@@ -2,6 +2,7 @@
 "use client";
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -13,10 +14,10 @@ import SidebarFilters from './sidebar-filters';
 import { Separator } from '../ui/separator';
 
 interface HeaderProps {
-  sidebarTrigger?: React.ReactNode;
+  children?: React.ReactNode;
 }
 
-export default function Header({ sidebarTrigger }: HeaderProps) {
+export default function Header({ children }: HeaderProps) {
   const { currentUser, userProfile, signOut } = useAuth();
   const router = useRouter();
 
@@ -32,8 +33,8 @@ export default function Header({ sidebarTrigger }: HeaderProps) {
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 border-b bg-card shadow-sm sm:px-6">
-      <div className="flex items-center gap-2">
-        {sidebarTrigger}
+      <div className="flex items-center gap-3">
+        {children}
         <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="md:hidden">
@@ -43,8 +44,9 @@ export default function Header({ sidebarTrigger }: HeaderProps) {
             </SheetTrigger>
             <SheetContent side="left" className="sm:max-w-xs bg-sidebar text-sidebar-foreground p-0 flex flex-col">
                 <div className="p-4">
-                  <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-primary">
-                    <span className="font-headline">PESU Playbook</span>
+                  <Link href="/" className="flex items-center gap-2">
+                    <Image src="/pes-logo.png" alt="PES University Logo" width={100} height={36} className="w-auto h-7" />
+                    <span className="font-headline text-lg text-primary">PESU Playbook</span>
                   </Link>
                 </div>
                 <Separator className="bg-sidebar-border" />
