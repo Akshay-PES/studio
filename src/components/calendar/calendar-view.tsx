@@ -20,7 +20,7 @@ import {
   isToday as fnsIsToday,
   startOfDay,
 } from 'date-fns';
-import React from 'react';
+import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 
 interface CalendarViewProps {
@@ -44,7 +44,7 @@ export default function CalendarView({
   setShowEventDetail,
   onDateClick, 
 }: CalendarViewProps) {
-  const [currentDate, setCurrentDate] = React.useState(new Date());
+  const [currentDate, setCurrentDate] = useState(new Date());
 
   const handleEventClick = (event: AcademicEvent) => {
     setSelectedEvent(event);
