@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import SidebarFilters from './sidebar-filters';
 import { Separator } from '../ui/separator';
+import { SidebarTrigger } from '../ui/sidebar';
 
 interface HeaderProps {
   children?: React.ReactNode;
@@ -34,7 +35,12 @@ export default function Header({ children }: HeaderProps) {
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 border-b bg-card shadow-sm sm:px-6">
       <div className="flex items-center gap-3">
-        {children}
+        <SidebarTrigger asChild className="hidden md:flex p-0 h-auto w-auto">
+             <button className="flex items-center gap-2 text-lg font-semibold text-primary">
+                <Image src="/pes-logo.png" alt="PES University Logo" width={100} height={36} className="w-auto h-7" />
+             </button>
+        </SidebarTrigger>
+        
         <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="md:hidden">
@@ -50,11 +56,13 @@ export default function Header({ children }: HeaderProps) {
                   </Link>
                 </div>
                 <Separator className="bg-sidebar-border" />
-                {/* SidebarFilters component is now rendered here for mobile view */}
                 <SidebarFilters />
             </SheetContent>
         </Sheet>
-        <Link href="/" className="hidden md:flex items-center gap-2 text-lg font-semibold text-primary">
+
+        <Separator orientation="vertical" className="h-6 hidden md:block" />
+
+        <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-primary">
           <span className="font-headline text-xl">PESU Playbook</span>
         </Link>
       </div>

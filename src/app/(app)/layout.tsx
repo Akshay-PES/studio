@@ -2,13 +2,11 @@
 "use client";
 
 import * as React from 'react';
-import Image from 'next/image';
 import Header from '@/components/layout/header';
-import { SidebarProvider, Sidebar, SidebarTrigger, SidebarRail } from '@/components/ui/sidebar';
+import { SidebarProvider, Sidebar, SidebarRail } from '@/components/ui/sidebar';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import SidebarFilters from '@/components/layout/sidebar-filters';
 import { FilterProvider } from '@/contexts/FilterContext';
-import { Button } from '@/components/ui/button';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
@@ -27,20 +25,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <FilterProvider>
         <SidebarProvider defaultOpen={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
           <div className="flex flex-col min-h-screen">
-            {/* The Header now contains the mobile sidebar content */}
-            <Header>
-                <SidebarTrigger asChild className="hidden md:flex">
-                    <Button variant="ghost" size="icon">
-                      <>
-                        <Image src="/pes-logo.png" alt="PES University Logo" width={100} height={36} className="w-auto h-7" />
-                        <span className="sr-only">Toggle Sidebar</span>
-                      </>
-                    </Button>
-                </SidebarTrigger>
-            </Header>
+            <Header />
             <div className="flex flex-1 overflow-hidden">
               <Sidebar collapsible="icon" className="border-r bg-sidebar text-sidebar-foreground">
-                {/* This instance of SidebarFilters is for the desktop view */}
                 <SidebarFilters />
               </Sidebar>
               <SidebarRail />
