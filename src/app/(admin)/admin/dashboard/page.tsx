@@ -131,7 +131,6 @@ export default function AdminDashboardPage() {
   const [editCategoryFormData, setEditCategoryFormData] = useState<EditCategoryFormData>({ id: '', name: '', color: '#808080', subTypesString: '' });
 
   // Filters for Manage Events tab
-  const [eventSearchQuery, setEventSearchQuery] = useState('');
   const [eventFilterCategory, setEventFilterCategory] = useState<string>(ALL_CATEGORIES);
   const [eventFilterSubject, setEventFilterSubject] = useState<string>(ALL_SUBJECTS);
   const [eventFilterSemester, setEventFilterSemester] = useState<string>(ALL_SEMESTERS);
@@ -659,14 +658,13 @@ export default function AdminDashboardPage() {
 
   const filteredEventsForList = useMemo(() => {
     return events.filter(event => {
-      const titleMatch = !eventSearchQuery || event.title.toLowerCase().includes(eventSearchQuery.toLowerCase());
       const categoryMatch = eventFilterCategory === ALL_CATEGORIES || event.category === eventFilterCategory;
       const subjectMatch = eventFilterSubject === ALL_SUBJECTS || event.subjectId === eventFilterSubject;
       const semesterMatch = eventFilterSemester === ALL_SEMESTERS || (event.semester && String(event.semester) === eventFilterSemester);
       
-      return titleMatch && categoryMatch && subjectMatch && semesterMatch;
+      return categoryMatch && subjectMatch && semesterMatch;
     });
-  }, [events, eventSearchQuery, eventFilterCategory, eventFilterSubject, eventFilterSemester]);
+  }, [events, eventFilterCategory, eventFilterSubject, eventFilterSemester]);
 
   const filteredEventsForReport = useMemo(() => {
     return events.filter(event => {
@@ -850,21 +848,7 @@ export default function AdminDashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="p-4 border rounded-lg bg-muted/50 mb-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
-                    <div className="sm:col-span-2 md:col-span-1">
-                        <Label htmlFor="event-search-query" className="text-xs">Search by Title</Label>
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                id="event-search-query"
-                                type="text"
-                                placeholder="Search..."
-                                value={eventSearchQuery}
-                                onChange={(e) => setEventSearchQuery(e.target.value)}
-                                className="pl-10"
-                            />
-                        </div>
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                     <div>
                         <Label htmlFor="event-category-filter" className="text-xs">Category</Label>
                         <Select value={eventFilterCategory} onValueChange={setEventFilterCategory}>
@@ -1497,4 +1481,6 @@ export default function AdminDashboardPage() {
 }
 
     
+    
+
     
