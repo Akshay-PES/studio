@@ -202,6 +202,10 @@ export default function DashboardComponent() {
     setShowDayViewDialog(true);
   };
 
+  const handleOpenTodayView = () => {
+    handleOpenDayView(new Date());
+  };
+
   const handleCloseDayView = () => {
     setShowDayViewDialog(false);
     setTimeout(() => setSelectedDateForDayView(null), 300); // Delay to allow for fade-out animation
@@ -238,6 +242,7 @@ export default function DashboardComponent() {
           setSelectedEvent={setSelectedEvent}
           setShowEventDetail={setShowEventDetail}
           onDateClick={handleOpenDayView}
+          onTodayClick={handleOpenTodayView}
         />
       </div>
 
@@ -245,7 +250,7 @@ export default function DashboardComponent() {
         <EventDetailDialog
           event={selectedEvent}
           allSubjects={subjects}
-          allCategories={eventCategories} 
+          allCategories={allCategories} 
           isOpen={showEventDetail}
           onClose={() => {
             setShowEventDetail(false);
@@ -261,7 +266,7 @@ export default function DashboardComponent() {
           selectedDate={selectedDateForDayView}
           allEvents={events}
           allSubjects={subjects}
-          allCategories={eventCategories}
+          allCategories={allCategories}
           filters={filters}
           onEventClick={handleEventClickFromDayView}
         />

@@ -31,7 +31,8 @@ interface CalendarViewProps {
   colorMode: ColorCodingMode;
   setSelectedEvent: Dispatch<SetStateAction<AcademicEvent | null>>;
   setShowEventDetail: Dispatch<SetStateAction<boolean>>;
-  onDateClick: (date: Date) => void; // Callback for when a date number is clicked
+  onDateClick: (date: Date) => void;
+  onTodayClick: () => void;
 }
 
 export default function CalendarView({
@@ -42,7 +43,8 @@ export default function CalendarView({
   colorMode,
   setSelectedEvent,
   setShowEventDetail,
-  onDateClick, 
+  onDateClick,
+  onTodayClick,
 }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
 
@@ -104,7 +106,14 @@ export default function CalendarView({
 
   const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
   const prevMonth = () => setCurrentDate(subMonths(currentDate, 1));
-  const goToToday = () => setCurrentDate(new Date());
+  
+  // This function now only sets the calendar view, doesn't open the dialog
+  const goToTodayView = () => {
+    if (!isSameMonth(new Date(), currentDate)) {
+      setCurrentDate(new Date());
+    }
+  };
+
 
   return (
     <div className="p-4 md:p-6 h-full flex flex-col">
@@ -113,17 +122,22 @@ export default function CalendarView({
           <Button variant="outline" size="icon" onClick={prevMonth} aria-label="Previous month">
             <ChevronLeft className="w-5 h-5" />
           </Button>
-          <h2 className="text-xl md:text-2xl font-headline text-primary text-center w-40 sm:w-48">
+          <h2 className="text-xl md:text-2xl font-headline text-primary text-center w-40 sm:w-48"
+            onClick={goToTodayView}
+            role="button"
+            aria-label="Go to current month"
+            tabIndex={0}
+          >
             {format(currentDate, 'MMMM yyyy')}
           </h2>
           <Button variant="outline" size="icon" onClick={nextMonth} aria-label="Next month">
             <ChevronRight className="w-5 h-5" />
           </Button>
         </div>
-        <Button variant="outline" onClick={goToToday} size="icon" className="sm:hidden">
+        <Button variant="outline" onClick={onTodayClick} size="icon" className="sm:hidden">
             <span className="text-xs">Today</span>
         </Button>
-         <Button variant="outline" onClick={goToToday} className="hidden sm:inline-flex">
+         <Button variant="outline" onClick={onTodayClick} className="hidden sm:inline-flex">
             Today
         </Button>
       </div>
