@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import AddEventDialog from '@/components/calendar/add-event-dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Pencil, Trash2, PlusCircle, BookOpen, Layers, ListFilter, CalendarIcon, Download, FileDown, ChevronDown } from 'lucide-react';
+import { Pencil, Trash2, PlusCircle, BookOpen, Layers, ListFilter, CalendarIcon, Download, FileDown, ChevronDown, Search } from 'lucide-react';
 import { format, startOfDay, endOfDay } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from '@/components/ui/label';
@@ -127,6 +127,9 @@ export default function AdminDashboardPage() {
   const [currentCategoryToEdit, setCurrentCategoryToEdit] = useState<EventCategory | null>(null);
   const [addCategoryFormData, setAddCategoryFormData] = useState<AddCategoryFormData>({ name: '', subTypesString: '' });
   const [editCategoryFormData, setEditCategoryFormData] = useState<EditCategoryFormData>({ id: '', name: '', color: '#808080', subTypesString: '' });
+
+  // Filter for Manage Events tab
+  const [eventSearchQuery, setEventSearchQuery] = useState('');
 
   // Filters for the report generation tab
   const [reportFilterCategory, setReportFilterCategory] = useState<string>(ALL_CATEGORIES);
@@ -649,6 +652,15 @@ export default function AdminDashboardPage() {
   const selectedEditEventCategoryDetails = eventCategoriesDB.find(c => c.name === editEventFormData.category);
   const uniqueSubTypesForEdit = selectedEditEventCategoryDetails?.subTypes ? [...new Set(selectedEditEventCategoryDetails.subTypes)] : [];
 
+  const filteredEventsForList = useMemo(() => {
+    if (!eventSearchQuery) {
+      return events;
+    }
+    return events.filter(event =>
+      event.title.toLowerCase().includes(eventSearchQuery.toLowerCase())
+    );
+  }, [events, eventSearchQuery]);
+
   const filteredEventsForReport = useMemo(() => {
     return events.filter(event => {
       const categoryMatch = reportFilterCategory === ALL_CATEGORIES || event.category === reportFilterCategory;
@@ -830,14 +842,29 @@ export default function AdminDashboardPage() {
               </div>
             </CardHeader>
             <CardContent>
+              <div className="mb-6">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Search for events by title..."
+                    value={eventSearchQuery}
+                    onChange={(e) => setEventSearchQuery(e.target.value)}
+                    className="pl-10 w-full max-w-sm"
+                  />
+                </div>
+              </div>
               {isLoadingEvents ? (<p className="text-center text-muted-foreground">Loading events...</p>) :
-              events.length === 0 ? (
-                <p className="text-center text-muted-foreground py-10">
-                    No events found for this department. Add one!
-                </p>
+              filteredEventsForList.length === 0 ? (
+                <div className="text-center text-muted-foreground py-10">
+                    <p className="font-semibold">No events found.</p>
+                    <p className="text-sm">
+                        {eventSearchQuery ? "Try adjusting your search query." : "No events have been created for this department yet."}
+                    </p>
+                </div>
               ) : (
                 <ul className="space-y-4">
-                  {events.map((event) => {
+                  {filteredEventsForList.map((event) => {
                     const categoryDetails = eventCategoriesDB.find(c => c.name === event.category);
                     return (
                     <li key={event.id} className="p-4 border rounded-lg shadow-sm flex justify-between items-center hover:bg-muted/50 transition-colors">
@@ -1423,3 +1450,5 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
+    
