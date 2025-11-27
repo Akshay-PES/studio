@@ -55,8 +55,8 @@ export default function LoginPage() {
   return (
     <Card className="w-full max-w-sm shadow-2xl">
       <CardHeader className="text-center">
-        <CardTitle className="text-3xl font-headline text-primary">Admin Login</CardTitle>
-        <CardDescription>Enter your department credentials to access the admin panel.</CardDescription>
+        <CardTitle className="text-2xl md:text-3xl font-headline text-primary">Admin Login</CardTitle>
+        <CardDescription className="text-sm md:text-base">Enter your department credentials to access the admin panel.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">

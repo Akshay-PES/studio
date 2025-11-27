@@ -410,11 +410,10 @@ export default function AdminDashboardPage() {
     }
 
     const usedColors = new Set(subjectsDB.map(s => s.color));
-    let assignedColor: string | undefined = PREDEFINED_SUBJECT_COLORS.find(c => !usedColors.has(c));
+    let assignedColor = PREDEFINED_SUBJECT_COLORS.find(c => !usedColors.has(c));
 
     if (!assignedColor) {
-      // Fallback to a random color if all predefined are used
-      assignedColor = `#${Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')}`;
+        assignedColor = `#${Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')}`;
     }
     
     try {

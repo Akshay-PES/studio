@@ -157,7 +157,7 @@ export default function CalendarView({
               >
                 <span 
                   className={cn(
-                    "block text-center mb-1 p-1 rounded-full w-7 h-7 flex items-center justify-center mx-auto shrink-0 cursor-pointer hover:bg-accent/50 transition-colors",
+                    "block text-center mb-1 p-1 rounded-full w-8 h-8 flex items-center justify-center mx-auto shrink-0 cursor-pointer hover:bg-accent/50 transition-colors text-xs md:text-sm",
                     fnsIsToday(day) ? 'bg-primary text-primary-foreground font-bold' : isSameMonth(day, currentDate) ? 'text-foreground' : 'text-muted-foreground/70'
                   )}
                   onClick={() => onDateClick(day)} // Trigger day view
@@ -186,18 +186,6 @@ export default function CalendarView({
           })}
         </div>
       </div>
-      <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background-color: hsl(var(--border));
-          border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background-color: transparent;
-        }
-      `}</style>
     </div>
   );
 }
