@@ -35,8 +35,7 @@ export default function Header({ children }: HeaderProps) {
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 border-b bg-card shadow-sm sm:px-6">
       <div className="flex items-center gap-3">
-        <SidebarTrigger className="hidden md:flex" />
-        
+        {/* This is the mobile menu trigger, it remains */}
         <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="md:hidden">
@@ -55,6 +54,8 @@ export default function Header({ children }: HeaderProps) {
                 <SidebarFilters />
             </SheetContent>
         </Sheet>
+        
+        {/* The desktop trigger button has been removed from here. */}
 
         <Separator orientation="vertical" className="h-6 hidden md:block" />
 
@@ -68,7 +69,7 @@ export default function Header({ children }: HeaderProps) {
         {currentUser && userProfile ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-auto rounded-full px-2">
+              <Button variant="ghost" className="relative h-8 w-auto px-2">
                 <Avatar className="w-7 h-7 mr-2">
                   <AvatarImage src="https://placehold.co/40x40.png" alt="User Avatar" data-ai-hint="user avatar" />
                   <AvatarFallback>
