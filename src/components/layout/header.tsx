@@ -55,10 +55,6 @@ export default function Header({ children }: HeaderProps) {
             </SheetContent>
         </Sheet>
         
-        {/* The desktop trigger button has been removed from here. */}
-
-        <Separator orientation="vertical" className="h-6 hidden md:block" />
-
         <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-primary">
           <Image src="/pes-logo.png" alt="PES University Logo" width={100} height={36} className="w-auto h-7 hidden md:block" />
           <span className="font-headline text-xl">PESU Playbook</span>
