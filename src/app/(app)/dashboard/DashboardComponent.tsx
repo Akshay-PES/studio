@@ -13,6 +13,7 @@ import type { AcademicEvent, Subject, EventCategory } from '@/lib/types';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 import { useFilters } from '@/contexts/FilterContext';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const departmentNames: { [key: string]: string } = {
     "mba": "MBA",
@@ -33,6 +34,35 @@ const departmentNames: { [key: string]: string } = {
     "bsc-jmc": "B.Sc(JMC)",
     "ma-pp": "M A Public policy",
 };
+
+// A skeleton loader component for the mobile view
+function MobileCalendarSkeleton() {
+  return (
+    <div className="p-4 space-y-4">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-10 w-2/5 rounded-md" />
+        <div className="flex items-center gap-2">
+            <Skeleton className="h-9 w-9 rounded-md" />
+            <Skeleton className="h-9 w-9 rounded-md" />
+            <Skeleton className="h-9 w-9 rounded-md" />
+        </div>
+      </div>
+      <div className="border rounded-lg p-2 space-y-2">
+        <div className="grid grid-cols-7 gap-2">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <Skeleton key={i} className="h-6 w-full rounded-md" />
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-2">
+          {Array.from({ length: 35 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full rounded-md" />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 export default function DashboardComponent() {
   const searchParams = useSearchParams();
@@ -182,8 +212,8 @@ export default function DashboardComponent() {
     setShowEventDetail(true);
   };
 
-  if (isLoading && !isMobile) { 
-    return (
+  if (isLoading) {
+    return isMobile ? <MobileCalendarSkeleton /> : (
       <div className="flex flex-1 h-full items-center justify-center">
         <p className="text-lg text-muted-foreground">Loading {departmentDisplayName} calendar data...</p>
       </div>
@@ -199,11 +229,6 @@ export default function DashboardComponent() {
           <p className="text-muted-foreground">Academic events and schedules for the {departmentDisplayName} department.</p>
       </div>
       <div className="flex-1 overflow-auto min-h-0">
-      {isLoading && isMobile && ( 
-          <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-50">
-            <p className="text-muted-foreground">Loading...</p>
-          </div>
-        )}
         <CalendarView
           allEvents={events}
           allSubjects={subjects}

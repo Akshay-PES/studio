@@ -108,7 +108,7 @@ export default function CalendarView({
 
   return (
     <div className="p-4 md:p-6 h-full flex flex-col">
-      <div className="flex flex-col sm:flex-row items-center justify-between mb-4 gap-2">
+      <div className="flex items-center justify-between mb-4 gap-2">
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" onClick={prevMonth} aria-label="Previous month">
             <ChevronLeft className="w-5 h-5" />
@@ -119,21 +119,19 @@ export default function CalendarView({
           <Button variant="outline" size="icon" onClick={nextMonth} aria-label="Next month">
             <ChevronRight className="w-5 h-5" />
           </Button>
-          <Button variant="outline" onClick={goToToday} className="ml-2 hidden sm:inline-flex">
+        </div>
+        <Button variant="outline" onClick={goToToday} size="icon" className="sm:hidden">
+            <span className="text-xs">Today</span>
+        </Button>
+         <Button variant="outline" onClick={goToToday} className="hidden sm:inline-flex">
             Today
-          </Button>
-        </div>
-        <div className="flex items-center gap-2 sm:hidden">
-            <Button variant="outline" onClick={goToToday} className="text-xs px-2.5 py-1 h-auto">
-                Today
-            </Button>
-        </div>
+        </Button>
       </div>
       
       <div className="flex-grow overflow-hidden border rounded-lg shadow-sm bg-card flex flex-col min-h-0">
         <div className="grid grid-cols-7 sticky top-0 bg-card z-10 border-b">
           {dayNames.map(dayName => (
-            <div key={dayName} className="p-2 text-center font-medium text-sm text-muted-foreground">
+            <div key={dayName} className="p-2 text-center font-medium text-xs md:text-sm text-muted-foreground">
               {dayName}
             </div>
           ))}
@@ -150,14 +148,14 @@ export default function CalendarView({
               <div
                 key={day.toString()}
                 className={cn(
-                  "p-1.5 border-b border-r text-sm overflow-hidden flex flex-col", 
+                  "p-1 md:p-1.5 border-b border-r text-sm overflow-hidden flex flex-col", 
                   !isSameMonth(day, currentDate) ? 'bg-muted/30' : 'bg-card',
                   fnsIsToday(day) ? 'border-primary border-2 relative' : ''
                 )}
               >
                 <span 
                   className={cn(
-                    "block text-center mb-1 p-1 rounded-full w-8 h-8 flex items-center justify-center mx-auto shrink-0 cursor-pointer hover:bg-accent/50 transition-colors text-xs md:text-sm",
+                    "block text-center mb-1 p-1 rounded-full w-8 h-8 flex items-center justify-center mx-auto shrink-0 cursor-pointer hover:bg-accent/50 transition-colors text-base md:text-sm",
                     fnsIsToday(day) ? 'bg-primary text-primary-foreground font-bold' : isSameMonth(day, currentDate) ? 'text-foreground' : 'text-muted-foreground/70'
                   )}
                   onClick={() => onDateClick(day)} // Trigger day view
