@@ -31,8 +31,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Header>
                 <SidebarTrigger asChild className="hidden md:flex">
                     <Button variant="ghost" size="icon">
+                      <>
                         <Image src="/pes-logo.png" alt="PES University Logo" width={100} height={36} className="w-auto h-7" />
                         <span className="sr-only">Toggle Sidebar</span>
+                      </>
                     </Button>
                 </SidebarTrigger>
             </Header>
