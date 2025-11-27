@@ -34,7 +34,7 @@ export default function Header({ children }: HeaderProps) {
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 border-b bg-card shadow-sm sm:px-6">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         {/* This is the mobile menu trigger, it remains */}
         <Sheet>
             <SheetTrigger asChild>
@@ -46,7 +46,7 @@ export default function Header({ children }: HeaderProps) {
             <SheetContent side="left" className="sm:max-w-xs bg-sidebar text-sidebar-foreground p-0 flex flex-col">
                 <div className="p-4">
                   <Link href="/" className="flex items-center gap-2">
-                    <Image src="/pes-logo.png" alt="PES University Logo" width={100} height={36} className="w-auto h-7" />
+                    <Image src="/pes-logo.png" alt="PES University Logo" width={80} height={29} className="w-auto h-6" />
                     <span className="font-headline text-lg text-primary">PESU Playbook</span>
                   </Link>
                 </div>
@@ -56,7 +56,7 @@ export default function Header({ children }: HeaderProps) {
         </Sheet>
         
         <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-primary">
-          <Image src="/pes-logo.png" alt="PES University Logo" width={100} height={36} className="w-auto h-7 hidden md:block" />
+          <Image src="/pes-logo.png" alt="PES University Logo" width={80} height={29} className="w-auto h-6 hidden md:block" />
           <span className="font-headline text-xl">PESU Playbook</span>
         </Link>
       </div>
