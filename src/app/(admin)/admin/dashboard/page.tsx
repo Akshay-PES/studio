@@ -498,11 +498,11 @@ export default function AdminDashboardPage() {
 
         await batch.commit();
         toast({ title: "Subject Deleted Successfully" });
-        fetchSubjects(); // Refresh subjects list
-        fetchEvents(); // Refresh events list
+        fetchSubjects();
+        fetchEvents();
     } catch (error) {
-        console.error("Error deleting subject:", error);
-        toast({ variant: "destructive", title: "Error Deleting Subject", description: `Details: ${(error as Error)?.message}` });
+      console.error("Error deleting subject:", error);
+      toast({ variant: "destructive", title: "Error Deleting Subject", description: `Details: ${(error as Error)?.message}` });
     }
   };
 
@@ -918,12 +918,12 @@ export default function AdminDashboardPage() {
                           {format(event.start, "PPP p")} - {format(event.end, "PPP p")}
                         </p>
                         <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
-                          <p className="flex items-center">
+                          <div className="flex items-center">
                             Category:
                             {categoryDetails && <span className="w-3 h-3 rounded-full mr-1.5 ml-1.5" style={{ backgroundColor: categoryDetails.color }} />}
                             {event.category} {event.subType && `(${event.subType})`}
-                          </p>
-                          {departmentName && <p>For: <Badge variant="secondary">{departmentName}</Badge></p>}
+                          </div>
+                          {departmentName && <div className="flex items-center">For: <Badge variant="secondary" className="ml-1.5">{departmentName}</Badge></div>}
                         </div>
                         {event.semester && <p className="text-sm text-muted-foreground">Standard: {event.semester}</p>}
                         {event.section && <p className="text-sm text-muted-foreground">Section: {event.section}</p>}
@@ -1471,5 +1471,7 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
+    
 
     
