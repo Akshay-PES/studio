@@ -490,25 +490,28 @@ export default function AdminDashboardPage() {
     if (!window.confirm(`Are you sure you want to delete the subject "${subject.name}"? This will also remove its association from ALL events.`)) return;
     
     try {
-      const batch = writeBatch(db);
-      const subjectDocRef = doc(db, "subjects", subject.id);
-      batch.delete(subjectDocRef);
-      
-      const eventsQuery = query(collection(db, "events"), where("subjectId", "==", subject.id));
-      const eventSnapshots = await getDocs(eventsQuery);
+        const batch = writeBatch(db);
+        
+        // Delete the subject document
+        const subjectDocRef = doc(db, "subjects", subject.id);
+        batch.delete(subjectDocRef);
+        
+        // Query for events that have this subjectId and unset it
+        const eventsQuery = query(collection(db, "events"), where("subjectId", "==", subject.id));
+        const eventSnapshots = await getDocs(eventsQuery);
 
-      eventSnapshots.forEach(eventDoc => {
-        const eventDocRef = doc(db, "events", eventDoc.id);
-        batch.update(eventDocRef, { subjectId: null });
-      });
+        eventSnapshots.forEach(eventDoc => {
+            const eventDocRef = doc(db, "events", eventDoc.id);
+            batch.update(eventDocRef, { subjectId: null });
+        });
 
-      await batch.commit();
-      toast({ title: "Subject Deleted Successfully" });
-      fetchSubjects();
-      fetchEvents();
+        await batch.commit();
+        toast({ title: "Subject Deleted Successfully" });
+        fetchSubjects(); // Refresh subjects list
+        fetchEvents(); // Refresh events list
     } catch (error) {
-      console.error("Error deleting subject:", error);
-      toast({ variant: "destructive", title: "Error Deleting Subject", description: `Details: ${(error as Error)?.message}` });
+        console.error("Error deleting subject:", error);
+        toast({ variant: "destructive", title: "Error Deleting Subject", description: `Details: ${(error as Error)?.message}` });
     }
   };
 
@@ -985,7 +988,7 @@ export default function AdminDashboardPage() {
                       <div>
                         <h3 className="text-lg font-semibold" style={{color: subject.color}}>{subject.name}</h3>
                         {subject.semester && (
-                          <p className="text-sm text-muted-foreground">Taught In: {subject.semester}th Standard</p>
+                          <p className="text-sm text-muted-foreground">Taught In: {subject.semester}{['st', 'nd', 'rd'][((subject.semester % 100 - 10) % 10) - 1] || 'th'} Standard</p>
                         )}
                         <p className="text-sm text-muted-foreground">Color: {subject.color}</p>
                       </div>
