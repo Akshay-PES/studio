@@ -1,8 +1,15 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
     
+    // A helper function to check if the requester is a super admin.
+    function isSuperAdmin() {
+      let userProfile = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return request.auth != null && userProfile.role == 'super_admin';
+    }
+
     // A helper function to check if the requester is an admin of a specific department.
     function isDepartmentAdmin(departmentId) {
       let userProfile = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
@@ -11,45 +18,38 @@ service cloud.firestore {
              userProfile.departmentId == departmentId;
     }
 
-    // A helper function to check if the requester is any admin.
-    function isAnyAdmin() {
-      let userProfile = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-      return request.auth != null &&
-             userProfile.role == 'department_admin';
-    }
-
-    // Users collection can only be read by the user themselves.
+    // Users collection can be read by the user themselves or any super admin.
     // User creation is open (for signup), but updates are restricted.
     match /users/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
+      allow read: if (request.auth != null && request.auth.uid == userId) || isSuperAdmin();
       allow create: if request.auth != null;
-      allow update: if request.auth != null && request.auth.uid == userId;
-      allow delete: if false; 
+      allow update: if (request.auth != null && request.auth.uid == userId) || isSuperAdmin();
+      allow delete: if isSuperAdmin();
     }
 
     // Subjects can be read by anyone.
     match /subjects/{subjectId} {
       allow read: if true;
-      // On create, check the incoming data's departmentId.
-      allow create: if isDepartmentAdmin(request.resource.data.departmentId);
-      // On update/delete, check the existing data's departmentId.
-      allow update, delete: if isDepartmentAdmin(resource.data.departmentId);
+      // On create, check the incoming data's departmentId or if user is super admin.
+      allow create: if isDepartmentAdmin(request.resource.data.departmentId) || isSuperAdmin();
+      // On update/delete, check the existing data's departmentId or if user is super admin.
+      allow update, delete: if isDepartmentAdmin(resource.data.departmentId) || isSuperAdmin();
     }
 
     // Event Categories are global. They can be read by anyone.
-    // Only any admin can manage them.
+    // Only a super admin can manage them.
     match /eventCategories/{categoryId} {
       allow read: if true;
-      allow create, update, delete: if isAnyAdmin();
+      allow create, update, delete: if isSuperAdmin();
     }
 
     // Events can be read by anyone.
     match /events/{eventId} {
       allow read: if true;
-      // On create, check the incoming data's departmentId.
-      allow create: if isDepartmentAdmin(request.resource.data.departmentId);
-      // On update/delete, check the existing data's departmentId.
-      allow update, delete: if isDepartmentAdmin(resource.data.departmentId);
+      // On create, check the incoming data's departmentId or if user is super admin.
+      allow create: if isDepartmentAdmin(request.resource.data.departmentId) || isSuperAdmin();
+      // On update/delete, check the existing data's departmentId or if user is super admin.
+      allow update, delete: if isDepartmentAdmin(resource.data.departmentId) || isSuperAdmin();
     }
   }
 }

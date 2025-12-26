@@ -48,6 +48,7 @@ interface EditEventFormData {
 interface AddSubjectFormData {
   name: string;
   semester: string;
+  departmentId: string; // Now required for super_admin
 }
 
 interface EditSubjectFormData {
@@ -77,6 +78,7 @@ const DEFAULT_EVENT_CATEGORY_ON_DELETE = "Others";
 const ALL_CATEGORIES = "__ALL_CATEGORIES__";
 const ALL_SUBJECTS = "__ALL_SUBJECTS__";
 const ALL_SEMESTERS = "__ALL_SEMESTERS__";
+const ALL_DEPARTMENTS = "__ALL_DEPARTMENTS__";
 
 
 const PREDEFINED_SUBJECT_COLORS = [
@@ -100,6 +102,14 @@ const hoursArray = Array.from({ length: 12 }, (_, i) => String(i + 1));
 const minutesArray = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
 const periodsArray: ('AM' | 'PM')[] = ['AM', 'PM'];
 
+const departmentOptions = [
+    { name: "1st Standard", id: "std-1" }, { name: "2nd Standard", id: "std-2" },
+    { name: "3rd Standard", id: "std-3" }, { name: "4th Standard", id: "std-4" },
+    { name: "5th Standard", id: "std-5" }, { name: "6th Standard", id: "std-6" },
+    { name: "7th Standard", id: "std-7" }, { name: "8th Standard", id: "std-8" },
+    { name: "9th Standard", id: "std-9" }, { name: "10th Standard", id: "std-10" },
+];
+
 export default function AdminDashboardPage() {
   const { userProfile } = useAuth();
   const [events, setEvents] = useState<AcademicEvent[]>([]);
@@ -121,7 +131,7 @@ export default function AdminDashboardPage() {
   const [showAddSubjectDialog, setShowAddSubjectDialog] = useState(false);
   const [showEditSubjectDialog, setShowEditSubjectDialog] = useState(false);
   const [currentSubjectToEdit, setCurrentSubjectToEdit] = useState<Subject | null>(null);
-  const [addSubjectFormData, setAddSubjectFormData] = useState<AddSubjectFormData>({ name: '', semester: NO_SEMESTER_VALUE });
+  const [addSubjectFormData, setAddSubjectFormData] = useState<AddSubjectFormData>({ name: '', semester: NO_SEMESTER_VALUE, departmentId: ALL_DEPARTMENTS });
   const [editSubjectFormData, setEditSubjectFormData] = useState<EditSubjectFormData>({ name: '', color: '#808080', semester: NO_SEMESTER_VALUE });
 
   const [showAddCategoryDialog, setShowAddCategoryDialog] = useState(false);
@@ -131,6 +141,7 @@ export default function AdminDashboardPage() {
   const [editCategoryFormData, setEditCategoryFormData] = useState<EditCategoryFormData>({ id: '', name: '', color: '#808080', subTypesString: '' });
 
   // Filters for Manage Events tab
+  const [eventFilterDepartment, setEventFilterDepartment] = useState<string>(ALL_DEPARTMENTS);
   const [eventFilterCategory, setEventFilterCategory] = useState<string>(ALL_CATEGORIES);
   const [eventFilterSubject, setEventFilterSubject] = useState<string>(ALL_SUBJECTS);
   const [eventFilterSemester, setEventFilterSemester] = useState<string>(ALL_SEMESTERS);
@@ -144,15 +155,14 @@ export default function AdminDashboardPage() {
 
   const { toast } = useToast();
 
-  const departmentId = userProfile?.departmentId;
-  const isMbaAdmin = userProfile?.departmentId === 'mba'; // This logic might need adjustment for a school context
+  const isSuperAdmin = userProfile?.role === 'super_admin';
+  const departmentId = isSuperAdmin ? undefined : userProfile?.departmentId;
 
   const fetchEvents = useCallback(async () => {
-    if (!departmentId) return;
     setIsLoadingEvents(true);
     try {
       const eventsCollectionRef = collection(db, "events");
-      const q = query(eventsCollectionRef, where("departmentId", "==", departmentId));
+      const q = departmentId ? query(eventsCollectionRef, where("departmentId", "==", departmentId)) : query(eventsCollectionRef);
       const querySnapshot = await getDocs(q);
 
       const invalidEventTitles: string[] = [];
@@ -202,11 +212,10 @@ export default function AdminDashboardPage() {
   }, [toast, departmentId]);
 
   const fetchSubjects = useCallback(async () => {
-    if (!departmentId) return;
     setIsLoadingSubjects(true);
     try {
         const subjectsCollectionRef = collection(db, "subjects");
-        const q = query(subjectsCollectionRef, where("departmentId", "==", departmentId), orderBy("name"));
+        const q = departmentId ? query(subjectsCollectionRef, where("departmentId", "==", departmentId), orderBy("name")) : query(subjectsCollectionRef, orderBy("name"));
         const querySnapshot = await getDocs(q);
 
         const fetchedSubjects: Subject[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
@@ -245,21 +254,24 @@ export default function AdminDashboardPage() {
 
 
   useEffect(() => {
-    if (departmentId) {
-      fetchEvents();
-      fetchSubjects();
-    }
+    // If user is a dept admin, departmentId is set. If super admin, it is not, so data for all depts is fetched.
+    fetchEvents();
+    fetchSubjects();
     fetchEventCategories();
-  }, [departmentId, fetchEvents, fetchSubjects, fetchEventCategories]);
+  }, [userProfile, fetchEvents, fetchSubjects, fetchEventCategories]);
 
   const handleAddEvent = async (newEventData: Omit<AcademicEvent, 'id'>) => {
-    if (!departmentId || newEventData.departmentId !== departmentId) {
-        toast({ variant: "destructive", title: "Error", description: "Department ID is missing or mismatched." });
+    // For super admin, newEventData.departmentId is set in the AddEventDialog. For dept admin, it uses their own ID.
+    const finalDepartmentId = isSuperAdmin ? newEventData.departmentId : departmentId;
+    if (!finalDepartmentId) {
+        toast({ variant: "destructive", title: "Error", description: "Standard/Department ID is missing." });
         return;
     }
+    
     try {
       const eventDataForFirestore = {
         ...newEventData,
+        departmentId: finalDepartmentId,
         start: Timestamp.fromDate(newEventData.start),
         end: Timestamp.fromDate(newEventData.end),
         subjectId: newEventData.subjectId || null,
@@ -361,7 +373,7 @@ export default function AdminDashboardPage() {
 
   const handleUpdateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentEventToEdit || !departmentId || !editEventFormData.startDate || !editEventFormData.endDate) return;
+    if (!currentEventToEdit || !editEventFormData.startDate || !editEventFormData.endDate) return;
 
     const constructDate = (date: Date, hourStr: string, minuteStr: string, period: 'AM' | 'PM'): Date => {
       const newDate = new Date(date);
@@ -392,7 +404,7 @@ export default function AdminDashboardPage() {
             subjectId: editEventFormData.subjectId || null,
             semester: editEventFormData.semester && editEventFormData.semester !== NO_SEMESTER_VALUE ? parseInt(editEventFormData.semester, 10) : null,
             section: editEventFormData.section && editEventFormData.section !== NO_SECTION_VALUE ? editEventFormData.section : null,
-            departmentId: departmentId, 
+            departmentId: currentEventToEdit.departmentId, 
         };
         await updateDoc(doc(db, "events", currentEventToEdit.id), updatedEventData as { [x: string]: any });
         toast({ title: "Event Updated Successfully" });
@@ -407,8 +419,9 @@ export default function AdminDashboardPage() {
 
   const handleAddSubjectToDB = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!departmentId) {
-      toast({ variant: "destructive", title: "Error", description: "No department identified for admin." });
+    const finalDepartmentId = isSuperAdmin ? addSubjectFormData.departmentId : departmentId;
+    if (!finalDepartmentId || finalDepartmentId === ALL_DEPARTMENTS) {
+      toast({ variant: "destructive", title: "Validation Error", description: "Please select a standard for the subject." });
       return;
     }
     if (!addSubjectFormData.name.trim()) {
@@ -427,13 +440,13 @@ export default function AdminDashboardPage() {
       await addDoc(collection(db, "subjects"), {
         name: addSubjectFormData.name,
         color: assignedColor,
-        departmentId: departmentId,
+        departmentId: finalDepartmentId,
         semester: addSubjectFormData.semester && addSubjectFormData.semester !== NO_SEMESTER_VALUE ? parseInt(addSubjectFormData.semester, 10) : null,
       });
       toast({ title: "Subject Added Successfully", description: `Assigned color: ${assignedColor}` });
       fetchSubjects();
       setShowAddSubjectDialog(false);
-      setAddSubjectFormData({ name: '', semester: NO_SEMESTER_VALUE });
+      setAddSubjectFormData({ name: '', semester: NO_SEMESTER_VALUE, departmentId: ALL_DEPARTMENTS });
     } catch (error) {
       console.error("Error adding subject:", error);
       toast({ variant: "destructive", title: "Error Adding Subject", description: `Details: ${(error as Error)?.message}` });
@@ -461,7 +474,7 @@ export default function AdminDashboardPage() {
 
   const handleUpdateSubjectInDB = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentSubjectToEdit || !editSubjectFormData.name.trim() || !editSubjectFormData.color.trim() || !departmentId) {
+    if (!currentSubjectToEdit || !editSubjectFormData.name.trim() || !editSubjectFormData.color.trim()) {
       toast({ variant: "destructive", title: "Validation Error", description: "Subject name and color are required." });
       return;
     }
@@ -469,7 +482,7 @@ export default function AdminDashboardPage() {
       await updateDoc(doc(db, "subjects", currentSubjectToEdit.id), {
         name: editSubjectFormData.name,
         color: editSubjectFormData.color,
-        departmentId: departmentId,
+        departmentId: currentSubjectToEdit.departmentId,
         semester: editSubjectFormData.semester && editSubjectFormData.semester !== NO_SEMESTER_VALUE ? parseInt(editSubjectFormData.semester, 10) : null,
       });
       toast({ title: "Subject Updated Successfully" });
@@ -482,16 +495,15 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleDeleteSubjectFromDB = async (subjectId: string) => {
-    if (!window.confirm("Are you sure you want to delete this subject? This will also remove its association from any events in this department.")) return;
-    if (!departmentId) return;
-
+  const handleDeleteSubjectFromDB = async (subject: Subject) => {
+    if (!window.confirm(`Are you sure you want to delete the subject "${subject.name}" from ${subject.departmentId}? This will also remove its association from any events in that standard.`)) return;
+    
     try {
       const batch = writeBatch(db);
-      const subjectDocRef = doc(db, "subjects", subjectId);
+      const subjectDocRef = doc(db, "subjects", subject.id);
       batch.delete(subjectDocRef);
       
-      const eventsQuery = query(collection(db, "events"), where("subjectId", "==", subjectId), where("departmentId", "==", departmentId));
+      const eventsQuery = query(collection(db, "events"), where("subjectId", "==", subject.id), where("departmentId", "==", subject.departmentId));
       const eventSnapshots = await getDocs(eventsQuery);
 
       eventSnapshots.forEach(eventDoc => {
@@ -658,13 +670,14 @@ export default function AdminDashboardPage() {
 
   const filteredEventsForList = useMemo(() => {
     return events.filter(event => {
+      const departmentMatch = !isSuperAdmin || eventFilterDepartment === ALL_DEPARTMENTS || event.departmentId === eventFilterDepartment;
       const categoryMatch = eventFilterCategory === ALL_CATEGORIES || event.category === eventFilterCategory;
       const subjectMatch = eventFilterSubject === ALL_SUBJECTS || event.subjectId === eventFilterSubject;
       const semesterMatch = eventFilterSemester === ALL_SEMESTERS || (event.semester && String(event.semester) === eventFilterSemester);
       
-      return categoryMatch && subjectMatch && semesterMatch;
+      return departmentMatch && categoryMatch && subjectMatch && semesterMatch;
     });
-  }, [events, eventFilterCategory, eventFilterSubject, eventFilterSemester]);
+  }, [events, eventFilterDepartment, eventFilterCategory, eventFilterSubject, eventFilterSemester, isSuperAdmin]);
 
   const filteredEventsForReport = useMemo(() => {
     return events.filter(event => {
@@ -714,7 +727,7 @@ export default function AdminDashboardPage() {
 
   const handleDownloadPdf = () => {
     const doc = new jsPDF();
-    const departmentName = userProfile?.departmentId?.toUpperCase() || 'Department';
+    const departmentName = userProfile?.departmentId?.toUpperCase() || 'All Standards';
 
     // Function to fetch image and convert to data URI
     const getImageDataUri = (url: string, callback: (dataUri: string) => void) => {
@@ -794,7 +807,7 @@ export default function AdminDashboardPage() {
         }
         
         // Save file
-        const fileName = `events_report_${departmentName.toLowerCase()}_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+        const fileName = `events_report_${departmentName.toLowerCase().replace(' ','_')}_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
         doc.save(fileName);
 
         toast({ title: "PDF Generated", description: "Your event report has been downloaded." });
@@ -806,12 +819,14 @@ export default function AdminDashboardPage() {
   }
 
   const tabsConfig = [
-    { value: "events", label: "Manage Events" },
-    { value: "subjects", label: "Manage Subjects" },
-    { value: "reports", label: "Download Reports" },
-    // Only a 'super admin' equivalent should manage global categories. This logic may need to be updated.
-    { value: "categories", label: "Manage Global Categories" }
+    { value: "events", label: "Manage Events", roles: ['department_admin', 'super_admin'] },
+    { value: "subjects", label: "Manage Subjects", roles: ['department_admin', 'super_admin'] },
+    { value: "reports", label: "Download Reports", roles: ['department_admin', 'super_admin'] },
+    { value: "categories", label: "Manage Global Categories", roles: ['super_admin'] }
   ];
+
+  const availableTabs = tabsConfig.filter(tab => tab.roles.includes(userProfile.role));
+
 
   return (
     <div className="container mx-auto py-8">
@@ -819,7 +834,7 @@ export default function AdminDashboardPage() {
       <div className="relative border-b">
         <TabsList className="w-full justify-start rounded-none border-b-0 bg-transparent p-0">
             <div className="flex items-center gap-4 overflow-x-auto pb-1 custom-scrollbar">
-                {tabsConfig.map(tab => (
+                {availableTabs.map(tab => (
                     <TabsTrigger 
                         key={tab.value} 
                         value={tab.value}
@@ -839,7 +854,7 @@ export default function AdminDashboardPage() {
                 <div>
                     <CardTitle>Manage Academic Events</CardTitle>
                     <CardDescription>
-                        Add, edit, or delete academic events for your standard.
+                        Add, edit, or delete academic events for any standard.
                     </CardDescription>
                 </div>
                  <Button onClick={() => setShowAddEventDialog(true)}>
@@ -849,7 +864,19 @@ export default function AdminDashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="p-4 border rounded-lg bg-muted/50 mb-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                <div className={cn("grid gap-4 items-end", isSuperAdmin ? "grid-cols-1 md:grid-cols-4" : "grid-cols-1 md:grid-cols-3")}>
+                    {isSuperAdmin && (
+                        <div>
+                            <Label htmlFor="event-department-filter" className="text-xs">Standard</Label>
+                            <Select value={eventFilterDepartment} onValueChange={setEventFilterDepartment}>
+                                <SelectTrigger id="event-department-filter"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value={ALL_DEPARTMENTS}>All Standards</SelectItem>
+                                    {departmentOptions.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
                     <div>
                         <Label htmlFor="event-category-filter" className="text-xs">Category</Label>
                         <Select value={eventFilterCategory} onValueChange={setEventFilterCategory}>
@@ -866,7 +893,9 @@ export default function AdminDashboardPage() {
                             <SelectTrigger id="event-subject-filter"><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value={ALL_SUBJECTS}>All Subjects</SelectItem>
-                                {subjectsDB.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                                {subjectsDB
+                                  .filter(s => isSuperAdmin || !eventFilterDepartment || eventFilterDepartment === ALL_DEPARTMENTS || s.departmentId === eventFilterDepartment)
+                                  .map(s => <SelectItem key={s.id} value={s.id}>{s.name} ({s.departmentId})</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </div>
@@ -896,18 +925,22 @@ export default function AdminDashboardPage() {
                 <ul className="space-y-4">
                   {filteredEventsForList.map((event) => {
                     const categoryDetails = eventCategoriesDB.find(c => c.name === event.category);
+                    const departmentName = departmentOptions.find(d => d.id === event.departmentId)?.name;
                     return (
-                    <li key={event.id} className="p-4 border rounded-lg shadow-sm flex justify-between items-center hover:bg-muted/50 transition-colors">
+                    <li key={event.id} className="p-4 border rounded-lg shadow-sm flex justify-between items-start sm:items-center flex-col sm:flex-row gap-4">
                       <div>
                         <h3 className="text-lg font-semibold text-primary">{event.title}</h3>
                         <p className="text-sm text-muted-foreground">
                           {format(event.start, "PPP p")} - {format(event.end, "PPP p")}
                         </p>
-                        <p className="text-sm text-muted-foreground flex items-center">
-                          Category:
-                          {categoryDetails && <span className="w-3 h-3 rounded-full mr-1.5 ml-1.5" style={{ backgroundColor: categoryDetails.color }} />}
-                          {event.category} {event.subType && `(${event.subType})`}
-                        </p>
+                        <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
+                          <p className="flex items-center">
+                            Category:
+                            {categoryDetails && <span className="w-3 h-3 rounded-full mr-1.5 ml-1.5" style={{ backgroundColor: categoryDetails.color }} />}
+                            {event.category} {event.subType && `(${event.subType})`}
+                          </p>
+                          {departmentName && <p>For: <Badge variant="secondary">{departmentName}</Badge></p>}
+                        </div>
                         {event.semester && <p className="text-sm text-muted-foreground">Standard: {event.semester}</p>}
                         {event.section && <p className="text-sm text-muted-foreground">Section: {event.section}</p>}
                         {event.location && <p className="text-sm text-muted-foreground">Location: {event.location}</p>}
@@ -917,7 +950,7 @@ export default function AdminDashboardPage() {
                           </p>
                         }
                       </div>
-                      <div className="space-x-2">
+                      <div className="flex-shrink-0 flex items-center gap-2 self-end sm:self-center">
                         <Button variant="outline" size="sm" onClick={() => openEditEventDialog(event)}>
                           <Pencil className="mr-1 h-4 w-4" /> Edit
                         </Button>
@@ -940,14 +973,14 @@ export default function AdminDashboardPage() {
               <div className="flex justify-between items-center">
                 <CardTitle>Manage Class Subjects</CardTitle>
                 <Button onClick={() => {
-                  setAddSubjectFormData({ name: '', semester: NO_SEMESTER_VALUE });
+                  setAddSubjectFormData({ name: '', semester: NO_SEMESTER_VALUE, departmentId: isSuperAdmin ? ALL_DEPARTMENTS : departmentId || '' });
                   setShowAddSubjectDialog(true);
                 }}>
                   <BookOpen className="mr-2 h-4 w-4" /> Add New Subject
                 </Button>
               </div>
               <CardDescription>
-                Add, edit, or delete subjects for your class/standard.
+                Add, edit, or delete subjects for any class/standard.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -961,8 +994,9 @@ export default function AdminDashboardPage() {
                     <li key={subject.id} className="p-4 border rounded-lg shadow-sm flex justify-between items-center hover:bg-muted/50 transition-colors">
                       <div>
                         <h3 className="text-lg font-semibold" style={{color: subject.color}}>{subject.name}</h3>
+                        {subject.departmentId && <p className="text-sm text-muted-foreground">Standard: {departmentOptions.find(d => d.id === subject.departmentId)?.name || subject.departmentId}</p>}
                         {subject.semester && (
-                          <p className="text-sm text-muted-foreground">Standard: {subject.semester}</p>
+                          <p className="text-sm text-muted-foreground">Taught In: {subject.semester}th Standard</p>
                         )}
                         <p className="text-sm text-muted-foreground">Color: {subject.color}</p>
                       </div>
@@ -970,7 +1004,7 @@ export default function AdminDashboardPage() {
                         <Button variant="outline" size="sm" onClick={() => openEditSubjectDialog(subject)}>
                           <Pencil className="mr-1 h-4 w-4" /> Edit
                         </Button>
-                        <Button variant="destructive" size="sm" onClick={() => handleDeleteSubjectFromDB(subject.id)}>
+                        <Button variant="destructive" size="sm" onClick={() => handleDeleteSubjectFromDB(subject)}>
                           <Trash2 className="mr-1 h-4 w-4" /> Delete
                         </Button>
                       </div>
@@ -1204,7 +1238,7 @@ export default function AdminDashboardPage() {
                     <SelectTrigger id="edit-event-subjectId"><SelectValue placeholder="Select a subject" /></SelectTrigger>
                     <SelectContent>
                         <SelectItem value={NO_SUBJECT_VALUE}>None</SelectItem>
-                        {subjectsDB.map(subject => (
+                        {subjectsDB.filter(s => s.departmentId === currentEventToEdit.departmentId).map(subject => (
                             <SelectItem key={subject.id} value={subject.id}>
                                 <span className="flex items-center">
                                     <span className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: subject.color }} />
@@ -1212,7 +1246,7 @@ export default function AdminDashboardPage() {
                                 </span>
                             </SelectItem>
                         ))}
-                        {subjectsDB.length === 0 && <SelectItem value="no-subjects" disabled>No subjects configured</SelectItem>}
+                        {subjectsDB.filter(s => s.departmentId === currentEventToEdit.departmentId).length === 0 && <SelectItem value="no-subjects" disabled>No subjects for this standard</SelectItem>}
                     </SelectContent>
                 </Select>
               </div>
@@ -1343,13 +1377,13 @@ export default function AdminDashboardPage() {
       )}
 
       <Dialog open={showAddSubjectDialog} onOpenChange={(isOpen) => {
-        if (!isOpen) setAddSubjectFormData({ name: '', semester: NO_SEMESTER_VALUE });
+        if (!isOpen) setAddSubjectFormData({ name: '', semester: NO_SEMESTER_VALUE, departmentId: ALL_DEPARTMENTS });
         setShowAddSubjectDialog(isOpen);
       }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Add New Subject</DialogTitle>
-            <DialogDescription>Define a new subject for your class. A unique color will be automatically assigned.</DialogDescription>
+            <DialogDescription>Define a new subject. A unique color will be automatically assigned.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleAddSubjectToDB} className="space-y-4 py-4">
             <div>
@@ -1357,8 +1391,25 @@ export default function AdminDashboardPage() {
               <Input id="add-subject-name" name="name" value={addSubjectFormData.name}
                 onChange={(e) => setAddSubjectFormData(prev => ({...prev, name: e.target.value}))} required />
             </div>
+            {isSuperAdmin && (
+                 <div>
+                    <Label htmlFor="add-subject-department">For Standard</Label>
+                    <Select
+                        value={addSubjectFormData.departmentId}
+                        onValueChange={(value) => setAddSubjectFormData(prev => ({ ...prev, departmentId: value }))}
+                    >
+                        <SelectTrigger id="add-subject-department"><SelectValue placeholder="Select standard" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value={ALL_DEPARTMENTS} disabled>Select a standard</SelectItem>
+                            {departmentOptions.map(d => (
+                                <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                 </div>
+            )}
             <div>
-              <Label htmlFor="add-subject-semester">Standard</Label>
+              <Label htmlFor="add-subject-semester">Taught In Standard</Label>
               <Select
                   value={addSubjectFormData.semester}
                   onValueChange={(value) => setAddSubjectFormData(prev => ({ ...prev, semester: value }))}

@@ -10,8 +10,8 @@ export interface Subject {
   id: string; // Firestore document ID
   name: string;
   color: string; // Hex color code
-  departmentId: string; // e.g., "mba", "bba"
-  semester?: number; // Optional semester/trimester number
+  departmentId: string; // e.g., "std-1", "std-2"
+  semester?: number; // Optional standard number
 }
 
 export interface AcademicEvent {
@@ -28,14 +28,14 @@ export interface AcademicEvent {
   description?: string;
   location?: string;
   attendees?: string[]; // Array of user IDs or names
-  departmentId: string; // e.g., "mba", "bba"
+  departmentId: string; // e.g., "std-1", "std-2"
 }
 
 export interface UserProfile {
   uid: string;
   email: string;
-  role: "department_admin";
-  departmentId: string; // e.g., "mba", "bba"
+  role: "department_admin" | "super_admin";
+  departmentId?: string; // e.g., "std-1", "std-2". Optional for super_admin
 }
 
 // Kept for legacy compatibility if needed, but UserProfile is preferred

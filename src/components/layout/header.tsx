@@ -18,6 +18,20 @@ interface HeaderProps {
   children?: React.ReactNode;
 }
 
+const departmentNames: { [key: string]: string } = {
+    "std-1": "1st Standard",
+    "std-2": "2nd Standard",
+    "std-3": "3rd Standard",
+    "std-4": "4th Standard",
+    "std-5": "5th Standard",
+    "std-6": "6th Standard",
+    "std-7": "7th Standard",
+    "std-8": "8th Standard",
+    "std-9": "9th Standard",
+    "std-10": "10th Standard",
+};
+
+
 export default function Header({ children }: HeaderProps) {
   const { currentUser, userProfile, signOut } = useAuth();
   const router = useRouter();
@@ -30,7 +44,18 @@ export default function Header({ children }: HeaderProps) {
     router.push('/login');
   };
   
-  const isDepartmentAdmin = userProfile?.role === 'department_admin';
+  const isAdmin = userProfile?.role === 'department_admin' || userProfile?.role === 'super_admin';
+  
+  const getAdminTitle = () => {
+    if (!userProfile) return '';
+    if (userProfile.role === 'super_admin') {
+      return 'Super Admin';
+    }
+    if (userProfile.role === 'department_admin' && userProfile.departmentId) {
+      return `${departmentNames[userProfile.departmentId] || userProfile.departmentId.toUpperCase()} Admin`;
+    }
+    return 'Admin';
+  };
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 border-b bg-card shadow-sm sm:px-6">
@@ -77,12 +102,12 @@ export default function Header({ children }: HeaderProps) {
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>
                 My Account
-                {isDepartmentAdmin && userProfile.departmentId && (
-                  <span className="text-xs text-primary"> ({userProfile.departmentId.toUpperCase()} Admin)</span>
+                {isAdmin && (
+                  <span className="text-xs text-primary font-normal"> ({getAdminTitle()})</span>
                 )}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {isDepartmentAdmin && (
+              {isAdmin && (
                 <Link href="/admin/dashboard">
                   <DropdownMenuItem>Admin Dashboard</DropdownMenuItem>
                 </Link>

@@ -33,13 +33,20 @@ export default function AdminLayout({
       return; 
     }
 
-    // Redirect if user is not a valid department admin or is missing critical data
-    if (!currentUser || !userProfile || userProfile.role?.toLowerCase() !== 'department_admin' || !userProfile.departmentId) {
-      router.push('/login?error=unauthorized_or_missing_data');
+    // Redirect if user is not logged in or doesn't have a valid admin role.
+    const isAdmin = userProfile?.role === 'department_admin' || userProfile?.role === 'super_admin';
+    if (!currentUser || !userProfile || !isAdmin) {
+      router.push('/login?error=unauthorized');
     }
+    
+    // Redirect department admin if they are missing their departmentId
+    if (userProfile?.role === 'department_admin' && !userProfile.departmentId) {
+       router.push('/login?error=missing_data');
+    }
+
   }, [currentUser, userProfile, loading, router]);
 
-  if (loading || !currentUser || !userProfile || !userProfile.departmentId) {
+  if (loading || !currentUser || !userProfile) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p className="text-lg text-muted-foreground">Verifying admin access...</p>
@@ -47,22 +54,25 @@ export default function AdminLayout({
     );
   }
 
-  // At this point, userProfile and userProfile.departmentId are guaranteed to exist.
-  const departmentIdKey = userProfile.departmentId.toLowerCase();
-  const departmentName = departmentNames[departmentIdKey] || userProfile.departmentId.toUpperCase();
+  const isSuperAdmin = userProfile.role === 'super_admin';
+  const departmentId = userProfile.departmentId;
+  const departmentIdKey = departmentId?.toLowerCase() || '';
+  const departmentName = isSuperAdmin 
+    ? 'Admin' 
+    : departmentNames[departmentIdKey] || departmentId?.toUpperCase();
 
   return (
     <div className="flex flex-col min-h-screen">
       <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 border-b bg-card shadow-sm sm:px-6">
         <Link href="/admin/dashboard" className="flex items-center gap-2 text-lg font-semibold text-primary">
-          Jnanodaya school - {departmentName} Admin
+          Jnanodaya school - {departmentName}
         </Link>
         <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground hidden md:inline">
               {currentUser.email}
             </span>
           <Button variant="outline" size="sm" asChild>
-            <Link href={`/dashboard?department=${userProfile.departmentId}`}>View Public Calendar</Link>
+            <Link href={`/dashboard?department=${departmentId || 'std-1'}`}>View Public Calendar</Link>
           </Button>
         </div>
       </header>
