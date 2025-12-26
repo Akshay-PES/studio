@@ -732,7 +732,7 @@ export default function AdminDashboardPage() {
         img.src = url;
     };
 
-    getImageDataUri('/jnanodaya-logo.png', (logoDataUri) => {
+    getImageDataUri('/download.jpeg', (logoDataUri) => {
         // Header
         doc.addImage(logoDataUri, 'PNG', 14, 15, 60, 15);
         doc.setFontSize(22);

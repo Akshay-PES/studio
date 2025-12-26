@@ -13,7 +13,7 @@ const standards = [
     { name: "5th Standard", id: "std-5" },
     { name: "6th Standard", id: "std-6" },
     { name: "7th Standard", id: "std-7" },
-    { name: "8th Standard", id: "std-8" },
+    { name: "8th Standard", id_ts: "std-8" },
     { name: "9th Standard", id: "std-9" },
     { name: "10th Standard", id: "std-10" },
 ];
@@ -23,7 +23,7 @@ export default function HomePage() {
     <main className="flex flex-col items-center justify-center min-h-screen p-8 bg-gradient-to-br from-background to-blue-100">
       <Card className="w-full max-w-md shadow-2xl">
         <CardHeader className="text-center">
-          <Image src="/jnanodaya-logo.png" alt="Jnanodaya school Logo" width={300} height={78} className="mx-auto mb-4" />
+          <Image src="/download.jpeg" alt="Jnanodaya school Logo" width={300} height={78} className="mx-auto mb-4" />
           <CardTitle className="text-4xl font-headline text-primary">Jnanodaya school</CardTitle>
           <CardDescription className="text-lg text-muted-foreground">
             Your Unified Academic Planner

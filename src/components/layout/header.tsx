@@ -46,7 +46,7 @@ export default function Header({ children }: HeaderProps) {
             <SheetContent side="left" className="sm:max-w-xs bg-sidebar text-sidebar-foreground p-0 flex flex-col">
                 <div className="p-4">
                   <Link href="/" className="flex items-center gap-2">
-                    <Image src="/jnanodaya-logo.png" alt="Jnanodaya school Logo" width={150} height={39} className="w-auto h-8" />
+                    <Image src="/download.jpeg" alt="Jnanodaya school Logo" width={150} height={39} className="w-auto h-8" />
                   </Link>
                 </div>
                 <Separator className="bg-sidebar-border" />
@@ -55,7 +55,7 @@ export default function Header({ children }: HeaderProps) {
         </Sheet>
         
         <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-primary">
-          <Image src="/jnanodaya-logo.png" alt="Jnanodaya school Logo" width={150} height={39} className="w-auto h-8 hidden md:block" />
+          <Image src="/download.jpeg" alt="Jnanodaya school Logo" width={150} height={39} className="w-auto h-8 hidden md:block" />
           <span className="font-headline text-xl sr-only">Jnanodaya school</span>
         </Link>
       </div>
