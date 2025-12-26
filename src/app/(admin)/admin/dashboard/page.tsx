@@ -732,12 +732,12 @@ export default function AdminDashboardPage() {
         img.src = url;
     };
 
-    getImageDataUri('/pes-logo.png', (logoDataUri) => {
+    getImageDataUri('/jnanodaya-logo.png', (logoDataUri) => {
         // Header
-        doc.addImage(logoDataUri, 'PNG', 14, 15, 33, 12);
+        doc.addImage(logoDataUri, 'PNG', 14, 15, 60, 15);
         doc.setFontSize(22);
         doc.setFont("helvetica", "bold");
-        doc.text("Jnanodaya school", 52, 23);
+        doc.text("Jnanodaya school", 80, 23);
         doc.setFont("helvetica", "normal");
         
         // Sub-header

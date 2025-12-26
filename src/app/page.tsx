@@ -23,7 +23,7 @@ export default function HomePage() {
     <main className="flex flex-col items-center justify-center min-h-screen p-8 bg-gradient-to-br from-background to-blue-100">
       <Card className="w-full max-w-md shadow-2xl">
         <CardHeader className="text-center">
-          <Image src="/pes-logo.png" alt="Jnanodaya school Logo" width={133} height={48} className="mx-auto mb-4" />
+          <Image src="/jnanodaya-logo.png" alt="Jnanodaya school Logo" width={300} height={78} className="mx-auto mb-4" />
           <CardTitle className="text-4xl font-headline text-primary">Jnanodaya school</CardTitle>
           <CardDescription className="text-lg text-muted-foreground">
             Your Unified Academic Planner
