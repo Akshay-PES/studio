@@ -9,7 +9,7 @@
     ],
     "frameworksBackend": {
       "region": "us-central1",
-      "project": "jsb-calender"
+      "project": "academiasyncjsb-71977203-24f75"
     }
   },
   "firestore": {

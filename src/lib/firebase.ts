@@ -1,3 +1,4 @@
+
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import { getFirestore, type Firestore } from "firebase/firestore";
@@ -6,13 +7,12 @@ import { getAuth, type Auth } from "firebase/auth";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyBLNI6M4Qr2ASvDSpZjNWx7IPkVQqQHB_8",
-  authDomain: "jsb-calender.firebaseapp.com",
-  projectId: "jsb-calender",
-  storageBucket: "jsb-calender.appspot.com",
-  messagingSenderId: "919280262238",
-  appId: "1:919280262238:web:a8a55c6c97566f338228cf",
-  measurementId: "G-WY3Y85WV7M"
+  apiKey: "AIzaSyCps-KXEenwG711fLfnUM6lAV2C6jw7r-c",
+  authDomain: "academiasyncjsb-71977203-24f75.firebaseapp.com",
+  projectId: "academiasyncjsb-71977203-24f75",
+  storageBucket: "academiasyncjsb-71977203-24f75.appspot.com",
+  messagingSenderId: "586143134182",
+  appId: "1:586143134182:web:27747c2401ded119226627"
 };
 
 
