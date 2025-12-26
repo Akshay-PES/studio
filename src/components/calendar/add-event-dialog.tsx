@@ -437,17 +437,17 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
                         name="semester"
                         render={({ field }) => (
                             <FormItem>
-                            <FormLabel><ListFilter className="inline w-4 h-4 mr-1" />Sem/Trimester</FormLabel>
+                            <FormLabel><ListFilter className="inline w-4 h-4 mr-1" />Standard</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value || NO_SEMESTER_VALUE} defaultValue={field.value || NO_SEMESTER_VALUE}>
                                 <FormControl>
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Select a semester" />
+                                    <SelectValue placeholder="Select a standard" />
                                 </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
                                     <SelectItem value={NO_SEMESTER_VALUE}>None</SelectItem>
-                                    {Array.from({ length: 8 }, (_, i) => i + 1).map(sem => (
-                                        <SelectItem key={sem} value={String(sem)}>Sem/Trimester {sem}</SelectItem>
+                                    {Array.from({ length: 10 }, (_, i) => i + 1).map(std => (
+                                        <SelectItem key={std} value={String(std)}>{std}{std === 1 ? 'st' : std === 2 ? 'nd' : std === 3 ? 'rd' : 'th'} Standard</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
@@ -469,7 +469,7 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
                                 </FormControl>
                                 <SelectContent>
                                     <SelectItem value={NO_SECTION_VALUE}>None</SelectItem>
-                                    {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].map(sec => (
+                                    {['A', 'B', 'C', 'D'].map(sec => (
                                         <SelectItem key={sec} value={String(sec)}>Section {sec}</SelectItem>
                                     ))}
                                 </SelectContent>

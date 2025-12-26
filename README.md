@@ -1,21 +1,21 @@
 # Jnanodaya school: The Unified Academic Planner
 
-Welcome to Jnanodaya school, a modern, streamlined academic event planner built with Next.js, Firebase, and Tailwind CSS. This application is designed to help academic departments at PES University manage and display their event schedules in a clear, interactive, and accessible way.
+Welcome to Jnanodaya school, a modern, streamlined academic event planner built with Next.js, Firebase, and Tailwind CSS. This application is designed to help academic classes manage and display their event schedules in a clear, interactive, and accessible way.
 
 ## Key Features
 
-- **Multi-Department Calendars**: A central landing page allows students, faculty, and staff to select their specific department and view a dedicated calendar of events.
+- **Multi-Standard Calendars**: A central landing page allows students, faculty, and staff to select their specific class/standard and view a dedicated calendar of events.
 - **Interactive Calendar View**: A clean, monthly calendar displays all academic events, color-coded for easy identification. Users can click on any event to see detailed information.
 - **Powerful Filtering**: A comprehensive sidebar allows users to filter the calendar view by:
-    - Event Category (e.g., Academics, Placement)
-    - Event Sub-Type (e.g., ISA, Workshop)
-    - Semester or Trimester
-    - Department-specific Subjects
+    - Event Category (e.g., Academics, Examination)
+    - Event Sub-Type (e.g., Test, Holiday)
+    - Standard (e.g., 1st, 2nd, 10th)
+    - Class-specific Subjects
     - Section
     - Custom Date Ranges
-- **Dedicated Admin Dashboard**: Authorized department administrators have a secure portal to:
-    - **Manage Events**: Create, update, and delete events for their department.
-    - **Manage Subjects**: Define subjects and map them to specific semesters.
+- **Dedicated Admin Dashboard**: Authorized class administrators have a secure portal to:
+    - **Manage Events**: Create, update, and delete events for their standard.
+    - **Manage Subjects**: Define subjects and map them to specific standards.
     - **Manage Categories**: Globally manage event categories and their associated sub-types (for authorized admins).
     - **Generate PDF Reports**: Download filtered lists of events as professionally branded PDF documents.
 - **Real-Time Data**: The application uses real-time Firebase listeners to ensure the calendar and filter options are always up-to-date with the latest information from the database.

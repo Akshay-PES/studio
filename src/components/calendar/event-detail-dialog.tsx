@@ -99,7 +99,7 @@ export default function EventDetailDialog({ event, allSubjects, allCategories, i
                 <div className="flex items-start">
                   <ListFilter className="w-4 h-4 mr-2 mt-0.5 text-primary" />
                   <div>
-                    <strong>Semester/Trimester:</strong>
+                    <strong>Standard:</strong>
                     <p>{event.semester}</p>
                   </div>
                 </div>

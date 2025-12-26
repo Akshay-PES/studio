@@ -16,23 +16,16 @@ import { useFilters } from '@/contexts/FilterContext';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const departmentNames: { [key: string]: string } = {
-    "mba": "MBA",
-    "bba": "BBA",
-    "bba-hons-ba": "BBA (Hons) Business Analytics",
-    "bcom": "B.Com",
-    "bcom-hons-acca": "B.Com (Hons) ACCA",
-    "bcom-hons-cma": "B.Com (Hons) CMA",
-    "bsc-hons-eco": "B.Sc (Hons) Economics",
-    "bsc-hons-psy": "B.Sc (Hons) Psychology",
-    "msc-psy": "M.Sc Psychology",
-    "bba-llb": "BBA-LLB",
-    "ba-llb": "BA-LLB",
-    "llb-hons": "LLB (Hons)",
-    "bba-ec": "BBA (EC Campus)",
-    "bcom-ec": "B.Com(EC Campus)",
-    "bba-hem": "BBA (Hospitality and Event management)",
-    "bsc-jmc": "B.Sc(JMC)",
-    "ma-pp": "M A Public policy",
+    "std-1": "1st Standard",
+    "std-2": "2nd Standard",
+    "std-3": "3rd Standard",
+    "std-4": "4th Standard",
+    "std-5": "5th Standard",
+    "std-6": "6th Standard",
+    "std-7": "7th Standard",
+    "std-8": "8th Standard",
+    "std-9": "9th Standard",
+    "std-10": "10th Standard",
 };
 
 // A skeleton loader component for the mobile view
@@ -66,7 +59,7 @@ function MobileCalendarSkeleton() {
 
 export default function DashboardComponent() {
   const searchParams = useSearchParams();
-  const department = searchParams.get('department') || 'mba'; // Default to 'mba'
+  const department = searchParams.get('department') || 'std-1'; // Default to 'std-1'
   
   const [events, setEvents] = useState<AcademicEvent[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -228,9 +221,9 @@ export default function DashboardComponent() {
     <div className="flex flex-col flex-1 h-full">
       <div className="p-4 md:px-6 md:pt-6 md:pb-0">
           <h1 className="text-2xl font-bold text-primary">
-              {departmentDisplayName} Department Calendar
+              {departmentDisplayName} Calendar
           </h1>
-          <p className="text-muted-foreground">Academic events and schedules for the {departmentDisplayName} department.</p>
+          <p className="text-muted-foreground">Academic events and schedules for the {departmentDisplayName}.</p>
       </div>
       <div className="flex-1 overflow-auto min-h-0">
         <CalendarView

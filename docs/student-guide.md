@@ -2,7 +2,7 @@
 
 **Your Ultimate Guide to the Unified Academic Planner**
 
-Jnanodaya school is your central hub for all academic events, deadlines, and schedules for your department. This comprehensive guide will walk you through every feature to help you get the most out of the platform.
+Jnanodaya school is your central hub for all academic events, deadlines, and schedules for your class. This comprehensive guide will walk you through every feature to help you get the most out of the platform.
 
 ---
 
@@ -10,10 +10,10 @@ Jnanodaya school is your central hub for all academic events, deadlines, and sch
 
 When you first visit the Jnanodaya school homepage, you are greeted with a welcome screen.
 
-- **Action:** Simply find and click on your department's name from the list.
-- **Result:** You will be taken to a dedicated, interactive calendar populated with all the events, exams, and holidays relevant to your department.
+- **Action:** Simply find and click on your standard's name from the list (e.g., "5th Standard").
+- **Result:** You will be taken to a dedicated, interactive calendar populated with all the events, exams, and holidays relevant to your class.
 
-This ensures you see a focused view, free from the clutter of other departments' schedules.
+This ensures you see a focused view, free from the clutter of other classes' schedules.
 
 ---
 
@@ -46,12 +46,12 @@ Events appear as small, colored cards on the calendar. To get the full picture:
 - **Action:** Click on any event card.
 - **Result:** A detailed dialog box will open, providing comprehensive information, which may include:
   - **Full Title:** The complete name of the event.
-  - **Category & Sub-Type:** Helps you understand the event's nature (e.g., Academics - ISA).
+  - **Category & Sub-Type:** Helps you understand the event's nature (e.g., Academics - Test).
   - **Date & Time:** The precise start and end times.
-  - **Subject:** If applicable, the course it relates to (e.g., "Corporate Finance").
-  - **Semester & Section:** Specific academic groups the event is for.
-  - **Location:** The room, hall, or building where the event will take place.
-  - **Faculty/Host:** The professor or person in charge.
+  - **Subject:** If applicable, the course it relates to (e.g., "Mathematics").
+  - **Standard & Section:** Specific academic groups the event is for.
+  - **Location:** The room or hall where the event will take place.
+  - **Teacher/Host:** The person in charge.
   - **Description:** Any additional notes, instructions, or context.
 
 ---
@@ -63,13 +63,13 @@ The sidebar on the left is the most powerful feature of Jnanodaya school. It all
 #### **Filter by Categories & Sub-Types**
 - **How it works:** This is a two-level filter. First, select a broad category, then narrow it down with a sub-type.
 - **Action:**
-  1. Check a main category box, like `Academics` or `Placement`. The calendar will update to show all events in that category.
-  2. The "Sub-Types" section below it will then populate with options related to your choice (e.g., `ISA`, `Workshop`).
+  1. Check a main category box, like `Academics` or `Exams`. The calendar will update to show all events in that category.
+  2. The "Sub-Types" section below it will then populate with options related to your choice (e.g., `Unit Test`, `Final Exam`).
   3. You can then check one or more sub-types to further refine your view.
 
-#### **Filter by Semester/Trimester**
-- **How it works:** Shows only events and subjects relevant to a specific academic term.
-- **Action:** Check the box for your semester (e.g., `Sem/Trimester 3`). The "Subjects" list below will automatically update to show only courses taught in that semester.
+#### **Filter by Standard**
+- **How it works:** Shows only events and subjects relevant to a specific standard.
+- **Action:** Check the box for your standard (e.g., `8th Standard`). The "Subjects" list below will automatically update to show only courses taught in that standard.
 
 #### **Filter by Subjects**
 - **How it works:** Perfect for tracking deadlines or classes for specific courses.
@@ -93,8 +93,8 @@ The sidebar on the left is the most powerful feature of Jnanodaya school. It all
 
 #### **Clearing All Filters**
 - **Action:** Click the **"Clear All"** button at the top of the sidebar.
-- **Result:** All your filter selections will be removed, and the calendar will return to showing all events for the department.
+- **Result:** All your filter selections will be removed, and the calendar will return to showing all events for the class.
 
 ---
 
-We hope this detailed guide helps you stay organized and on top of your academic schedule. Welcome to a smarter way of planning your semester!
+We hope this detailed guide helps you stay organized and on top of your academic schedule. Welcome to a smarter way of planning your school year!

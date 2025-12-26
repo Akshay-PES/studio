@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect } from 'react';
@@ -7,23 +8,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 
 const departmentNames: { [key: string]: string } = {
-    "mba": "MBA",
-    "bba": "BBA",
-    "bba-hons-ba": "BBA (Hons) Business Analytics",
-    "bcom": "B.Com",
-    "bcom-hons-acca": "B.Com (Hons) ACCA",
-    "bcom-hons-cma": "B.Com (Hons) CMA",
-    "bsc-hons-eco": "B.Sc (Hons) Economics",
-    "bsc-hons-psy": "B.Sc (Hons) Psychology",
-    "msc-psy": "M.Sc Psychology",
-    "bba-llb": "BBA-LLB",
-    "ba-llb": "BA-LLB",
-    "llb-hons": "LLB (Hons)",
-    "bba-ec": "BBA (EC Campus)",
-    "bcom-ec": "B.Com(EC Campus)",
-    "bba-hem": "BBA (Hospitality and Event management)",
-    "bsc-jmc": "B.Sc(JMC)",
-    "ma-pp": "M A Public policy",
+    "std-1": "1st Standard",
+    "std-2": "2nd Standard",
+    "std-3": "3rd Standard",
+    "std-4": "4th Standard",
+    "std-5": "5th Standard",
+    "std-6": "6th Standard",
+    "std-7": "7th Standard",
+    "std-8": "8th Standard",
+    "std-9": "9th Standard",
+    "std-10": "10th Standard",
 };
 
 export default function AdminLayout({

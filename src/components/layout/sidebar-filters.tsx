@@ -35,7 +35,7 @@ export default function SidebarFilters() {
   const { toast } = useToast();
   
   const searchParams = useSearchParams();
-  const department = searchParams.get('department') || 'mba';
+  const department = searchParams.get('department') || 'std-1';
 
   React.useEffect(() => {
     if (!department) return;
@@ -242,19 +242,19 @@ export default function SidebarFilters() {
 
           <AccordionItem value="semesters" className="border-b-sidebar-border">
             <AccordionTrigger className="text-sm font-medium hover:no-underline px-2 py-2.5">
-              <div className="flex items-center gap-1.5"><ListFilter className="w-4 h-4" /> Semester/Trimester</div>
+              <div className="flex items-center gap-1.5"><ListFilter className="w-4 h-4" /> Standard</div>
             </AccordionTrigger>
             <AccordionContent className="pt-1 pb-1.5 space-y-1 px-2">
-              {Array.from({ length: 8 }, (_, i) => i + 1).map(sem => (
-                <div key={sem} className="flex items-center space-x-2 p-1 rounded-md hover:bg-sidebar-accent/70">
+              {Array.from({ length: 10 }, (_, i) => i + 1).map(std => (
+                <div key={std} className="flex items-center space-x-2 p-1 rounded-md hover:bg-sidebar-accent/70">
                   <Checkbox
-                    id={`sem-${sem}`}
-                    checked={filters.semesters.includes(sem)}
-                    onCheckedChange={(checked) => handleSemesterChange(sem, !!checked)}
+                    id={`std-${std}`}
+                    checked={filters.semesters.includes(std)}
+                    onCheckedChange={(checked) => handleSemesterChange(std, !!checked)}
                     className="border-sidebar-primary data-[state=checked]:bg-sidebar-primary data-[state=checked]:text-sidebar-primary-foreground"
                   />
-                  <Label htmlFor={`sem-${sem}`} className="text-xs font-normal cursor-pointer flex-grow">
-                    Sem/Trimester {sem}
+                  <Label htmlFor={`std-${std}`} className="text-xs font-normal cursor-pointer flex-grow">
+                    {std}{std === 1 ? 'st' : std === 2 ? 'nd' : std === 3 ? 'rd' : 'th'} Standard
                   </Label>
                 </div>
               ))}
@@ -293,7 +293,7 @@ export default function SidebarFilters() {
               <div className="flex items-center gap-1.5"><Bookmark className="w-4 h-4" /> Section</div>
             </AccordionTrigger>
             <AccordionContent className="pt-1 pb-1.5 space-y-1 px-2">
-              {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].map(sec => (
+              {['A', 'B', 'C', 'D'].map(sec => (
                 <div key={sec} className="flex items-center space-x-2 p-1 rounded-md hover:bg-sidebar-accent/70">
                   <Checkbox
                     id={`sec-${sec}`}

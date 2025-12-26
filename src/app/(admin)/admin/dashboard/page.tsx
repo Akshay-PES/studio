@@ -145,7 +145,7 @@ export default function AdminDashboardPage() {
   const { toast } = useToast();
 
   const departmentId = userProfile?.departmentId;
-  const isMbaAdmin = userProfile?.departmentId === 'mba';
+  const isMbaAdmin = userProfile?.departmentId === 'mba'; // This logic might need adjustment for a school context
 
   const fetchEvents = useCallback(async () => {
     if (!departmentId) return;
@@ -737,7 +737,7 @@ export default function AdminDashboardPage() {
         doc.addImage(logoDataUri, 'PNG', 14, 15, 33, 12);
         doc.setFontSize(22);
         doc.setFont("helvetica", "bold");
-        doc.text("PES University", 52, 23);
+        doc.text("Jnanodaya school", 52, 23);
         doc.setFont("helvetica", "normal");
         
         // Sub-header
@@ -809,7 +809,8 @@ export default function AdminDashboardPage() {
     { value: "events", label: "Manage Events" },
     { value: "subjects", label: "Manage Subjects" },
     { value: "reports", label: "Download Reports" },
-    ...(isMbaAdmin ? [{ value: "categories", label: "Manage Global Categories" }] : [])
+    // Only a 'super admin' equivalent should manage global categories. This logic may need to be updated.
+    { value: "categories", label: "Manage Global Categories" }
   ];
 
   return (
@@ -838,7 +839,7 @@ export default function AdminDashboardPage() {
                 <div>
                     <CardTitle>Manage Academic Events</CardTitle>
                     <CardDescription>
-                        Add, edit, or delete academic events for your department.
+                        Add, edit, or delete academic events for your standard.
                     </CardDescription>
                 </div>
                  <Button onClick={() => setShowAddEventDialog(true)}>
@@ -870,13 +871,13 @@ export default function AdminDashboardPage() {
                         </Select>
                     </div>
                      <div>
-                        <Label htmlFor="event-semester-filter" className="text-xs">Semester</Label>
+                        <Label htmlFor="event-semester-filter" className="text-xs">Standard</Label>
                         <Select value={eventFilterSemester} onValueChange={setEventFilterSemester}>
                             <SelectTrigger id="event-semester-filter"><SelectValue /></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value={ALL_SEMESTERS}>All Semesters</SelectItem>
-                                {Array.from({ length: 8 }, (_, i) => i + 1).map(sem => (
-                                  <SelectItem key={sem} value={String(sem)}>Sem/Trimester {sem}</SelectItem>
+                                <SelectItem value={ALL_SEMESTERS}>All Standards</SelectItem>
+                                {Array.from({ length: 10 }, (_, i) => i + 1).map(std => (
+                                  <SelectItem key={std} value={String(std)}>{std}{std === 1 ? 'st' : std === 2 ? 'nd' : std === 3 ? 'rd' : 'th'} Standard</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
@@ -888,7 +889,7 @@ export default function AdminDashboardPage() {
                 <div className="text-center text-muted-foreground py-10">
                     <p className="font-semibold">No events found.</p>
                     <p className="text-sm">
-                        Try adjusting your search or filter criteria.
+                        Try adjusting your filter criteria.
                     </p>
                 </div>
               ) : (
@@ -907,7 +908,7 @@ export default function AdminDashboardPage() {
                           {categoryDetails && <span className="w-3 h-3 rounded-full mr-1.5 ml-1.5" style={{ backgroundColor: categoryDetails.color }} />}
                           {event.category} {event.subType && `(${event.subType})`}
                         </p>
-                        {event.semester && <p className="text-sm text-muted-foreground">Semester: {event.semester}</p>}
+                        {event.semester && <p className="text-sm text-muted-foreground">Standard: {event.semester}</p>}
                         {event.section && <p className="text-sm text-muted-foreground">Section: {event.section}</p>}
                         {event.location && <p className="text-sm text-muted-foreground">Location: {event.location}</p>}
                         {event.subjectId && subjectsDB.find(s => s.id === event.subjectId) &&
@@ -937,7 +938,7 @@ export default function AdminDashboardPage() {
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center">
-                <CardTitle>Manage Department Subjects</CardTitle>
+                <CardTitle>Manage Class Subjects</CardTitle>
                 <Button onClick={() => {
                   setAddSubjectFormData({ name: '', semester: NO_SEMESTER_VALUE });
                   setShowAddSubjectDialog(true);
@@ -946,7 +947,7 @@ export default function AdminDashboardPage() {
                 </Button>
               </div>
               <CardDescription>
-                Add, edit, or delete subjects for your department.
+                Add, edit, or delete subjects for your class/standard.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -961,7 +962,7 @@ export default function AdminDashboardPage() {
                       <div>
                         <h3 className="text-lg font-semibold" style={{color: subject.color}}>{subject.name}</h3>
                         {subject.semester && (
-                          <p className="text-sm text-muted-foreground">Semester/Trimester: {subject.semester}</p>
+                          <p className="text-sm text-muted-foreground">Standard: {subject.semester}</p>
                         )}
                         <p className="text-sm text-muted-foreground">Color: {subject.color}</p>
                       </div>
@@ -1085,7 +1086,7 @@ export default function AdminDashboardPage() {
             </Card>
         </TabsContent>
 
-        {isMbaAdmin && (
+        
           <TabsContent value="categories" className="pt-6">
             <Card>
               <CardHeader>
@@ -1099,7 +1100,7 @@ export default function AdminDashboardPage() {
                   </Button>
                 </div>
                 <CardDescription>
-                  These categories are GLOBAL and shared across all departments.
+                  These categories are GLOBAL and shared across all classes.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -1136,7 +1137,7 @@ export default function AdminDashboardPage() {
               </CardContent>
             </Card>
           </TabsContent>
-        )}
+        
       </Tabs>
       
       <AddEventDialog
@@ -1217,13 +1218,13 @@ export default function AdminDashboardPage() {
               </div>
                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="edit-event-semester">Semester/Trimester</Label>
+                    <Label htmlFor="edit-event-semester">Standard</Label>
                     <Select value={editEventFormData.semester || NO_SEMESTER_VALUE} onValueChange={handleEditEventSemesterChange}>
-                        <SelectTrigger id="edit-event-semester"><SelectValue placeholder="Select semester" /></SelectTrigger>
+                        <SelectTrigger id="edit-event-semester"><SelectValue placeholder="Select standard" /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value={NO_SEMESTER_VALUE}>None</SelectItem>
-                            {Array.from({ length: 8 }, (_, i) => i + 1).map(sem => (
-                                <SelectItem key={sem} value={String(sem)}>Sem/Trimester {sem}</SelectItem>
+                            {Array.from({ length: 10 }, (_, i) => i + 1).map(std => (
+                                <SelectItem key={std} value={String(std)}>{std}{std === 1 ? 'st' : std === 2 ? 'nd' : std === 3 ? 'rd' : 'th'} Standard</SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
@@ -1234,7 +1235,7 @@ export default function AdminDashboardPage() {
                         <SelectTrigger id="edit-event-section"><SelectValue placeholder="Select section" /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value={NO_SECTION_VALUE}>None</SelectItem>
-                            {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].map(sec => (
+                            {['A', 'B', 'C', 'D'].map(sec => (
                                 <SelectItem key={sec} value={String(sec)}>Section {sec}</SelectItem>
                             ))}
                         </SelectContent>
@@ -1348,7 +1349,7 @@ export default function AdminDashboardPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Add New Subject</DialogTitle>
-            <DialogDescription>Define a new subject for your department. A unique color will be automatically assigned.</DialogDescription>
+            <DialogDescription>Define a new subject for your class. A unique color will be automatically assigned.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleAddSubjectToDB} className="space-y-4 py-4">
             <div>
@@ -1357,16 +1358,16 @@ export default function AdminDashboardPage() {
                 onChange={(e) => setAddSubjectFormData(prev => ({...prev, name: e.target.value}))} required />
             </div>
             <div>
-              <Label htmlFor="add-subject-semester">Semester/Trimester</Label>
+              <Label htmlFor="add-subject-semester">Standard</Label>
               <Select
                   value={addSubjectFormData.semester}
                   onValueChange={(value) => setAddSubjectFormData(prev => ({ ...prev, semester: value }))}
               >
-                  <SelectTrigger id="add-subject-semester"><SelectValue placeholder="Select semester" /></SelectTrigger>
+                  <SelectTrigger id="add-subject-semester"><SelectValue placeholder="Select standard" /></SelectTrigger>
                   <SelectContent>
                       <SelectItem value={NO_SEMESTER_VALUE}>None</SelectItem>
-                      {Array.from({ length: 8 }, (_, i) => i + 1).map(sem => (
-                          <SelectItem key={sem} value={String(sem)}>Sem/Trimester {sem}</SelectItem>
+                      {Array.from({ length: 10 }, (_, i) => i + 1).map(std => (
+                          <SelectItem key={std} value={String(std)}>{std}{std === 1 ? 'st' : std === 2 ? 'nd' : std === 3 ? 'rd' : 'th'} Standard</SelectItem>
                       ))}
                   </SelectContent>
               </Select>
@@ -1394,13 +1395,13 @@ export default function AdminDashboardPage() {
                 <Input id="edit-subject-name" name="name" value={editSubjectFormData.name} onChange={handleEditSubjectFormChange} required />
               </div>
                <div>
-                <Label htmlFor="edit-subject-semester">Semester/Trimester</Label>
+                <Label htmlFor="edit-subject-semester">Standard</Label>
                 <Select value={editSubjectFormData.semester} onValueChange={(value) => handleEditSubjectSelectChange('semester', value)}>
-                    <SelectTrigger id="edit-subject-semester"><SelectValue placeholder="Select semester" /></SelectTrigger>
+                    <SelectTrigger id="edit-subject-semester"><SelectValue placeholder="Select standard" /></SelectTrigger>
                     <SelectContent>
                         <SelectItem value={NO_SEMESTER_VALUE}>None</SelectItem>
-                        {Array.from({ length: 8 }, (_, i) => i + 1).map(sem => (
-                            <SelectItem key={sem} value={String(sem)}>Sem/Trimester {sem}</SelectItem>
+                        {Array.from({ length: 10 }, (_, i) => i + 1).map(std => (
+                            <SelectItem key={std} value={String(std)}>{std}{std === 1 ? 'st' : std === 2 ? 'nd' : std === 3 ? 'rd' : 'th'} Standard</SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
@@ -1425,7 +1426,7 @@ export default function AdminDashboardPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Add New Global Category</DialogTitle>
-            <DialogDescription>This category will be available to ALL departments.</DialogDescription>
+            <DialogDescription>This category will be available to ALL classes.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleAddEventCategoryToDB} className="space-y-4 py-4">
             <div>
@@ -1479,8 +1480,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-
-    
-    
-
-    
