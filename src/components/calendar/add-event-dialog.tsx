@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { format } from 'date-fns';
-import { CalendarIcon, Tag, Layers, Clock, MapPin, User as UserIcon, Info, BookOpen, ChevronsUpDown, ListFilter, Bookmark } from 'lucide-react';
+import { CalendarIcon, Tag, Layers, Clock, MapPin, User as UserIcon, Info, BookOpen, ChevronsUpDown, ListFilter, Bookmark, School } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -43,11 +43,23 @@ import type { AcademicEvent, Subject, EventCategory } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { useAuth } from '@/contexts/AuthContext';
+
 
 const NO_SUBJECT_VALUE = "__NONE_SUBJECT__";
 const NO_CATEGORY_VALUE = "__NONE_CATEGORY__";
 const NO_SEMESTER_VALUE = "__NONE_SEMESTER__";
 const NO_SECTION_VALUE = "__NONE_SECTION__";
+const NO_DEPARTMENT_VALUE = "__NONE_DEPARTMENT__";
+
+const departmentOptions = [
+    { name: "1st Standard", id: "std-1" }, { name: "2nd Standard", id: "std-2" },
+    { name: "3rd Standard", id: "std-3" }, { name: "4th Standard", id: "std-4" },
+    { name: "5th Standard", id: "std-5" }, { name: "6th Standard", id: "std-6" },
+    { name: "7th Standard", id: "std-7" }, { name: "8th Standard", id: "std-8" },
+    { name: "9th Standard", id: "std-9" }, { name: "10th Standard", id: "std-10" },
+];
+
 
 const eventFormSchema = z.object({
   title: z.string().min(3, { message: "Title must be at least 3 characters." }),
@@ -56,6 +68,7 @@ const eventFormSchema = z.object({
   subjectId: z.string().optional(),
   semester: z.string().optional(),
   section: z.string().optional(),
+  departmentId: z.string().optional(),
   startDate: z.date({ required_error: "Start date is required." }),
   startHour: z.string({ required_error: "Hour is required." }),
   startMinute: z.string({ required_error: "Minute is required." }),
@@ -106,11 +119,15 @@ const periodsArray: ('AM' | 'PM')[] = ['AM', 'PM'];
 
 export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFromDB, categoriesFromDB, departmentId }: AddEventDialogProps) {
   const { toast } = useToast();
+  const { userProfile } = useAuth();
+  const isSuperAdmin = userProfile?.role === 'super_admin';
+
   const form = useForm<EventFormData>({
     resolver: zodResolver(eventFormSchema),
     defaultValues: {
       title: "",
       category: NO_CATEGORY_VALUE,
+      departmentId: isSuperAdmin ? NO_DEPARTMENT_VALUE : departmentId,
       startHour: "9",
       startMinute: "00",
       startPeriod: 'AM',
@@ -147,10 +164,13 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
         toast({ variant: "destructive", title: "Validation Error", description: "Please select an event category."});
         return;
     }
-    if (!departmentId) {
-        toast({ variant: "destructive", title: "System Error", description: "Department ID is missing."});
+    
+    const finalDepartmentId = isSuperAdmin ? data.departmentId : departmentId;
+    if (!finalDepartmentId || finalDepartmentId === NO_DEPARTMENT_VALUE) {
+        toast({ variant: "destructive", title: "Validation Error", description: "Please select a Standard for the event."});
         return;
     }
+
     const startDateTime = new Date(data.startDate);
     let startHour24 = parseInt(data.startHour, 10);
     if (data.startPeriod === 'PM' && startHour24 < 12) startHour24 += 12;
@@ -165,7 +185,7 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
 
     const newEvent: Omit<AcademicEvent, 'id'> = {
       title: data.title,
-      departmentId: departmentId,
+      departmentId: finalDepartmentId,
       category: data.category,
       subType: data.subType || undefined,
       subjectId: data.subjectId === NO_SUBJECT_VALUE || !data.subjectId ? undefined : data.subjectId,
@@ -185,6 +205,7 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
     form.reset({ 
         title: "",
         category: NO_CATEGORY_VALUE,
+        departmentId: isSuperAdmin ? NO_DEPARTMENT_VALUE : departmentId,
         subType: "",
         subjectId: NO_SUBJECT_VALUE,
         semester: NO_SEMESTER_VALUE,
@@ -208,7 +229,7 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
     <Dialog open={isOpen} onOpenChange={(open) => {
       if (!open) {
         form.reset({
-            title: "", category: NO_CATEGORY_VALUE, subType: "", subjectId: NO_SUBJECT_VALUE, semester: NO_SEMESTER_VALUE, section: NO_SECTION_VALUE,
+            title: "", category: NO_CATEGORY_VALUE, departmentId: isSuperAdmin ? NO_DEPARTMENT_VALUE : departmentId, subType: "", subjectId: NO_SUBJECT_VALUE, semester: NO_SEMESTER_VALUE, section: NO_SECTION_VALUE,
             startDate: undefined, startHour: '9', startMinute: '00', startPeriod: 'AM',
             endDate: undefined, endHour: '10', endMinute: '00', endPeriod: 'AM',
             location: "", faculty: "", description: ""
@@ -228,7 +249,32 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
                   <div>
                     <h4 className="text-sm font-medium text-muted-foreground mb-4">Core Details</h4>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <div className="md:col-span-2">
+                       {isSuperAdmin && (
+                          <FormField
+                            control={form.control}
+                            name="departmentId"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel><School className="inline w-4 h-4 mr-1" />Standard</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value || NO_DEPARTMENT_VALUE}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                    <SelectValue placeholder="Select a standard for this event" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    <SelectItem value={NO_DEPARTMENT_VALUE} disabled>Select a standard</SelectItem>
+                                    {departmentOptions.map(option => (
+                                      <SelectItem key={option.id} value={option.id}>{option.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                          />
+                        )}
+                      <div className={cn(!isSuperAdmin && "md:col-span-2")}>
                         <FormField
                           control={form.control}
                           name="title"
@@ -545,3 +591,5 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
     </Dialog>
   );
 }
+
+    
