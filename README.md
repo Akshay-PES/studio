@@ -1,6 +1,6 @@
-# PESU Playbook: The Unified Academic Planner
+# Jnanodaya school: The Unified Academic Planner
 
-Welcome to PESU Playbook, a modern, streamlined academic event planner built with Next.js, Firebase, and Tailwind CSS. This application is designed to help academic departments at PES University manage and display their event schedules in a clear, interactive, and accessible way.
+Welcome to Jnanodaya school, a modern, streamlined academic event planner built with Next.js, Firebase, and Tailwind CSS. This application is designed to help academic departments at PES University manage and display their event schedules in a clear, interactive, and accessible way.
 
 ## Key Features
 

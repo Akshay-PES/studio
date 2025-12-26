@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/contexts/AuthContext'; // Import AuthProvider
 
 export const metadata: Metadata = {
-  title: 'PESU Playbook - Academic Planner',
+  title: 'Jnanodaya school - Academic Planner',
   description: 'Streamline event scheduling and management for academic institutions.',
 };
 

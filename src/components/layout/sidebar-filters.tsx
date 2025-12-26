@@ -394,7 +394,7 @@ export default function SidebarFilters() {
       </ScrollArea>
       <Separator className="my-1.5 bg-sidebar-border"/>
       <div className="text-xs text-center text-muted-foreground/70 pb-2">
-        PESU Playbook v1.0
+        Jnanodaya school v1.0
       </div>
     </div>
   );

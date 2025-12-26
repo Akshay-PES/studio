@@ -47,7 +47,7 @@ export default function Header({ children }: HeaderProps) {
                 <div className="p-4">
                   <Link href="/" className="flex items-center gap-2">
                     <Image src="/pes-logo.png" alt="PES University Logo" width={80} height={29} className="w-auto h-6" />
-                    <span className="font-headline text-lg text-primary">PESU Playbook</span>
+                    <span className="font-headline text-lg text-primary">Jnanodaya school</span>
                   </Link>
                 </div>
                 <Separator className="bg-sidebar-border" />
@@ -57,7 +57,7 @@ export default function Header({ children }: HeaderProps) {
         
         <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-primary">
           <Image src="/pes-logo.png" alt="PES University Logo" width={80} height={29} className="w-auto h-6 hidden md:block" />
-          <span className="font-headline text-xl">PESU Playbook</span>
+          <span className="font-headline text-xl">Jnanodaya school</span>
         </Link>
       </div>
       

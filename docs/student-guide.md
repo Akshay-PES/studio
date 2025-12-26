@@ -1,14 +1,14 @@
-# Welcome to PESU Playbook!
+# Welcome to Jnanodaya school!
 
 **Your Ultimate Guide to the Unified Academic Planner**
 
-PESU Playbook is your central hub for all academic events, deadlines, and schedules for your department. This comprehensive guide will walk you through every feature to help you get the most out of the platform.
+Jnanodaya school is your central hub for all academic events, deadlines, and schedules for your department. This comprehensive guide will walk you through every feature to help you get the most out of the platform.
 
 ---
 
 ## 1. Getting Started: Finding Your Calendar
 
-When you first visit the PESU Playbook homepage, you are greeted with a welcome screen.
+When you first visit the Jnanodaya school homepage, you are greeted with a welcome screen.
 
 - **Action:** Simply find and click on your department's name from the list.
 - **Result:** You will be taken to a dedicated, interactive calendar populated with all the events, exams, and holidays relevant to your department.
@@ -58,7 +58,7 @@ Events appear as small, colored cards on the calendar. To get the full picture:
 
 ## 4. Mastering the Filters: Your Personalized View
 
-The sidebar on the left is the most powerful feature of PESU Playbook. It allows you to create a personalized calendar view by showing only the events that are important to you. You can combine any number of filters.
+The sidebar on the left is the most powerful feature of Jnanodaya school. It allows you to create a personalized calendar view by showing only the events that are important to you. You can combine any number of filters.
 
 #### **Filter by Categories & Sub-Types**
 - **How it works:** This is a two-level filter. First, select a broad category, then narrow it down with a sub-type.

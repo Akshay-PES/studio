@@ -31,7 +31,7 @@ export default function HomePage() {
       <Card className="w-full max-w-md shadow-2xl">
         <CardHeader className="text-center">
           <Image src="/pes-logo.png" alt="PES University Logo" width={133} height={48} className="mx-auto mb-4" />
-          <CardTitle className="text-4xl font-headline text-primary">PESU Playbook</CardTitle>
+          <CardTitle className="text-4xl font-headline text-primary">Jnanodaya school</CardTitle>
           <CardDescription className="text-lg text-muted-foreground">
             Your Unified Academic Planner
           </CardDescription>
@@ -56,7 +56,7 @@ export default function HomePage() {
         </CardFooter>
       </Card>
       <footer className="mt-12 text-center text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} PESU Playbook. Built for modern academic institutions.</p>
+        <p>&copy; {new Date().getFullYear()} Jnanodaya school. Built for modern academic institutions.</p>
       </footer>
     </main>
   );
