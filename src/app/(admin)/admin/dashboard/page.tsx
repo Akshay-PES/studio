@@ -75,7 +75,7 @@ const NO_SECTION_VALUE = "__NONE_SECTION__";
 const DEFAULT_EVENT_CATEGORY_ON_DELETE = "Others";
 const ALL_CATEGORIES = "__ALL_CATEGORIES__";
 const ALL_SUBJECTS = "__ALL_SUBJECTS__";
-const ALL_SEMESTERS = "__ALL_SEMESTERS__";
+
 const ALL_DEPARTMENTS = "__ALL_DEPARTMENTS__";
 
 
@@ -142,7 +142,7 @@ export default function AdminDashboardPage() {
   const [eventFilterDepartment, setEventFilterDepartment] = useState<string>(ALL_DEPARTMENTS);
   const [eventFilterCategory, setEventFilterCategory] = useState<string>(ALL_CATEGORIES);
   const [eventFilterSubject, setEventFilterSubject] = useState<string>(ALL_SUBJECTS);
-  const [eventFilterSemester, setEventFilterSemester] = useState<string>(ALL_SEMESTERS);
+  
 
   // Filters for the report generation tab
   const [reportFilterCategory, setReportFilterCategory] = useState<string>(ALL_CATEGORIES);
@@ -259,8 +259,8 @@ export default function AdminDashboardPage() {
 
   const handleAddEvent = async (newEventData: Omit<AcademicEvent, 'id'>) => {
     const finalDepartmentId = isSuperAdmin ? newEventData.departmentId : departmentId;
-    if (!finalDepartmentId) {
-        toast({ variant: "destructive", title: "Error", description: "Standard/Department ID is missing." });
+    if (!finalDepartmentId || finalDepartmentId === NO_DEPARTMENT_VALUE) {
+        toast({ variant: "destructive", title: "System Error", description: "Department ID is missing." });
         return;
     }
     
@@ -658,11 +658,11 @@ export default function AdminDashboardPage() {
       const departmentMatch = !isSuperAdmin || eventFilterDepartment === ALL_DEPARTMENTS || event.departmentId === eventFilterDepartment;
       const categoryMatch = eventFilterCategory === ALL_CATEGORIES || event.category === eventFilterCategory;
       const subjectMatch = eventFilterSubject === ALL_SUBJECTS || event.subjectId === eventFilterSubject;
-      const semesterMatch = eventFilterSemester === ALL_SEMESTERS || (event.semester && String(event.semester) === eventFilterSemester);
       
-      return departmentMatch && categoryMatch && subjectMatch && semesterMatch;
+      
+      return departmentMatch && categoryMatch && subjectMatch;
     });
-  }, [events, eventFilterDepartment, eventFilterCategory, eventFilterSubject, eventFilterSemester, isSuperAdmin]);
+  }, [events, eventFilterDepartment, eventFilterCategory, eventFilterSubject, isSuperAdmin]);
 
   const filteredEventsForReport = useMemo(() => {
     return events.filter(event => {
@@ -850,7 +850,7 @@ export default function AdminDashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="p-4 border rounded-lg bg-muted/50 mb-6">
-                <div className={cn("grid gap-4 items-end", isSuperAdmin ? "grid-cols-1 md:grid-cols-4" : "grid-cols-1 md:grid-cols-3")}>
+                <div className={cn("grid gap-4 items-end", isSuperAdmin ? "grid-cols-1 md:grid-cols-3" : "grid-cols-1 md:grid-cols-2")}>
                     {isSuperAdmin && (
                         <div>
                             <Label htmlFor="event-department-filter" className="text-xs">Standard</Label>
@@ -883,18 +883,6 @@ export default function AdminDashboardPage() {
                             </SelectContent>
                         </Select>
                     </div>
-                     <div>
-                        <Label htmlFor="event-semester-filter" className="text-xs">Standard</Label>
-                        <Select value={eventFilterSemester} onValueChange={setEventFilterSemester}>
-                            <SelectTrigger id="event-semester-filter"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value={ALL_SEMESTERS}>All Standards</SelectItem>
-                                {Array.from({ length: 10 }, (_, i) => i + 1).map(std => (
-                                  <SelectItem key={std} value={String(std)}>{std}{std === 1 ? 'st' : std === 2 ? 'nd' : std === 3 ? 'rd' : 'th'} Standard</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
                 </div>
               </div>
               {isLoadingEvents ? (<p className="text-center text-muted-foreground">Loading events...</p>) :
@@ -914,9 +902,9 @@ export default function AdminDashboardPage() {
                     <li key={event.id} className="p-4 border rounded-lg shadow-sm flex justify-between items-start sm:items-center flex-col sm:flex-row gap-4">
                       <div>
                         <h3 className="text-lg font-semibold text-primary">{event.title}</h3>
-                        <p className="text-sm text-muted-foreground">
+                        <div className="text-sm text-muted-foreground">
                           {format(event.start, "PPP p")} - {format(event.end, "PPP p")}
-                        </p>
+                        </div>
                         <div className="text-sm text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
                           <div className="flex items-center">
                             Category:
@@ -925,13 +913,13 @@ export default function AdminDashboardPage() {
                           </div>
                           {departmentName && <div className="flex items-center">For: <Badge variant="secondary" className="ml-1.5">{departmentName}</Badge></div>}
                         </div>
-                        {event.semester && <p className="text-sm text-muted-foreground">Standard: {event.semester}</p>}
-                        {event.section && <p className="text-sm text-muted-foreground">Section: {event.section}</p>}
-                        {event.location && <p className="text-sm text-muted-foreground">Location: {event.location}</p>}
+                        {event.semester && <div className="text-sm text-muted-foreground">Standard: {event.semester}</div>}
+                        {event.section && <div className="text-sm text-muted-foreground">Section: {event.section}</div>}
+                        {event.location && <div className="text-sm text-muted-foreground">Location: {event.location}</div>}
                         {event.subjectId && subjectsDB.find(s => s.id === event.subjectId) &&
-                          <p className="text-sm" style={{color: subjectsDB.find(s => s.id === event.subjectId)?.color || 'inherit'}}>
+                          <div className="text-sm" style={{color: subjectsDB.find(s => s.id === event.subjectId)?.color || 'inherit'}}>
                             Subject: {subjectsDB.find(s => s.id === event.subjectId)?.name}
-                          </p>
+                          </div>
                         }
                       </div>
                       <div className="flex-shrink-0 flex items-center gap-2 self-end sm:self-center">
