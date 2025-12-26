@@ -13,7 +13,7 @@ const standards = [
     { name: "5th Standard", id: "std-5" },
     { name: "6th Standard", id: "std-6" },
     { name: "7th Standard", id: "std-7" },
-    { name: "8th Standard", id_ts: "std-8" },
+    { name: "8th Standard", id: "std-8" },
     { name: "9th Standard", id: "std-9" },
     { name: "10th Standard", id: "std-10" },
 ];
