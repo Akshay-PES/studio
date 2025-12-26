@@ -56,7 +56,7 @@ export default function LoginPage() {
     <Card className="w-full max-w-sm shadow-2xl">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl md:text-3xl font-headline text-primary">Admin Login</CardTitle>
-        <CardDescription className="text-sm md:text-base">Enter your department credentials to access the admin panel.</CardDescription>
+        <CardDescription className="text-sm md:text-base">Enter your class credentials to access the admin panel.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -67,7 +67,7 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="department-admin@example.com"
+              placeholder="class-admin@example.com"
               required
             />
           </div>
@@ -90,10 +90,10 @@ export default function LoginPage() {
       </CardContent>
        <CardFooter className="flex flex-col items-center text-sm">
          <p className="text-muted-foreground">
-            Only authorized department admins can log in.
+            Only authorized class admins can log in.
           </p>
         <Link href="/" className="mt-2 text-primary hover:underline">
-          Back to Department Selection
+          Back to Class Selection
         </Link>
       </CardFooter>
     </Card>
