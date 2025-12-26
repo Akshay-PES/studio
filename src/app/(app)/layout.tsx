@@ -3,41 +3,29 @@
 
 import * as React from 'react';
 import Header from '@/components/layout/header';
-import { SidebarProvider, Sidebar, SidebarRail } from '@/components/ui/sidebar';
-import { TooltipProvider } from '@/components/ui/tooltip';
 import SidebarFilters from '@/components/layout/sidebar-filters';
 import { FilterProvider } from '@/contexts/FilterContext';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
-  React.useEffect(() => {
-    const storedState = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('sidebar_state='))
-      ?.split('=')[1];
-    if (storedState) {
-      setIsSidebarOpen(storedState === 'true');
-    }
-  }, []);
 
   return (
     <TooltipProvider delayDuration={0}>
       <FilterProvider>
-        <SidebarProvider defaultOpen={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
           <div className="flex flex-col min-h-screen">
             <Header />
             <div className="flex flex-1 overflow-hidden">
-              <Sidebar collapsible="icon" className="border-r bg-sidebar text-sidebar-foreground">
+              <aside className="hidden md:block w-64 border-r bg-sidebar text-sidebar-foreground">
                 <SidebarFilters />
-              </Sidebar>
-              <SidebarRail />
+              </aside>
               <main className="flex flex-col flex-1 overflow-y-auto bg-background">
                 {children}
               </main>
             </div>
           </div>
-        </SidebarProvider>
       </FilterProvider>
     </TooltipProvider>
   );
 }
+
+    

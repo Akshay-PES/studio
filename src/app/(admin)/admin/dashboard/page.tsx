@@ -48,13 +48,11 @@ interface EditEventFormData {
 
 interface AddSubjectFormData {
   name: string;
-  semester: string;
 }
 
 interface EditSubjectFormData {
   name: string;
   color: string;
-  semester: string;
 }
 
 interface AddCategoryFormData {
@@ -131,8 +129,8 @@ export default function AdminDashboardPage() {
   const [showAddSubjectDialog, setShowAddSubjectDialog] = useState(false);
   const [showEditSubjectDialog, setShowEditSubjectDialog] = useState(false);
   const [currentSubjectToEdit, setCurrentSubjectToEdit] = useState<Subject | null>(null);
-  const [addSubjectFormData, setAddSubjectFormData] = useState<AddSubjectFormData>({ name: '', semester: NO_SEMESTER_VALUE });
-  const [editSubjectFormData, setEditSubjectFormData] = useState<EditSubjectFormData>({ name: '', color: '#808080', semester: NO_SEMESTER_VALUE });
+  const [addSubjectFormData, setAddSubjectFormData] = useState<AddSubjectFormData>({ name: ''});
+  const [editSubjectFormData, setEditSubjectFormData] = useState<EditSubjectFormData>({ name: '', color: '#808080' });
 
   const [showAddCategoryDialog, setShowAddCategoryDialog] = useState(false);
   const [showEditCategoryDialog, setShowEditCategoryDialog] = useState(false);
@@ -220,7 +218,7 @@ export default function AdminDashboardPage() {
 
         const fetchedSubjects: Subject[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
             const data = doc.data();
-            return { id: doc.id, name: data.name, color: data.color, semester: data.semester };
+            return { id: doc.id, name: data.name, color: data.color };
         });
         setSubjectsDB(fetchedSubjects);
     } catch (error) {
@@ -433,12 +431,11 @@ export default function AdminDashboardPage() {
       await addDoc(collection(db, "subjects"), {
         name: addSubjectFormData.name,
         color: assignedColor,
-        semester: addSubjectFormData.semester && addSubjectFormData.semester !== NO_SEMESTER_VALUE ? parseInt(addSubjectFormData.semester, 10) : null,
       });
       toast({ title: "Subject Added Successfully", description: `Assigned color: ${assignedColor}` });
       fetchSubjects();
       setShowAddSubjectDialog(false);
-      setAddSubjectFormData({ name: '', semester: NO_SEMESTER_VALUE });
+      setAddSubjectFormData({ name: ''});
     } catch (error) {
       console.error("Error adding subject:", error);
       toast({ variant: "destructive", title: "Error Adding Subject", description: `Details: ${(error as Error)?.message}` });
@@ -450,7 +447,6 @@ export default function AdminDashboardPage() {
     setEditSubjectFormData({
       name: subject.name,
       color: subject.color,
-      semester: subject.semester ? String(subject.semester) : NO_SEMESTER_VALUE,
     });
     setShowEditSubjectDialog(true);
   };
@@ -458,10 +454,6 @@ export default function AdminDashboardPage() {
   const handleEditSubjectFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setEditSubjectFormData(prev => ({ ...prev, [name]: value }));
-  };
-  
-  const handleEditSubjectSelectChange = (name: string, value: string) => {
-      setEditSubjectFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleUpdateSubjectInDB = async (e: React.FormEvent) => {
@@ -474,7 +466,6 @@ export default function AdminDashboardPage() {
       await updateDoc(doc(db, "subjects", currentSubjectToEdit.id), {
         name: editSubjectFormData.name,
         color: editSubjectFormData.color,
-        semester: editSubjectFormData.semester && editSubjectFormData.semester !== NO_SEMESTER_VALUE ? parseInt(editSubjectFormData.semester, 10) : null,
       });
       toast({ title: "Subject Updated Successfully" });
       fetchSubjects();
@@ -963,18 +954,20 @@ export default function AdminDashboardPage() {
         <TabsContent value="subjects" className="pt-6">
           <Card>
             <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Manage Global Subjects</CardTitle>
+              <div className="flex justify-between items-center flex-col sm:flex-row gap-4">
+                <div>
+                  <CardTitle>Manage Global Subjects</CardTitle>
+                  <CardDescription>
+                    Add, edit, or delete subjects. These are available to all standards.
+                  </CardDescription>
+                </div>
                 <Button onClick={() => {
-                  setAddSubjectFormData({ name: '', semester: NO_SEMESTER_VALUE });
+                  setAddSubjectFormData({ name: ''});
                   setShowAddSubjectDialog(true);
                 }}>
                   <BookOpen className="mr-2 h-4 w-4" /> Add New Subject
                 </Button>
               </div>
-              <CardDescription>
-                Add, edit, or delete subjects. These are available to all standards.
-              </CardDescription>
             </CardHeader>
             <CardContent>
               {isLoadingSubjects ? (
@@ -984,15 +977,12 @@ export default function AdminDashboardPage() {
               ) : (
                 <ul className="space-y-4">
                   {subjectsDB.map((subject) => (
-                    <li key={subject.id} className="p-4 border rounded-lg shadow-sm flex justify-between items-center hover:bg-muted/50 transition-colors">
+                    <li key={subject.id} className="p-4 border rounded-lg shadow-sm flex justify-between items-center flex-col sm:flex-row gap-4 hover:bg-muted/50 transition-colors">
                       <div>
                         <h3 className="text-lg font-semibold" style={{color: subject.color}}>{subject.name}</h3>
-                        {subject.semester && (
-                          <p className="text-sm text-muted-foreground">Taught In: {subject.semester}{['st', 'nd', 'rd'][((subject.semester % 100 - 10) % 10) - 1] || 'th'} Standard</p>
-                        )}
                         <p className="text-sm text-muted-foreground">Color: {subject.color}</p>
                       </div>
-                      <div className="space-x-2">
+                      <div className="space-x-2 self-end sm:self-center">
                         <Button variant="outline" size="sm" onClick={() => openEditSubjectDialog(subject)}>
                           <Pencil className="mr-1 h-4 w-4" /> Edit
                         </Button>
@@ -1116,8 +1106,13 @@ export default function AdminDashboardPage() {
           <TabsContent value="categories" className="pt-6">
             <Card>
               <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle>Manage Global Event Categories</CardTitle>
+                <div className="flex justify-between items-center flex-col sm:flex-row gap-4">
+                  <div>
+                    <CardTitle>Manage Global Event Categories</CardTitle>
+                    <CardDescription>
+                      These categories are GLOBAL and shared across all classes.
+                    </CardDescription>
+                  </div>
                   <Button onClick={() => {
                     setAddCategoryFormData({ name: '', subTypesString: ''});
                     setShowAddCategoryDialog(true);
@@ -1125,9 +1120,6 @@ export default function AdminDashboardPage() {
                     <Layers className="mr-2 h-4 w-4" /> Add New Category
                   </Button>
                 </div>
-                <CardDescription>
-                  These categories are GLOBAL and shared across all classes.
-                </CardDescription>
               </CardHeader>
               <CardContent>
                 {isLoadingCategories ? (
@@ -1137,7 +1129,7 @@ export default function AdminDashboardPage() {
                 ) : (
                   <ul className="space-y-4">
                     {eventCategoriesDB.map((category) => (
-                      <li key={category.id} className="p-4 border rounded-lg shadow-sm flex justify-between items-center hover:bg-muted/50 transition-colors">
+                      <li key={category.id} className="p-4 border rounded-lg shadow-sm flex justify-between items-center flex-col sm:flex-row gap-4 hover:bg-muted/50 transition-colors">
                         <div>
                           <h3 className="text-lg font-semibold flex items-center">
                              <span className="w-4 h-4 rounded-full mr-2" style={{ backgroundColor: category.color }} />
@@ -1148,7 +1140,7 @@ export default function AdminDashboardPage() {
                             Sub-types: {(category.subTypes && category.subTypes.length > 0) ? [...new Set(category.subTypes)].join(', ') : 'None'}
                           </p>
                         </div>
-                        <div className="space-x-2">
+                        <div className="space-x-2 self-end sm:self-center">
                           <Button variant="outline" size="sm" onClick={() => openEditCategoryDialog(category)}>
                             <Pencil className="mr-1 h-4 w-4" /> Edit
                           </Button>
@@ -1369,7 +1361,7 @@ export default function AdminDashboardPage() {
       )}
 
       <Dialog open={showAddSubjectDialog} onOpenChange={(isOpen) => {
-        if (!isOpen) setAddSubjectFormData({ name: '', semester: NO_SEMESTER_VALUE });
+        if (!isOpen) setAddSubjectFormData({ name: ''});
         setShowAddSubjectDialog(isOpen);
       }}>
         <DialogContent className="sm:max-w-md">
@@ -1382,21 +1374,6 @@ export default function AdminDashboardPage() {
               <Label htmlFor="add-subject-name">Subject Name</Label>
               <Input id="add-subject-name" name="name" value={addSubjectFormData.name}
                 onChange={(e) => setAddSubjectFormData(prev => ({...prev, name: e.target.value}))} required />
-            </div>
-            <div>
-              <Label htmlFor="add-subject-semester">Taught In Standard (Optional)</Label>
-              <Select
-                  value={addSubjectFormData.semester}
-                  onValueChange={(value) => setAddSubjectFormData(prev => ({ ...prev, semester: value }))}
-              >
-                  <SelectTrigger id="add-subject-semester"><SelectValue placeholder="Select standard" /></SelectTrigger>
-                  <SelectContent>
-                      <SelectItem value={NO_SEMESTER_VALUE}>None</SelectItem>
-                      {Array.from({ length: 10 }, (_, i) => i + 1).map(std => (
-                          <SelectItem key={std} value={String(std)}>{std}{std === 1 ? 'st' : std === 2 ? 'nd' : std === 3 ? 'rd' : 'th'} Standard</SelectItem>
-                      ))}
-                  </SelectContent>
-              </Select>
             </div>
             <DialogFooter>
               <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
@@ -1419,18 +1396,6 @@ export default function AdminDashboardPage() {
               <div>
                 <Label htmlFor="edit-subject-name">Subject Name</Label>
                 <Input id="edit-subject-name" name="name" value={editSubjectFormData.name} onChange={handleEditSubjectFormChange} required />
-              </div>
-               <div>
-                <Label htmlFor="edit-subject-semester">Standard</Label>
-                <Select value={editSubjectFormData.semester} onValueChange={(value) => handleEditSubjectSelectChange('semester', value)}>
-                    <SelectTrigger id="edit-subject-semester"><SelectValue placeholder="Select standard" /></SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value={NO_SEMESTER_VALUE}>None</SelectItem>
-                        {Array.from({ length: 10 }, (_, i) => i + 1).map(std => (
-                            <SelectItem key={std} value={String(std)}>{std}{std === 1 ? 'st' : std === 2 ? 'nd' : std === 3 ? 'rd' : 'th'} Standard</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
               </div>
               <div>
                 <Label htmlFor="edit-subject-color">Color (Hex Code)</Label>

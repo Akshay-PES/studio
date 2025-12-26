@@ -7,12 +7,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Menu, LogOut, UserCircle, LogIn, Filter } from 'lucide-react';
+import { Menu, LogOut, UserCircle, LogIn } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import SidebarFilters from './sidebar-filters';
 import { Separator } from '../ui/separator';
-import { SidebarTrigger } from '../ui/sidebar';
 
 interface HeaderProps {
   children?: React.ReactNode;
@@ -60,12 +59,12 @@ export default function Header({ children }: HeaderProps) {
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 border-b bg-card shadow-sm sm:px-6">
       <div className="flex items-center gap-2">
-        {/* This is the mobile menu trigger, it remains */}
+        {/* This is the mobile menu trigger for the filters */}
         <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="md:hidden">
                 <Menu className="w-6 h-6" />
-                <span className="sr-only">Toggle Menu</span>
+                <span className="sr-only">Toggle Filters</span>
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="sm:max-w-xs bg-sidebar text-sidebar-foreground p-0 flex flex-col">
@@ -129,3 +128,5 @@ export default function Header({ children }: HeaderProps) {
     </header>
   );
 }
+
+    
