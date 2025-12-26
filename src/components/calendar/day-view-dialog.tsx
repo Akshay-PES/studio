@@ -41,7 +41,7 @@ export default function DayViewDialog({
       const isEventOnSelectedDate = currentDayOnly >= eventStartDateOnly && currentDayOnly <= eventEndDateOnly;
       if (!isEventOnSelectedDate) return false;
 
-      // Apply additional filters (categories, sub-types, subjects, semesters)
+      // Apply additional filters (categories, sub-types, subjects)
       if (filters.categories.length > 0 && !filters.categories.includes(event.category)) {
         return false;
       }
@@ -51,9 +51,6 @@ export default function DayViewDialog({
         }
       }
       if (filters.subjects.length > 0 && event.subjectId && !filters.subjects.includes(event.subjectId)) {
-        return false;
-      }
-      if (filters.semesters.length > 0 && event.semester && !filters.semesters.includes(event.semester)) {
         return false;
       }
       if (filters.sections.length > 0 && event.section && !filters.sections.includes(event.section)) {
@@ -117,12 +114,6 @@ export default function DayViewDialog({
                           <div className="flex items-center">
                             <BookOpen className="w-3.5 h-3.5 mr-1.5" style={{ color: subject.color }} />
                             {subject.name}
-                          </div>
-                        )}
-                        {event.semester && (
-                          <div className="flex items-center">
-                            <ListFilter className="w-3.5 h-3.5 mr-1.5" />
-                            Standard: {event.semester}
                           </div>
                         )}
                         {event.section && (

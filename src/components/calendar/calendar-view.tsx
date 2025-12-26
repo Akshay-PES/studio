@@ -54,8 +54,6 @@ export default function CalendarView({
   };
 
   const filteredEvents = React.useMemo(() => {
-    const subjectsById = new Map(allSubjects.map(subject => [subject.id, subject]));
-
     return allEvents.filter(event => {
       const eventStart = event.start;
       const eventEnd = event.end;
@@ -71,18 +69,6 @@ export default function CalendarView({
       if (filters.subjects.length > 0 && event.subjectId && !filters.subjects.includes(event.subjectId)) {
         return false;
       }
-      if (filters.semesters.length > 0) {
-        const eventSubject = event.subjectId ? subjectsById.get(event.subjectId) : null;
-        const eventSemester = event.semester;
-        const subjectSemester = eventSubject?.semester;
-
-        const semesterMatch = (eventSemester && filters.semesters.includes(eventSemester)) || 
-                              (subjectSemester && filters.semesters.includes(subjectSemester));
-        
-        if (!semesterMatch) {
-            return false;
-        }
-      }
       if (filters.sections.length > 0 && event.section && !filters.sections.includes(event.section)) {
         return false;
       }
@@ -94,7 +80,7 @@ export default function CalendarView({
       }
       return true;
     });
-  }, [allEvents, allSubjects, filters]);
+  }, [allEvents, filters]);
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
