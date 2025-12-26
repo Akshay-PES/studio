@@ -1,3 +1,4 @@
+
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import { getFirestore, type Firestore } from "firebase/firestore";
@@ -9,7 +10,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyBLNI6M4Qr2ASvDSpZjNWx7IPkVQqQHB_8",
   authDomain: "jsb-calender.firebaseapp.com",
   projectId: "jsb-calender",
-  storageBucket: "jsb-calender.firebasestorage.app",
+  storageBucket: "jsb-calender.appspot.com",
   messagingSenderId: "919280262238",
   appId: "1:919280262238:web:a8a55c6c97566f338228cf",
   measurementId: "G-WY3Y85WV7M"
