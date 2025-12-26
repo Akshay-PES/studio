@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { CalendarDays, Clock, MapPin, User, Info, BookOpen, Users, ListFilter, Bookmark } from 'lucide-react';
+import { CalendarDays, Clock, MapPin, User, Info, BookOpen, Users, ListFilter, Bookmark, School } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface EventDetailDialogProps {
@@ -18,12 +18,21 @@ interface EventDetailDialogProps {
   onClose: () => void;
 }
 
+const departmentOptions = [
+    { name: "1st Standard", id: "std-1" }, { name: "2nd Standard", id: "std-2" },
+    { name: "3rd Standard", id: "std-3" }, { name: "4th Standard", id: "std-4" },
+    { name: "5th Standard", id: "std-5" }, { name: "6th Standard", id: "std-6" },
+    { name: "7th Standard", id: "std-7" }, { name: "8th Standard", id: "std-8" },
+    { name: "9th Standard", id: "std-9" }, { name: "10th Standard", id: "std-10" },
+];
+
 export default function EventDetailDialog({ event, allSubjects, allCategories, isOpen, onClose }: EventDetailDialogProps) {
   if (!event) return null;
 
   // Use the passed allCategories list for lookup by name
   const category = getCategoryByName(event.category, allCategories);
   const subject = event.subjectId ? getSubjectById(event.subjectId, allSubjects) : null;
+  const departmentName = departmentOptions.find(d => d.id === event.departmentId)?.name;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -76,6 +85,15 @@ export default function EventDetailDialog({ event, allSubjects, allCategories, i
                   <p>{format(event.start, 'p')} - {format(event.end, 'p')}</p>
                 </div>
               </div>
+              {departmentName && (
+                 <div className="flex items-start">
+                  <School className="w-4 h-4 mr-2 mt-0.5 text-primary" />
+                  <div>
+                    <strong>Standard:</strong>
+                    <p>{departmentName}</p>
+                  </div>
+                </div>
+              )}
               {event.location && (
                 <div className="flex items-start">
                   <MapPin className="w-4 h-4 mr-2 mt-0.5 text-primary" />

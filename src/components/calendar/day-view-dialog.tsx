@@ -6,9 +6,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { CalendarDays, Clock, MapPin, Layers, BookOpen, Info, ListFilter, Bookmark } from 'lucide-react';
+import { CalendarDays, Clock, MapPin, Layers, BookOpen, Info, ListFilter, Bookmark, School } from 'lucide-react';
 import { format, isSameDay, startOfDay } from 'date-fns';
 import { getCategoryByName, getSubjectById } from '@/data/mock-data';
+import { Badge } from '../ui/badge';
 
 interface DayViewDialogProps {
   isOpen: boolean;
@@ -20,6 +21,14 @@ interface DayViewDialogProps {
   filters: CalendarFilters; // Add filters prop
   onEventClick: (event: AcademicEvent) => void;
 }
+
+const departmentOptions = [
+    { name: "1st Standard", id: "std-1" }, { name: "2nd Standard", id: "std-2" },
+    { name: "3rd Standard", id: "std-3" }, { name: "4th Standard", id: "std-4" },
+    { name: "5th Standard", id: "std-5" }, { name: "6th Standard", id: "std-6" },
+    { name: "7th Standard", id: "std-7" }, { name: "8th Standard", id: "std-8" },
+    { name: "9th Standard", id: "std-9" }, { name: "10th Standard", id: "std-10" },
+];
 
 export default function DayViewDialog({
   isOpen,
@@ -80,6 +89,7 @@ export default function DayViewDialog({
               {eventsForSelectedDate.map((event, index) => {
                 const category = getCategoryByName(event.category, allCategories);
                 const subject = event.subjectId ? getSubjectById(event.subjectId, allSubjects) : null;
+                const departmentName = departmentOptions.find(d => d.id === event.departmentId)?.name;
                 const isMultiDayOnThisDate = !isSameDay(event.start, event.end) && 
                                              (isSameDay(selectedDate, event.start) || isSameDay(selectedDate, event.end) || 
                                              (selectedDate > event.start && selectedDate < event.end));
@@ -126,6 +136,12 @@ export default function DayViewDialog({
                           <div className="flex items-center">
                             <MapPin className="w-3.5 h-3.5 mr-1.5" />
                             {event.location}
+                          </div>
+                        )}
+                        {departmentName && (
+                          <div className="flex items-center mt-1.5">
+                             <School className="w-3.5 h-3.5 mr-1.5" />
+                             <Badge variant="secondary">{departmentName}</Badge>
                           </div>
                         )}
                       </div>
