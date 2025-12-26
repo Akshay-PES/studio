@@ -48,7 +48,6 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const NO_SUBJECT_VALUE = "__NONE_SUBJECT__";
 const NO_CATEGORY_VALUE = "__NONE_CATEGORY__";
-const NO_SEMESTER_VALUE = "__NONE_SEMESTER__";
 const NO_SECTION_VALUE = "__NONE_SECTION__";
 const NO_DEPARTMENT_VALUE = "__NONE_DEPARTMENT__";
 
@@ -66,7 +65,6 @@ const eventFormSchema = z.object({
   category: z.string().min(1, { message: "Category is required."}),
   subType: z.string().optional(),
   subjectId: z.string().optional(),
-  semester: z.string().optional(),
   section: z.string().optional(),
   departmentId: z.string().optional(),
   startDate: z.date({ required_error: "Start date is required." }),
@@ -139,7 +137,6 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
       description: "",
       subType: "",
       subjectId: NO_SUBJECT_VALUE,
-      semester: NO_SEMESTER_VALUE,
       section: NO_SECTION_VALUE,
     },
   });
@@ -189,7 +186,6 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
       category: data.category,
       subType: data.subType || undefined,
       subjectId: data.subjectId === NO_SUBJECT_VALUE || !data.subjectId ? undefined : data.subjectId,
-      semester: data.semester && data.semester !== NO_SEMESTER_VALUE ? parseInt(data.semester, 10) : undefined,
       section: data.section === NO_SECTION_VALUE || !data.section ? undefined : data.section,
       start: startDateTime,
       end: endDateTime,
@@ -208,7 +204,6 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
         departmentId: isSuperAdmin ? NO_DEPARTMENT_VALUE : departmentId,
         subType: "",
         subjectId: NO_SUBJECT_VALUE,
-        semester: NO_SEMESTER_VALUE,
         section: NO_SECTION_VALUE,
         startDate: undefined,
         startHour: '9',
@@ -229,7 +224,7 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
     <Dialog open={isOpen} onOpenChange={(open) => {
       if (!open) {
         form.reset({
-            title: "", category: NO_CATEGORY_VALUE, departmentId: isSuperAdmin ? NO_DEPARTMENT_VALUE : departmentId, subType: "", subjectId: NO_SUBJECT_VALUE, semester: NO_SEMESTER_VALUE, section: NO_SECTION_VALUE,
+            title: "", category: NO_CATEGORY_VALUE, departmentId: isSuperAdmin ? NO_DEPARTMENT_VALUE : departmentId, subType: "", subjectId: NO_SUBJECT_VALUE, section: NO_SECTION_VALUE,
             startDate: undefined, startHour: '9', startMinute: '00', startPeriod: 'AM',
             endDate: undefined, endHour: '10', endMinute: '00', endPeriod: 'AM',
             location: "", faculty: "", description: ""
@@ -447,7 +442,7 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
                   {/* --- ACADEMIC CONTEXT --- */}
                   <div>
                     <h4 className="text-sm font-medium text-muted-foreground mb-4">Academic Context (Optional)</h4>
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <FormField
                         control={form.control}
                         name="subjectId"
@@ -476,29 +471,6 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
                             <FormMessage />
                             {subjectsFromDB.length === 0 && <FormDescription className="text-xs">No subjects found. Add them via admin panel.</FormDescription>}
                         </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="semester"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel><ListFilter className="inline w-4 h-4 mr-1" />Standard</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value || NO_SEMESTER_VALUE} defaultValue={field.value || NO_SEMESTER_VALUE}>
-                                <FormControl>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select a standard" />
-                                </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    <SelectItem value={NO_SEMESTER_VALUE}>None</SelectItem>
-                                    {Array.from({ length: 10 }, (_, i) => i + 1).map(std => (
-                                        <SelectItem key={std} value={String(std)}>{std}{std === 1 ? 'st' : std === 2 ? 'nd' : std === 3 ? 'rd' : 'th'} Standard</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                            </FormItem>
                         )}
                       />
                       <FormField
@@ -591,5 +563,3 @@ export default function AddEventDialog({ isOpen, onClose, onAddEvent, subjectsFr
     </Dialog>
   );
 }
-
-    

@@ -46,7 +46,6 @@ export default function SidebarFilters() {
                 id: doc.id, 
                 name: data.name, 
                 color: data.color, 
-                semester: data.semester 
             };
         });
         setSubjectsDB(fetchedSubjects);
@@ -108,27 +107,6 @@ export default function SidebarFilters() {
     }));
   };
   
-  const handleSemesterChange = (semester: number, checked: boolean) => {
-    setFilters(prev => {
-        const newSemesters = checked
-        ? [...prev.semesters, semester]
-        : prev.semesters.filter(s => s !== semester);
-        
-        // When semesters change, we need to un-filter subjects that are no longer relevant
-        const stillValidSubjects = prev.subjects.filter(subjectId => {
-            const subject = subjectsDB.find(s => s.id === subjectId);
-            // Keep subject if it has no semester or its semester is in the new list
-            return !subject?.semester || newSemesters.includes(subject.semester);
-        });
-
-        return {
-            ...prev,
-            semesters: newSemesters,
-            subjects: stillValidSubjects,
-        };
-    });
-  };
-
   const handleSectionChange = (section: string, checked: boolean) => {
     setFilters(prev => ({
       ...prev,
@@ -149,7 +127,7 @@ export default function SidebarFilters() {
   };
 
   const clearFilters = () => {
-    setFilters({ categories: [], subjects: [], subTypes: [], semesters: [], sections: [], dateRange: {} });
+    setFilters({ categories: [], subjects: [], subTypes: [], sections: [], dateRange: {} });
     setColorMode('category');
   };
 
@@ -163,13 +141,8 @@ export default function SidebarFilters() {
   }, [filters.categories, eventCategoriesDB]);
 
   const filteredSubjectsForDisplay = React.useMemo(() => {
-    if (filters.semesters.length === 0) {
-      return subjectsDB; // If no semester is selected, show all subjects
-    }
-    return subjectsDB.filter(subject => 
-      subject.semester && filters.semesters.includes(subject.semester)
-    );
-  }, [filters.semesters, subjectsDB]);
+    return subjectsDB;
+  }, [subjectsDB]);
 
   return (
     <div className="p-2 space-y-3 h-full flex flex-col text-sidebar-foreground bg-sidebar">
@@ -233,27 +206,6 @@ export default function SidebarFilters() {
                   </div>
                 ))
               )}
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem value="semesters" className="border-b-sidebar-border">
-            <AccordionTrigger className="text-sm font-medium hover:no-underline px-2 py-2.5">
-              <div className="flex items-center gap-1.5"><ListFilter className="w-4 h-4" /> Standard</div>
-            </AccordionTrigger>
-            <AccordionContent className="pt-1 pb-1.5 space-y-1 px-2">
-              {Array.from({ length: 10 }, (_, i) => i + 1).map(std => (
-                <div key={std} className="flex items-center space-x-2 p-1 rounded-md hover:bg-sidebar-accent/70">
-                  <Checkbox
-                    id={`std-${std}`}
-                    checked={filters.semesters.includes(std)}
-                    onCheckedChange={(checked) => handleSemesterChange(std, !!checked)}
-                    className="border-sidebar-primary data-[state=checked]:bg-sidebar-primary data-[state=checked]:text-sidebar-primary-foreground"
-                  />
-                  <Label htmlFor={`std-${std}`} className="text-xs font-normal cursor-pointer flex-grow">
-                    {std}{std === 1 ? 'st' : std === 2 ? 'nd' : std === 3 ? 'rd' : 'th'} Standard
-                  </Label>
-                </div>
-              ))}
             </AccordionContent>
           </AccordionItem>
 

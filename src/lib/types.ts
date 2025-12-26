@@ -10,7 +10,6 @@ export interface Subject {
   id: string; // Firestore document ID
   name: string;
   color: string; // Hex color code
-  semester?: number; // Optional standard number
 }
 
 export interface AcademicEvent {
@@ -19,7 +18,6 @@ export interface AcademicEvent {
   category: string; // Stores the NAME of the category
   subType?: string;
   subjectId?: string; // Reference to Subject id
-  semester?: number;
   section?: string;
   start: Date;
   end: Date;
@@ -52,7 +50,6 @@ export interface CalendarFilters {
   categories: string[]; // Array of category names
   subjects: string[]; // Array of Subject IDs
   subTypes: string[]; // Array of selected sub-types
-  semesters: number[];
   sections: string[];
   dateRange?: { start?: Date; end?: Date };
 }

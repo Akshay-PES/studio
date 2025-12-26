@@ -100,7 +100,6 @@ export default function DashboardComponent() {
             departmentId: data.departmentId,
             ...(data.subType && { subType: data.subType }),
             ...(data.subjectId && { subjectId: data.subjectId }),
-            ...(data.semester && { semester: data.semester }),
             ...(data.section && { section: data.section }),
             ...(data.location && { location: data.location }),
             ...(data.faculty && { faculty: data.faculty }),
@@ -125,7 +124,7 @@ export default function DashboardComponent() {
   }, [toast]);
   
   useEffect(() => {
-    setFilters({ categories: [], subjects: [], subTypes: [], semesters: [], sections: [], dateRange: {} });
+    setFilters({ categories: [], subjects: [], subTypes: [], sections: [], dateRange: {} });
     fetchEvents(department);
 
     // Set up real-time listener for all subjects (they are now global)
@@ -139,7 +138,6 @@ export default function DashboardComponent() {
           id: doc.id,
           name: data.name,
           color: data.color,
-          semester: data.semester,
         };
       });
       setSubjects(fetchedSubjects);

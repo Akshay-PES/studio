@@ -25,7 +25,6 @@ export const FilterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     categories: [],
     subjects: [],
     subTypes: [],
-    semesters: [],
     sections: [],
     dateRange: {},
   });

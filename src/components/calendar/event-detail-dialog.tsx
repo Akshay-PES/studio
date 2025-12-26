@@ -53,7 +53,6 @@ export default function EventDetailDialog({ event, allSubjects, allCategories, i
                   <BookOpen className="w-4 h-4 text-accent-foreground" /> Subject Details
                 </h4>
                 <p className="text-sm"><strong className="text-accent-foreground">{subject.name}</strong></p>
-                {/* Removed subject.courseCode and subject.semester as they are not in base Subject type */}
                  <div className="mt-1">
                     <Badge variant="outline" style={{ borderColor: subject.color, color: subject.color, backgroundColor: `${subject.color}1A` }}>
                       {subject.name}
@@ -92,15 +91,6 @@ export default function EventDetailDialog({ event, allSubjects, allCategories, i
                   <div>
                     <strong>Faculty:</strong>
                     <p>{event.faculty}</p>
-                  </div>
-                </div>
-              )}
-              {event.semester && (
-                <div className="flex items-start">
-                  <ListFilter className="w-4 h-4 mr-2 mt-0.5 text-primary" />
-                  <div>
-                    <strong>Standard:</strong>
-                    <p>{event.semester}</p>
                   </div>
                 </div>
               )}
