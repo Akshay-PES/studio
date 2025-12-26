@@ -10,7 +10,6 @@ export interface Subject {
   id: string; // Firestore document ID
   name: string;
   color: string; // Hex color code
-  departmentId: string; // e.g., "std-1", "std-2"
   semester?: number; // Optional standard number
 }
 

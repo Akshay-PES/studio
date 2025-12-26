@@ -18,6 +18,12 @@ service cloud.firestore {
              userProfile.departmentId == departmentId;
     }
 
+    // A helper function to check if the requester is any kind of admin.
+    function isAdmin() {
+      let userProfile = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return request.auth != null && (userProfile.role == 'department_admin' || userProfile.role == 'super_admin');
+    }
+
     // Users collection can be read by the user themselves or any super admin.
     // User creation is open (for signup), but updates are restricted.
     match /users/{userId} {
@@ -27,13 +33,11 @@ service cloud.firestore {
       allow delete: if isSuperAdmin();
     }
 
-    // Subjects can be read by anyone.
+    // Subjects are global and can be read by anyone.
+    // Any admin (super or department) can manage subjects.
     match /subjects/{subjectId} {
       allow read: if true;
-      // On create, check the incoming data's departmentId or if user is super admin.
-      allow create: if isDepartmentAdmin(request.resource.data.departmentId) || isSuperAdmin();
-      // On update/delete, check the existing data's departmentId or if user is super admin.
-      allow update, delete: if isDepartmentAdmin(resource.data.departmentId) || isSuperAdmin();
+      allow create, update, delete: if isAdmin();
     }
 
     // Event Categories are global. They can be read by anyone.

@@ -128,10 +128,10 @@ export default function DashboardComponent() {
     setFilters({ categories: [], subjects: [], subTypes: [], semesters: [], sections: [], dateRange: {} });
     fetchEvents(department);
 
-    // Set up real-time listener for subjects for the current department
+    // Set up real-time listener for all subjects (they are now global)
     setIsLoadingSubjects(true);
     const subjectsCollection = collection(db, "subjects");
-    const subjectsQuery = query(subjectsCollection, where("departmentId", "==", department), orderBy("name"));
+    const subjectsQuery = query(subjectsCollection, orderBy("name"));
     const unsubscribeSubjects = onSnapshot(subjectsQuery, (querySnapshot) => {
       const fetchedSubjects: Subject[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
         const data = doc.data();
@@ -139,7 +139,6 @@ export default function DashboardComponent() {
           id: doc.id,
           name: data.name,
           color: data.color,
-          departmentId: data.departmentId,
           semester: data.semester,
         };
       });

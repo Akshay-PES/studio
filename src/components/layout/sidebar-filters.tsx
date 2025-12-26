@@ -34,14 +34,11 @@ export default function SidebarFilters() {
   const [isLoadingCategories, setIsLoadingCategories] = React.useState(true);
   const { toast } = useToast();
   
-  const searchParams = useSearchParams();
-  const department = searchParams.get('department') || 'std-1';
-
   React.useEffect(() => {
-    if (!department) return;
     setIsLoadingSubjects(true);
+    // Subjects are now global, so we don't filter by department.
     const subjectsCollection = collection(db, "subjects");
-    const q = query(subjectsCollection, where("departmentId", "==", department), orderBy("name", "asc"));
+    const q = query(subjectsCollection, orderBy("name", "asc"));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
         const fetchedSubjects: Subject[] = querySnapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
             const data = doc.data();
@@ -49,7 +46,6 @@ export default function SidebarFilters() {
                 id: doc.id, 
                 name: data.name, 
                 color: data.color, 
-                departmentId: data.departmentId, 
                 semester: data.semester 
             };
         });
@@ -61,7 +57,7 @@ export default function SidebarFilters() {
         setIsLoadingSubjects(false);
     });
     return () => unsubscribe();
-  }, [toast, department]);
+  }, [toast]);
 
   React.useEffect(() => {
     setIsLoadingCategories(true);
